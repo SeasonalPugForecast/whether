@@ -45,7 +45,9 @@ phone, as for any place. The reading itself stays on the phone.
 - **Notifications** (weather alerts and shared-plan changes) are made on your phone after the app
   has fetched or synced. The project sends none, and you can turn them off in iOS Settings.
 - **Background refresh and widgets** make the same requests as the app, for the same rounded
-  coordinates, when iOS lets the app refresh or a widget's data is old.
+  coordinates, when iOS lets the app refresh or a widget's data is old. The exception is MET
+  Norway, whose terms allow requests only while the app is in use: it is asked only when you use
+  the app.
 - **The rain Live Activity** is updated by the app on your phone only.
 
 ## What stays on your phone
