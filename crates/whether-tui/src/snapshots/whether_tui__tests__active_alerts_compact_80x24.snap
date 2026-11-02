@@ -1,0 +1,29 @@
+---
+source: crates/whether-tui/src/tests.rs
+assertion_line: 299
+expression: "alert_snapshot(80, 24, LayoutPreset::Compact)"
+---
+New York, New York, US  Mon 11:00                  Updated just now · Open-Meteo
+┌ Now ─────────────────────────────────────────────────────────────────────────┐
+│15°  PCLD Partly cloudy                                                       │
+│Feels like 14°                                                                │
+│H 18°  L 8°                                                                   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+     Now          12:00        13:00        14:00         15:00        16:00
+     CLD           CLD          CLD          CLD           OVC         SHWR
+     15°           17°          17°          18°           18°          18°
+┌ Days ────────────────────────────────────────────────────────────────────────┐
+│Today    CLD  Cloudy         80%   8°     ━━━━━━━━━━━━━━━━━━━━━━─────── 18°   │
+│Tomorrow PCLD Partly cloudy  45%   10°    ────━━━━━━━━━━━━━━━────────── 16°   │
+│Wed      PCLD Partly cloudy  10%   9°     ──━━━━━━━━━━━━━━━━━━━━━━━──── 19°   │
+└──────────────────────────────────────────────────────────────────────────────┘
+! Flood Warning  Mon 09:00 – Tue 06:00  The East Branch Bronx River near New Yor
+! Wind Advisory  Mon 14:00 – Tue 00:00  West winds 20 to 30 mph with gusts up to
+Partly cloudy. High 18°, low 8°. Rain starting in ~45 min.
+
+
+
+
+
+q quit · ←→ location · 1-6 views · r refresh · ?  Weather data by Open-Meteo.com

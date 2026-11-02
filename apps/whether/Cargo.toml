@@ -1,0 +1,109 @@
+[package]
+name = "whether"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Weather for the terminal, the desktop and status bars"
+
+[features]
+default = ["tui", "gui", "line"]
+# The tui and gui registry entries arrive later.
+tui = ["dep:whether-tui", "whether-tui/host"]
+gui = ["dep:whether-gui", "whether-gui/desktop"]
+kiosk = ["gui", "whether-gui/kiosk"]
+line = ["dep:whether-line"]
+
+[dependencies]
+whether-core = { workspace = true, features = ["serde"] }
+whether-config = { workspace = true, features = ["std", "schema"] }
+whether-providers = { workspace = true, features = ["serde"] }
+whether-display.workspace = true
+whether-runtime.workspace = true
+whether-plugin-proto.workspace = true
+whether-line = { workspace = true, optional = true }
+whether-tui = { workspace = true, optional = true }
+whether-gui = { workspace = true, optional = true }
+anyhow.workspace = true
+clap.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+toml = { workspace = true, features = ["std", "display"] }
+serde_json = { workspace = true, features = ["std"] }
+schemars.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+whether-core = { workspace = true, features = ["serde", "testdata"] }
+tempfile.workspace = true
+insta.workspace = true
+serde_json = { workspace = true, features = ["std"] }
+
+# `cargo deb -p whether`. Run `cargo xtask dist --assets` and
+# `cargo xtask icons raster` first when the CLI or the icon changed. The `kiosk`
+# variant is for Raspberry Pi kiosks (`--target aarch64-unknown-linux-gnu`) and
+# `headless` drops the GUI.
+[package.metadata.deb]
+maintainer = "Sean Avery <pugforecast@gmail.com>"
+copyright = "2026, Sean Avery"
+license-file = ["../../packaging/deb/copyright", "0"]
+extended-description = """\
+A weather app with pluggable displays: a desktop GUI, a terminal dashboard, and \
+one-line or JSON output for status bars. Forecasts come from OpenWeather (with an \
+API key) or Open-Meteo. Data: Open-Meteo (CC BY 4.0) and OpenWeather \
+(CC BY-SA 4.0); every display credits its source."""
+# winit loads xkbcommon, Wayland, X11 and EGL at run time, so `$auto` misses them;
+# fontconfig is listed because `$auto` needs dpkg-shlibdeps, which Arch lacks.
+depends = "$auto, libfontconfig1, libxkbcommon0"
+recommends = "libwayland-client0, libxkbcommon-x11-0, libegl1"
+section = "utils"
+priority = "optional"
+assets = [
+    ["target/release/whether", "usr/bin/", "755"],
+    ["../../packaging/whether.desktop", "usr/share/applications/", "644"],
+    ["../../packaging/icons/hicolor/128x128/apps/whether.png", "usr/share/icons/hicolor/128x128/apps/", "644"],
+    ["../../packaging/icons/hicolor/256x256/apps/whether.png", "usr/share/icons/hicolor/256x256/apps/", "644"],
+    ["../../packaging/icons/hicolor/scalable/apps/whether.svg", "usr/share/icons/hicolor/scalable/apps/", "644"],
+    ["../../packaging/man/whether.1", "usr/share/man/man1/", "644"],
+    ["../../packaging/completions/whether.bash", "usr/share/bash-completion/completions/whether", "644"],
+    ["../../packaging/completions/_whether", "usr/share/zsh/vendor-completions/", "644"],
+    ["../../packaging/completions/whether.fish", "usr/share/fish/vendor_completions.d/", "644"],
+    ["../../packaging/systemd/whether-daemon.service", "usr/lib/systemd/user/", "644"],
+    ["../../docs/config/whether.example.toml", "usr/share/doc/whether/", "644"],
+]
+
+[package.metadata.deb.variants.kiosk]
+# The libraries the KMS build links (Debian/Raspberry Pi OS names), listed because
+# `$auto` needs dpkg-shlibdeps, which Arch lacks.
+depends = "$auto, libfontconfig1, libinput10, libudev1, libgbm1, libxkbcommon0"
+recommends = ""
+default-features = false
+features = ["tui", "gui", "kiosk", "line"]
+license-file = ["../../packaging/deb/copyright-kiosk", "0"]
+maintainer-scripts = "../../packaging/deb/kiosk/"
+assets = [
+    ["target/release/whether", "usr/bin/", "755"],
+    ["../../packaging/systemd/whether-kiosk.service", "usr/lib/systemd/system/", "644"],
+    ["../../packaging/systemd/whether.sysusers", "usr/lib/sysusers.d/whether.conf", "644"],
+    ["../../packaging/man/whether.1", "usr/share/man/man1/", "644"],
+    ["../../packaging/completions/whether.bash", "usr/share/bash-completion/completions/whether", "644"],
+    ["../../docs/config/whether.example.toml", "usr/share/doc/whether/", "644"],
+]
+
+[package.metadata.deb.variants.headless]
+depends = "$auto"
+recommends = ""
+default-features = false
+features = ["tui", "line"]
+assets = [
+    ["target/release/whether", "usr/bin/", "755"],
+    ["../../packaging/man/whether.1", "usr/share/man/man1/", "644"],
+    ["../../packaging/completions/whether.bash", "usr/share/bash-completion/completions/whether", "644"],
+    ["../../packaging/completions/_whether", "usr/share/zsh/vendor-completions/", "644"],
+    ["../../packaging/completions/whether.fish", "usr/share/fish/vendor_completions.d/", "644"],
+    ["../../docs/config/whether.example.toml", "usr/share/doc/whether/", "644"],
+]
+
+[lints]
+workspace = true

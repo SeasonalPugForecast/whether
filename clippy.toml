@@ -1,0 +1,2 @@
+# Proper nouns that clippy's doc_markdown lint should not ask to wrap in backticks.
+doc-valid-idents = ["OpenWeather", "OpenMeteo", "MetNorway", "GeoNames", "ARMv6", "UniFFI", "MapKit", "WeatherKit", "XCFramework", "ARMv7", ".."]

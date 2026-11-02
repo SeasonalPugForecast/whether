@@ -1,0 +1,216 @@
+// The compact UI for small screens: the desktop's compact mode and the ESP32-S3.
+// Path-free (shared with the MCU build). Pages switch by swipe, by tapping the
+// left or right quarter, or automatically every `page-interval`. While alerts are
+// active a fourth page lists them and the Now page shows the first as a pill.
+
+import { Theme } from "components/theme.slint";
+import { StatusUi, CurrentUi, HourUi, DayUi, DetailUi, AlertUi } from "components/structs.slint";
+import { ConditionIcon, BigTemp, HourCell, HourlyBars, DailyRow, MetricTile, PageDots, StatusLine, Attribution, AlertItem, AlertPill } from "components/shared.slint";
+
+component NowPage inherits VerticalLayout {
+    in property <CurrentUi> current;
+    in property <[HourUi]> hours;
+    in property <[AlertUi]> alerts;
+    callback show-alerts();
+    spacing: 2px;
+    HorizontalLayout {
+        spacing: 8px;
+        ConditionIcon { icon: root.current.icon; size: Theme.font(64px); }
+        VerticalLayout {
+            alignment: center;
+            BigTemp { text: root.current.temp; size: 44px; }
+            Text { text: root.current.condition; color: Theme.text; font-size: Theme.font(14px); overflow: elide; }
+            Text { text: "H " + root.current.high + "  L " + root.current.low; color: Theme.text-muted; font-size: Theme.font(12px); }
+        }
+        // The first alert in the free space right of the temperature.
+        if root.alerts.length > 0: VerticalLayout {
+            horizontal-stretch: 1;
+            min-width: 0px;
+            alignment: start;
+            padding-top: Theme.font(4px);
+            AlertPill {
+                alert: root.alerts[0];
+                clicked => { root.show-alerts(); }
+            }
+        }
+    }
+    HorizontalLayout {
+        for hour[i] in root.hours: HourCell {
+            hour: hour;
+            visible: i < 6;
+            // Six equal columns; later hours take no space.
+            min-width: 0px;
+            max-width: i < 6 ? 10000px : 0px;
+            horizontal-stretch: i < 6 ? 1 : 0;
+        }
+    }
+}
+
+component ForecastPage inherits VerticalLayout {
+    in property <[DayUi]> days;
+    alignment: start;
+    for day[i] in root.days: DailyRow {
+        day: day;
+        compact: true;
+        show-condition: false;
+        visible: i < 5;
+        height: i < 5 ? self.preferred-height : 0px;
+    }
+}
+
+// Up to two alerts; one alone gets more lines of its text.
+component AlertsPage inherits VerticalLayout {
+    in property <[AlertUi]> alerts;
+    alignment: start;
+    spacing: Theme.font(6px);
+    for alert[i] in root.alerts: AlertItem {
+        alert: alert;
+        title-size: 14px;
+        body-lines: root.alerts.length == 1 ? 6 : 2;
+        visible: i < 2;
+        height: i < 2 ? self.preferred-height : 0px;
+    }
+}
+
+component DetailsPage inherits GridLayout {
+    in property <[DetailUi]> metrics;
+    spacing: 6px;
+    Row {
+        MetricTile { title: root.metrics[0].title; value: root.metrics[0].value; gauge: root.metrics[0].gauge; level: root.metrics[0].level; }
+        MetricTile { title: root.metrics[1].title; value: root.metrics[1].value; gauge: root.metrics[1].gauge; level: root.metrics[1].level; }
+    }
+    Row {
+        MetricTile { title: root.metrics[2].title; value: root.metrics[2].value; gauge: root.metrics[2].gauge; level: root.metrics[2].level; }
+        MetricTile { title: root.metrics[3].title; value: root.metrics[3].value; gauge: root.metrics[3].gauge; level: root.metrics[3].level; }
+    }
+}
+
+export component CompactWindow inherits Window {
+    in property <bool> has-data;
+    in property <CurrentUi> current;
+    in property <[HourUi]> hours;
+    in property <[DayUi]> days;
+    // Wind, humidity, UV and pressure, in that order.
+    in property <[DetailUi]> metrics;
+    in property <StatusUi> status;
+    in property <[AlertUi]> alerts;
+    in property <string> attribution;
+    in property <color> sky-top: #2F80ED;
+    in property <color> sky-bottom: #56CCF2;
+    in-out property <int> page;
+    in property <duration> page-interval: 0ms;
+    callback page-changed(int);
+    callback refresh();
+
+    preferred-width: 320px;
+    preferred-height: 240px;
+    default-font-family: "Inter";
+
+    // Now, forecast, details, and alerts while there are any.
+    property <int> page-count: root.alerts.length > 0 ? 4 : 3;
+    // 320×240 is the base; larger panels scale text with their height.
+    property <float> scale: clamp(root.height / 240px, 1.0, 2.5);
+
+    // Footer measurements (never drawn): does the one-line footer fit?
+    status-probe := StatusLine { visible: false; status: root.status; show-provider: false; brief: true; size: 10px; }
+    credit-probe := Attribution { visible: false; text: root.attribution; size: 10px; }
+    property <bool> one-line-footer: status-probe.preferred-width + credit-probe.preferred-width
+        + Theme.font(24px) + root.page-count * 12px <= root.width - 2 * Theme.font(8px);
+
+    function go(delta: int) {
+        root.page = Math.mod(root.page + delta + root.page-count, root.page-count);
+        root.page-changed(root.page);
+    }
+
+    init => {
+        Theme.font-scale = root.scale;
+    }
+    changed scale => {
+        Theme.font-scale = root.scale;
+    }
+
+    Rectangle {
+        background: @linear-gradient(180deg, root.sky-top 0%, root.sky-bottom 100%);
+    }
+
+    Timer {
+        interval: root.page-interval;
+        running: root.page-interval > 0ms;
+        triggered => { root.go(1); }
+    }
+
+    SwipeGestureHandler {
+        handle-swipe-left: true;
+        handle-swipe-right: true;
+        swiped => {
+            if self.current-position.x > self.pressed-position.x {
+                root.go(-1);
+            } else {
+                root.go(1);
+            }
+        }
+        TouchArea {
+            x: 0;
+            width: parent.width * 25%;
+            clicked => { root.go(-1); }
+        }
+        TouchArea {
+            x: parent.width * 75%;
+            width: parent.width * 25%;
+            clicked => { root.go(1); }
+        }
+    }
+
+    content := Rectangle {
+        x: 0;
+        y: 0;
+        width: root.width;
+        height: root.height;
+    VerticalLayout {
+        padding: Theme.font(8px);
+        spacing: Theme.font(4px);
+
+        if !root.has-data: VerticalLayout {
+            vertical-stretch: 1;
+            alignment: center;
+            Text { text: "No weather data yet"; color: Theme.text; font-size: Theme.font(18px); horizontal-alignment: center; }
+            if root.status.error != "": Text { text: root.status.error; color: Theme.warning; font-size: Theme.font(12px); horizontal-alignment: center; wrap: word-wrap; }
+        }
+        // A page that no longer exists (the alerts ended) falls back to Now.
+        if root.has-data && (root.page == 0 || root.page >= root.page-count): NowPage {
+            vertical-stretch: 1;
+            current: root.current;
+            hours: root.hours;
+            alerts: root.alerts;
+            show-alerts => {
+                root.page = 3;
+                root.page-changed(root.page);
+            }
+        }
+        if root.has-data && root.page == 1: ForecastPage { vertical-stretch: 1; days: root.days; }
+        if root.has-data && root.page == 2: DetailsPage { vertical-stretch: 1; metrics: root.metrics; }
+        if root.has-data && root.page == 3 && root.page-count == 4: AlertsPage { vertical-stretch: 1; alerts: root.alerts; }
+
+        // The footer: the status, the data credit (always in full) and the page dots,
+        // on one line when they fit, else the credit below.
+        if root.one-line-footer: HorizontalLayout {
+            vertical-stretch: 0;
+            spacing: Theme.font(4px);
+            StatusLine { status: root.status; show-provider: false; brief: true; size: 10px; }
+            Text { text: "·"; color: Theme.text-muted; font-size: Theme.font(10px); }
+            Attribution { text: root.attribution; size: 10px; }
+            Rectangle { horizontal-stretch: 1; }
+            PageDots { count: root.page-count; current: root.page; }
+        }
+        if !root.one-line-footer: VerticalLayout {
+            vertical-stretch: 0;
+            HorizontalLayout {
+                spacing: 6px;
+                StatusLine { status: root.status; show-provider: false; brief: true; size: 10px; horizontal-stretch: 1; }
+                PageDots { count: root.page-count; current: root.page; }
+            }
+            Attribution { text: root.attribution; size: 10px; }
+        }
+    }
+    }
+}

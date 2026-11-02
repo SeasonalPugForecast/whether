@@ -1,0 +1,29 @@
+---
+source: crates/whether-tui/src/tests.rs
+assertion_line: 282
+expression: out
+---
+New York, New York, US  Mo 11:00                Gerade aktualisiert · Open-Meteo
+┌ Now ─────────────────────────────────────────────────────────────────────────┐
+│15°  PCLD Teilweise bewölkt                                                   │
+│Gefühlt 14°                                                                   │
+│H 18°  L 8°                                                                   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+    Jetzt         12:00        13:00        14:00         15:00        16:00
+     CLD           CLD          CLD          CLD           OVC         SHWR
+     15°           17°          17°          18°           18°          18°
+┌ Days ────────────────────────────────────────────────────────────────────────┐
+│Heute  CLD  Bewölkt        80%   8°     ━━━━━━━━━━━━━━━━━━━━━━━──────── 18°   │
+│Morgen PCLD Teilweise bewö 45%   10°    ─────━━━━━━━━━━━━━━━─────────── 16°   │
+│Mi     PCLD Teilweise bewö 10%   9°     ──━━━━━━━━━━━━━━━━━━━━━━━━───── 19°   │
+└──────────────────────────────────────────────────────────────────────────────┘
+Teilweise bewölkt. Höchstwert 18°, Tiefstwert 8°. Regen in etwa 45 Min.
+
+
+
+
+
+
+
+q quit · ←→ location · 1-6 views · r refresh · ?  Weather data by Open-Meteo.com

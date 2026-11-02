@@ -1,0 +1,17 @@
+---
+source: crates/whether-tui/src/tests.rs
+assertion_line: 656
+expression: out
+---
+New York, New York, US  Mon 11:00                  Updated just now · Open-Meteo
+┌ Radar ───────────────────────────────────────────────────────────────────────┐
+│                          No radar for this location                          │
+│      Add "radar" to [presentation] widgets; it covers the contiguous US.     │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+q quit · ←→ location · 1-6 views · r refresh · ?  Weather data by Open-Meteo.com

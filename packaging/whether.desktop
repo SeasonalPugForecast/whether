@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Whether
+GenericName=Weather
+Comment=Current conditions and forecast
+Exec=whether gui
+Icon=whether
+Terminal=false
+Categories=Utility;
+Keywords=weather;forecast;
+StartupNotify=true

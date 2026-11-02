@@ -1,0 +1,5 @@
+// The version of the app and its widget (they must match), from one place.
+// MARKETING_VERSION is what people see; CURRENT_PROJECT_VERSION is the build
+// number, raised for every upload to App Store Connect.
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1

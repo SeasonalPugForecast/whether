@@ -1,0 +1,19 @@
+// Signing for running on your iPhone. Your team and, if Apple asks for a
+// different one, the bundle identifier go in Signing.local.xcconfig next to this
+// file (gitignored, and never overwritten by `cargo xtask ios remote`):
+//
+//     DEVELOPMENT_TEAM = ABCDE12345
+//     WHETHER_BUNDLE_ID = dev.yourname.whether
+
+// The app's bundle identifier; the widget is `<it>.widget` and both share the
+// App Group `group.<it>` (forecasts the widget reads without fetching).
+//
+// `team = "ABCDE12345"` in ios/remote.local.toml makes `cargo xtask ios remote
+// device` write that file on the Mac.
+
+#include "Version.xcconfig"
+
+WHETHER_BUNDLE_ID = dev.savery.whether
+PRODUCT_BUNDLE_IDENTIFIER = $(WHETHER_BUNDLE_ID)
+
+#include? "Signing.local.xcconfig"

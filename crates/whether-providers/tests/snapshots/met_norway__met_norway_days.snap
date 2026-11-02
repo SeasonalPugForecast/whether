@@ -1,0 +1,180 @@
+---
+source: crates/whether-providers/tests/met_norway.rs
+expression: "snap.daily.iter().map(|d|\n(d.date, d.condition, d.temp_max.map(|t| t.0), d.temp_min.map(|t| t.0),\nd.precip_sum.map(|p| (p.0 * 10.0).round() / 10.0),)).collect::<Vec<_>>()"
+---
+[
+    (
+        LocalDate {
+            year: 2026,
+            month: 10,
+            day: 6,
+        },
+        Clear,
+        Some(
+            15.5,
+        ),
+        Some(
+            8.3,
+        ),
+        Some(
+            0.0,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 10,
+            day: 7,
+        },
+        Clear,
+        Some(
+            19.1,
+        ),
+        Some(
+            7.2,
+        ),
+        Some(
+            0.0,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 10,
+            day: 8,
+        },
+        MainlyClear,
+        Some(
+            22.2,
+        ),
+        Some(
+            12.7,
+        ),
+        Some(
+            0.0,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 10,
+            day: 9,
+        },
+        Clear,
+        Some(
+            20.5,
+        ),
+        Some(
+            9.5,
+        ),
+        Some(
+            0.0,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 10,
+            day: 10,
+        },
+        Clear,
+        Some(
+            21.9,
+        ),
+        Some(
+            9.6,
+        ),
+        Some(
+            0.0,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 10,
+            day: 11,
+        },
+        Rain(
+            Moderate,
+        ),
+        Some(
+            20.3,
+        ),
+        Some(
+            12.9,
+        ),
+        Some(
+            3.1,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 10,
+            day: 12,
+        },
+        Rain(
+            Heavy,
+        ),
+        Some(
+            23.5,
+        ),
+        Some(
+            17.0,
+        ),
+        Some(
+            16.3,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 10,
+            day: 13,
+        },
+        Cloudy,
+        Some(
+            24.3,
+        ),
+        Some(
+            16.5,
+        ),
+        Some(
+            0.0,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 10,
+            day: 14,
+        },
+        Clear,
+        Some(
+            22.7,
+        ),
+        Some(
+            9.8,
+        ),
+        Some(
+            0.1,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 10,
+            day: 15,
+        },
+        Clear,
+        Some(
+            16.3,
+        ),
+        Some(
+            8.3,
+        ),
+        Some(
+            0.0,
+        ),
+    ),
+]

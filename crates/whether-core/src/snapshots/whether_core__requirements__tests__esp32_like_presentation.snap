@@ -1,0 +1,22 @@
+---
+source: crates/whether-core/src/requirements.rs
+assertion_line: 370
+expression: "DataRequirements::from_presentation(&p)"
+---
+DataRequirements {
+    current: CurrentFields(
+        TEMPERATURE | APPARENT | HUMIDITY | DEW_POINT | IS_DAY | WEATHER_CODE | PRESSURE | WIND_SPEED | WIND_DIRECTION | WIND_GUSTS | UV_INDEX,
+    ),
+    hourly: HourlyFields(
+        TEMPERATURE | PRECIP_PROBABILITY | WEATHER_CODE | IS_DAY | PRESSURE,
+    ),
+    hourly_hours: 12,
+    past_hours: 0,
+    daily: DailyFields(
+        WEATHER_CODE | TEMP_MAX | TEMP_MIN | PRECIP_SUM | PRECIP_PROBABILITY_MAX | UV_INDEX_MAX,
+    ),
+    daily_days: 5,
+    minutely_hours: 0,
+    air_quality: false,
+    alerts: false,
+}

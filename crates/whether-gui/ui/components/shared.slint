@@ -1,0 +1,266 @@
+// Components shared by the desktop and the MCU (ESP32-S3) builds.
+// No `Path` here: Path does not compile without std in Slint 1.18.
+
+import { Theme } from "theme.slint";
+import { Icons } from "@icons";
+import { HourUi, DayUi, StatusUi, AlertUi } from "structs.slint";
+
+// A translucent rounded panel with an optional title.
+export component Card inherits Rectangle {
+    in property <string> title;
+    in property <color> title-color: Theme.text-muted;
+    background: Theme.card;
+    border-radius: Theme.radius;
+    border-width: 1px;
+    border-color: Theme.card-border;
+    VerticalLayout {
+        padding: Theme.spacing;
+        spacing: Theme.spacing / 2;
+        alignment: start;
+        if root.title != "": Text {
+            text: root.title;
+            color: root.title-color;
+            font-size: Theme.font(12px);
+            font-weight: 600;
+        }
+        @children
+    }
+}
+
+// A condition icon by `IconId` index.
+export component ConditionIcon inherits Image {
+    in property <int> icon;
+    in property <length> size: 64px;
+    source: Icons.cond(root.icon);
+    width: root.size;
+    height: root.size;
+    image-fit: contain;
+}
+
+// The large current temperature.
+export component BigTemp inherits Text {
+    in property <length> size: 96px;
+    color: Theme.text;
+    font-size: Theme.font(root.size);
+    font-weight: 300;
+}
+
+// One hour: time, icon, temperature and precipitation chance.
+export component HourCell inherits VerticalLayout {
+    in property <HourUi> hour;
+    spacing: 2px;
+    alignment: center;
+    Text { text: root.hour.label; color: Theme.text-muted; font-size: Theme.font(12px); horizontal-alignment: center; }
+    HorizontalLayout {
+        alignment: center;
+        ConditionIcon { icon: root.hour.icon; size: Theme.font(32px); }
+    }
+    Text { text: root.hour.temp; color: Theme.text; font-size: Theme.font(16px); horizontal-alignment: center; }
+    Text { text: root.hour.pop; color: Theme.rain; font-size: Theme.font(11px); horizontal-alignment: center; }
+}
+
+// Precipitation chance per hour as bars (fractions 0..1).
+export component HourlyBars inherits Rectangle {
+    in property <[HourUi]> hours;
+    min-height: 24px;
+    HorizontalLayout {
+        spacing: 4px;
+        for hour in root.hours: Rectangle {
+            Rectangle {
+                y: parent.height - self.height;
+                height: max(2px, parent.height * hour.pop-frac);
+                background: Theme.cool;
+                border-radius: 2px;
+            }
+        }
+    }
+}
+
+// A day's temperature range within the period's (fractions 0..1).
+export component RangeBar inherits Rectangle {
+    in property <float> lo;
+    in property <float> hi: 1;
+    // The normal low and high (0..1) as ticks across the bar; -1 for none.
+    in property <float> normal-lo: -1;
+    in property <float> normal-hi: -1;
+    height: 6px;
+    min-width: 40px;
+    border-radius: 3px;
+    background: #FFFFFF26;
+    Rectangle {
+        x: parent.width * root.lo;
+        width: max(4px, parent.width * (root.hi - root.lo));
+        border-radius: 3px;
+        background: @linear-gradient(90deg, Theme.cold 0%, Theme.mild 50%, Theme.hot 100%);
+    }
+    if root.normal-lo >= 0: Rectangle {
+        x: parent.width * root.normal-lo - 1px;
+        y: -3px;
+        width: 2px;
+        height: parent.height + 6px;
+        background: Theme.text.with-alpha(0.75);
+    }
+    if root.normal-hi >= 0: Rectangle {
+        x: parent.width * root.normal-hi - 1px;
+        y: -3px;
+        width: 2px;
+        height: parent.height + 6px;
+        background: Theme.text.with-alpha(0.75);
+    }
+}
+
+// One day of the forecast; `compact` narrows it for 320 px screens.
+export component DailyRow inherits HorizontalLayout {
+    in property <DayUi> day;
+    in property <bool> show-condition: true;
+    in property <bool> compact;
+    spacing: root.compact ? 6px : Theme.spacing;
+    height: Theme.font(root.compact ? 26px : 32px);
+    Text { text: root.day.label; color: Theme.text; font-size: Theme.font(root.compact ? 13px : 14px); width: Theme.font(root.compact ? 72px : 84px); vertical-alignment: center; overflow: elide; }
+    ConditionIcon { icon: root.day.icon; size: Theme.font(root.compact ? 22px : 28px); }
+    if root.show-condition: Text { text: root.day.condition; color: Theme.text-muted; font-size: Theme.font(13px); min-width: 0px; horizontal-stretch: 1; vertical-alignment: center; overflow: elide; }
+    Text { text: root.day.pop; color: Theme.rain; font-size: Theme.font(12px); width: Theme.font(32px); vertical-alignment: center; horizontal-alignment: right; }
+    Text { text: root.day.low; color: Theme.text-muted; font-size: Theme.font(root.compact ? 13px : 14px); width: Theme.font(32px); vertical-alignment: center; horizontal-alignment: right; }
+    VerticalLayout {
+        alignment: center;
+        width: Theme.font(root.compact ? 56px : 90px);
+        RangeBar { lo: root.day.range-lo; hi: root.day.range-hi; normal-lo: root.day.normal-lo; normal-hi: root.day.normal-hi; min-width: 0px; }
+    }
+    Text { text: root.day.high; color: Theme.text; font-size: Theme.font(root.compact ? 13px : 14px); width: Theme.font(32px); vertical-alignment: center; }
+}
+
+// A horizontal gauge (0..1) colored by `color`.
+export component BarGauge inherits Rectangle {
+    in property <float> value;
+    in property <color> tint: Theme.accent;
+    height: 6px;
+    border-radius: 3px;
+    background: #FFFFFF26;
+    Rectangle {
+        x: 0;
+        width: parent.width * clamp(root.value, 0, 1);
+        border-radius: 3px;
+        background: root.tint;
+    }
+}
+
+// A detail value with a caption and an optional gauge.
+export component MetricTile inherits Card {
+    in property <string> value;
+    in property <string> caption;
+    in property <float> gauge: -1;
+    in property <int> level: -1;
+    Text { text: root.value; color: root.level >= 0 ? Theme.level-color(root.level) : Theme.text; font-size: Theme.font(22px); }
+    if root.caption != "": Text { text: root.caption; color: Theme.text-muted; font-size: Theme.font(12px); wrap: word-wrap; }
+    if root.gauge >= 0: BarGauge { value: root.gauge; tint: root.level >= 0 ? Theme.level-color(root.level) : Theme.accent; }
+}
+
+// One alert on a darkened panel: a stripe and a warning sign in its level color,
+// then the title, the period and up to `body-lines` lines of the text.
+export component AlertItem inherits Rectangle {
+    in property <AlertUi> alert;
+    in property <int> body-lines: 4;
+    in property <length> title-size: 16px;
+    border-radius: 8px;
+    background: #00000038;
+    HorizontalLayout {
+        padding: Theme.font(8px);
+        spacing: Theme.font(8px);
+        Rectangle {
+            width: 4px;
+            border-radius: 2px;
+            background: Theme.level-color(root.alert.level);
+        }
+        VerticalLayout {
+            spacing: 2px;
+            HorizontalLayout {
+                spacing: Theme.font(6px);
+                Text {
+                    text: "⚠";
+                    color: Theme.level-color(root.alert.level);
+                    font-size: Theme.font(root.title-size);
+                    vertical-alignment: center;
+                }
+                Text {
+                    text: root.alert.title;
+                    color: Theme.text;
+                    font-size: Theme.font(root.title-size);
+                    font-weight: 600;
+                    horizontal-stretch: 1;
+                    vertical-alignment: center;
+                    overflow: elide;
+                }
+            }
+            Text { text: root.alert.period; color: Theme.text-muted; font-size: Theme.font(12px); overflow: elide; }
+            if root.body-lines > 0 && root.alert.body != "": Text {
+                text: root.alert.body;
+                color: Theme.text;
+                font-size: Theme.font(13px);
+                wrap: word-wrap;
+                overflow: elide;
+                max-lines: root.body-lines;
+            }
+        }
+    }
+}
+
+// A pill in the alert's level color with its title, for screens without room for
+// the whole alert.
+export component AlertPill inherits Rectangle {
+    in property <AlertUi> alert;
+    callback clicked();
+    height: label.preferred-height + Theme.font(6px);
+    border-radius: self.height / 2;
+    background: Theme.level-color(root.alert.level);
+    label := Text {
+        x: Theme.font(8px);
+        width: parent.width - Theme.font(16px);
+        text: "⚠ " + root.alert.title;
+        color: Theme.on-level(root.alert.level);
+        font-size: Theme.font(12px);
+        font-weight: 600;
+        overflow: elide;
+    }
+    TouchArea { clicked => { root.clicked(); } }
+}
+
+// Page indicator dots.
+export component PageDots inherits HorizontalLayout {
+    in property <int> count;
+    in property <int> current;
+    spacing: 6px;
+    alignment: center;
+    for i in root.count: Rectangle {
+        width: 6px;
+        height: 6px;
+        border-radius: 3px;
+        background: i == root.current ? Theme.text : Theme.text-muted;
+    }
+}
+
+// "Updated 3 min ago · Open-Meteo", warning-colored when stale or failing.
+// `show-provider: false` leaves the provider to the attribution beside it;
+// `brief` shows an error only as a warning sign after the age, for one-line
+// footers on small screens.
+export component StatusLine inherits Text {
+    in property <StatusUi> status;
+    in property <bool> show-provider: true;
+    in property <bool> brief: false;
+    in property <length> size: 12px;
+    property <string> provider: root.show-provider && root.status.provider != "" ? " · " + root.status.provider : "";
+    property <string> observed: root.status.observed != "" ? " · " + root.status.observed : "";
+    text: root.brief
+        ? root.status.updated + root.provider + (root.status.error != "" ? " ⚠" : "")
+        : (root.status.error != "" ? "⚠ " + root.status.error + " · " : "") + root.status.updated + root.provider + root.observed;
+    color: root.status.stale || root.status.error != "" ? Theme.warning : Theme.text-muted;
+    font-size: Theme.font(root.size);
+    overflow: elide;
+}
+
+// The data credit every screen shows.
+export component Attribution inherits Text {
+    in property <length> size: 11px;
+    color: Theme.text-muted;
+    font-size: Theme.font(root.size);
+    overflow: elide;
+}

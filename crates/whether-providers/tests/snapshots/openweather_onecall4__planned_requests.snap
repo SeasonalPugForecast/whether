@@ -1,0 +1,48 @@
+---
+source: crates/whether-providers/tests/openweather_onecall4.rs
+expression: summary
+---
+[
+    (
+        "https://api.openweathermap.org/data/4.0/onecall/current?lat=40.7143&lon=-74.006&units=metric&appid=***",
+        Current,
+        true,
+        true,
+    ),
+    (
+        "https://api.openweathermap.org/data/4.0/onecall/timeline/1h?lat=40.7143&lon=-74.006&units=metric&start=1791216000&appid=***",
+        Hourly,
+        false,
+        true,
+    ),
+    (
+        "https://api.openweathermap.org/data/4.0/onecall/timeline/1day?lat=40.7143&lon=-74.006&units=metric&appid=***",
+        Daily,
+        false,
+        true,
+    ),
+    (
+        "https://api.openweathermap.org/data/4.0/onecall/timeline/15min?lat=40.7143&lon=-74.006&units=metric&appid=***",
+        Nowcast,
+        false,
+        true,
+    ),
+    (
+        "https://api.openweathermap.org/data/4.0/onecall/timeline/1h?lat=40.7143&lon=-74.006&units=metric&start=1791288000&appid=***",
+        Hourly,
+        false,
+        true,
+    ),
+    (
+        "https://api.openweathermap.org/data/4.0/onecall/timeline/1h?lat=40.7143&lon=-74.006&units=metric&start=1791360000&appid=***",
+        Hourly,
+        false,
+        true,
+    ),
+    (
+        "https://api.openweathermap.org/data/2.5/air_pollution?lat=40.7143&lon=-74.006&appid=***",
+        AirQuality,
+        false,
+        false,
+    ),
+]

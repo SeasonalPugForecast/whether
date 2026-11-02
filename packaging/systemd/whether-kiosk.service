@@ -1,0 +1,47 @@
+# whether as a full-screen kiosk on the Linux console (Raspberry Pi and similar).
+# Needs a build with the `kiosk` feature. Configuration: /etc/xdg/whether/config.toml
+# (set `display.gui.kiosk = true`); an OpenWeather key can go in /etc/whether/env as
+# OPENWEATHER_API_KEY=… (mode 600). Logs: journalctl -u whether-kiosk.
+# Slint's Royalty-free license excludes embedded systems: see
+# /usr/share/doc/whether-kiosk/copyright.
+
+[Unit]
+Description=whether weather kiosk
+# No wait for the network (network-online, or systemd-user-sessions, which orders
+# after network.target): the screen comes up with cached data at once and the first
+# fetch retries (30 s, doubling) until the network is up. On a Pi Zero W the network
+# can take minutes after boot.
+# Take over the first console instead of a login prompt.
+Conflicts=getty@tty1.service
+After=getty@tty1.service
+
+[Service]
+Type=simple
+User=whether
+Group=whether
+SupplementaryGroups=video input render
+Environment=SLINT_BACKEND=linuxkms
+EnvironmentFile=-/etc/whether/env
+StateDirectory=whether
+CacheDirectory=whether
+Environment=XDG_STATE_HOME=/var/lib
+Environment=XDG_CACHE_HOME=/var/cache
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+StandardInput=tty-fail
+StandardOutput=journal
+StandardError=journal
+# The boot splash holds the display until plymouth-quit, which waits for the
+# network too; end it so whether can take the screen (as root, if installed).
+ExecStartPre=-+/usr/bin/plymouth quit
+ExecStart=/usr/bin/whether gui
+Restart=always
+RestartSec=5
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

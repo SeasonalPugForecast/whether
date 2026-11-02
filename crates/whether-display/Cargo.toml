@@ -1,0 +1,20 @@
+[package]
+name = "whether-display"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+whether-core = { workspace = true, features = ["serde"] }
+whether-config = { workspace = true, features = ["std"] }
+whether-providers.workspace = true
+toml = { workspace = true, features = ["std"] }
+schemars.workspace = true
+
+[dev-dependencies]
+whether-core = { workspace = true, features = ["serde", "testdata"] }
+
+[lints]
+workspace = true

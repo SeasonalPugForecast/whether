@@ -1,0 +1,387 @@
+{
+ "latitude": 40.7143,
+ "longitude": -74.0060,
+ "timezone": "America/New_York",
+ "offset": -4.0,
+ "elevation": 87,
+ "currently": {
+  "time": 1792980000,
+  "icon": "rain",
+  "precipIntensity": 3.2,
+  "precipProbability": 0.9,
+  "precipType": "rain",
+  "temperature": 9.5,
+  "apparentTemperature": 7.0,
+  "dewPoint": 8.0,
+  "humidity": 0.93,
+  "pressure": 1004.2,
+  "windSpeed": 6.1,
+  "windGust": 11.0,
+  "windBearing": 200,
+  "cloudCover": 1.0,
+  "uvIndex": 0,
+  "visibility": 6.4
+ },
+ "minutely": {
+  "summary": "x",
+  "icon": "rain",
+  "data": [
+   {
+    "time": 1792980000,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980060,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980120,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980180,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980240,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980300,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980360,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980420,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980480,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980540,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980600,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980660,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980720,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980780,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980840,
+    "precipIntensity": 3.0
+   },
+   {
+    "time": 1792980900,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792980960,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792981020,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792981080,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792981140,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792981200,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792981260,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792981320,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792981380,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792981440,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792981500,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792981560,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792981620,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792981680,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792981740,
+    "precipIntensity": 6.0
+   },
+   {
+    "time": 1792981800,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792981860,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792981920,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792981980,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792982040,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792982100,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792982160,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792982220,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792982280,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792982340,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792982400,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792982460,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792982520,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792982580,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792982640,
+    "precipIntensity": 0.0
+   },
+   {
+    "time": 1792982700,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792982760,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792982820,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792982880,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792982940,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792983000,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792983060,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792983120,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792983180,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792983240,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792983300,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792983360,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792983420,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792983480,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792983540,
+    "precipIntensity": 1.2
+   },
+   {
+    "time": 1792983600,
+    "precipIntensity": 1.2
+   }
+  ]
+ },
+ "hourly": {
+  "summary": "x",
+  "icon": "rain",
+  "data": [
+   {
+    "time": 1792978800,
+    "icon": "rain",
+    "precipIntensity": 3.2,
+    "precipProbability": 0.9,
+    "temperature": 9.5,
+    "apparentTemperature": 7.0,
+    "humidity": 0.93,
+    "pressure": 1004.2,
+    "windSpeed": 6.1,
+    "windGust": 11.0,
+    "windBearing": 200,
+    "cloudCover": 1.0,
+    "uvIndex": 0,
+    "visibility": 6.4
+   },
+   {
+    "time": 1792982400,
+    "icon": "thunderstorm",
+    "precipIntensity": 9.0,
+    "precipProbability": 1.0,
+    "temperature": 9.0,
+    "cloudCover": 1.0
+   },
+   {
+    "time": 1792986000,
+    "icon": "snow",
+    "precipIntensity": 0.2,
+    "precipProbability": 0.3,
+    "temperature": -1.0,
+    "cloudCover": 0.95
+   }
+  ]
+ },
+ "daily": {
+  "summary": "x",
+  "icon": "rain",
+  "data": [
+   {
+    "time": 1792900800,
+    "icon": "rain",
+    "sunriseTime": 1792925400,
+    "sunsetTime": 1792964400,
+    "moonPhase": 0.5,
+    "precipIntensity": 1.5,
+    "precipIntensityMax": 9.0,
+    "precipProbability": 1.0,
+    "temperatureMin": 4.0,
+    "temperatureMax": 12.5,
+    "apparentTemperatureMin": 1.0,
+    "apparentTemperatureMax": 11.0,
+    "windGust": 14.0,
+    "windBearing": 210,
+    "uvIndex": 2.4,
+    "cloudCover": 0.9
+   },
+   {
+    "time": 1792987200,
+    "icon": "clear-day",
+    "temperatureMin": 2.0,
+    "temperatureMax": 9.0,
+    "cloudCover": 0.02
+   }
+  ]
+ },
+ "alerts": [
+  {
+   "title": "Flood Watch",
+   "regions": [
+    "New York County"
+   ],
+   "severity": "Moderate",
+   "time": 1792972800,
+   "expires": 1793023200,
+   "description": "  Flooding of low-lying roads is possible.\n",
+   "uri": "https://example.invalid/alert/1"
+  },
+  {
+   "title": "Tornado Warning",
+   "regions": [
+    "New York County"
+   ],
+   "severity": "Extreme",
+   "time": 1792979400,
+   "expires": -999,
+   "description": "Take cover now.",
+   "uri": "javascript:alert(2)"
+  },
+  {
+   "title": "Wind Advisory",
+   "regions": [],
+   "severity": "Minor",
+   "time": 1792890000,
+   "expires": 1792976400,
+   "description": "Over.",
+   "uri": ""
+  },
+  {
+   "title": "",
+   "severity": "Severe",
+   "time": 1792980000,
+   "expires": 1792983600
+  }
+ ],
+ "flags": {
+  "units": "si",
+  "version": "V2.10.3"
+ }
+}

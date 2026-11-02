@@ -1,0 +1,72 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# whether firmware: example configuration
+#
+# Copy to firmware/whether-fw.toml (gitignored) or point WHETHER_FW_CONFIG at a
+# file. This file is parsed and validated at BUILD time by firmware/whether-fw/build.rs
+# (using the same whether-config crate as Linux). { env = "…" } secrets are
+# resolved at build time and the resolved config is embedded in the firmware
+# image, so the flashed device contains your Wi-Fi password and any API keys.
+#
+# The core sections ([general], [units], [[location]], [providers],
+# [presentation], [strings]) mean exactly what they mean in whether.example.toml.
+# ─────────────────────────────────────────────────────────────────────────────
+
+version = 1
+
+[wifi]
+ssid = { env = "WHETHER_WIFI_SSID" }          # REQUIRED
+password = { env = "WHETHER_WIFI_PASSWORD" }  # REQUIRED ("" for open networks)
+
+[device]
+board = "esp32-wroom-spi"     # must match the --board you build for: see firmware/boards.toml
+display = "panel"             # "panel" | "tui" ("gui" only in ESP32-S3 + PSRAM builds); long-press BOOT to swap
+rotation = 0                  # 0 | 90 | 180 | 270
+brightness = 80               # backlight %, 1–100
+page_interval = "15s"         # auto-advance pages; "0s" = manual (button/touch) only
+# night = { from = "22:00", to = "07:00", brightness = 10 }   # optional dimming, location-local time
+power = "always-on"           # "always-on" (mains) | "deep-sleep" (battery: wake, fetch, draw, sleep until the next refresh)
+
+[tls]
+verify = true                 # false = INSECURE: shows a permanent warning on screen
+# Root certificate per API host, one of firmware/certs/*.der. The device checks the
+# chain link by link, so the root must have issued the last certificate the server
+# sends. The built-in defaults (observed 2026-06-28) are:
+# roots = { "api.open-meteo.com" = "isrg-root-x1.der", "air-quality-api.open-meteo.com" = "isrg-root-x1.der", "api.met.no" = "harica-rootca-2015.der", "api.openweathermap.org" = "usertrust-rsa.der" }
+
+[general]
+refresh = "20m"
+units = "auto"                # resolved at build time from your locale (en_US → imperial)
+time_format = "24h"
+
+# Firmware locations need explicit coordinates (no geocoding on the device).
+# Use `whether locate "<place>"` on Linux to find them.
+[[location]]
+name = "New York"          # ZIP 10001, New York (`whether locate 10001 --zip --country US`)
+latitude = 40.7143
+longitude = -74.0060
+
+[providers]
+order = ["openweather", "open-meteo"]   # preferred; OpenWeather's 5-day forecast needs a ~20 KB buffer
+supplement = []                         # one provider per refresh keeps the device light
+                                        # (Open-Meteo alone needs only ~2 KB per refresh)
+
+[providers.openweather]
+api_key = { env = "OPENWEATHER_API_KEY" }   # resolved at build time and embedded in the firmware image
+api = "free"
+
+[presentation]
+widgets = ["current", "hourly", "daily", "details"]
+hourly_hours = 12
+daily_days = 5
+details = ["wind", "humidity", "uv", "pressure"]
+
+[display.tui]                 # device TUI (mousefood): icons are always ASCII on panels
+layout = "compact"
+art = true
+
+[display.panel]               # Mousam-style panel GUI (embedded-graphics); works without PSRAM
+dynamic_background = true     # sky gradient that follows conditions and time of day
+pages = ["now", "forecast", "details"]
+
+# [display.gui]               # Slint GUI: only in ESP32-S3 + PSRAM builds (optional)
+# dynamic_background = true

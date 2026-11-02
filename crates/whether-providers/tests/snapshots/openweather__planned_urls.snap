@@ -1,0 +1,9 @@
+---
+source: crates/whether-providers/tests/openweather.rs
+expression: urls
+---
+[
+    "https://api.openweathermap.org/data/2.5/weather?lat=40.7143&lon=-74.006&units=metric&appid=***",
+    "https://api.openweathermap.org/data/2.5/forecast?lat=40.7143&lon=-74.006&units=metric&cnt=40&appid=***",
+    "https://api.openweathermap.org/data/2.5/air_pollution?lat=40.7143&lon=-74.006&appid=***",
+]

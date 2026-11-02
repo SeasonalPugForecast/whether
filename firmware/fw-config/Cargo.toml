@@ -1,0 +1,25 @@
+[package]
+name = "fw-config"
+description = "The firmware's runtime configuration, built and validated at compile time"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+# Build-time parsing and validation (std; used by whether-fw/build.rs and tests).
+build = ["dep:whether-config", "dep:whether-providers", "dep:toml", "whether-config/std"]
+
+[dependencies]
+whether-core.workspace = true
+whether-tui.workspace = true
+whether-panel.workspace = true
+serde.workspace = true
+postcard.workspace = true
+whether-config = { workspace = true, optional = true }
+whether-providers = { workspace = true, optional = true }
+toml = { workspace = true, optional = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,29 @@
+[package]
+name = "whether-sim"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+# `--window`: an SDL window (needs SDL2). PNG output works without it.
+window = ["embedded-graphics-simulator/with-sdl"]
+
+[dependencies]
+whether-core = { workspace = true, features = ["serde", "testdata"] }
+whether-runtime.workspace = true
+whether-tui.workspace = true
+whether-panel.workspace = true
+mousefood = { workspace = true, features = ["std"] }
+embedded-graphics.workspace = true
+embedded-graphics-simulator.workspace = true
+ratatui.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json = { workspace = true, features = ["std"] }
+toml = { workspace = true, features = ["std"] }
+
+[lints]
+workspace = true

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Merged into the generated Info.plist: the App Group, background refresh, the
+     Documents folder in Files (for importing the desktop config.toml), and the
+     .whetherplan file a trip plan is sent as, iCloud sharing invitations,
+     and the .whethertheme file a custom color theme is sent as.
+     LSSupportsOpeningDocumentsInPlace stays true: it also shows the Documents folder in
+     Files, and it applies to the whole app. A plan or theme that opens in place is read at once
+     (WeatherStore.receivePlan, receiveTheme) and never edited, so nothing needs the system's copy. -->
+<plist version="1.0">
+<dict>
+	<key>WhetherAppGroup</key>
+	<string>group.$(WHETHER_BUNDLE_ID)</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>dev.savery.whether.refresh</string>
+	</array>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>dev.savery.whether.plan</string>
+			<key>UTTypeDescription</key>
+			<string>Trip plan</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>whetherplan</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>dev.savery.whether.theme</string>
+			<key>UTTypeDescription</key>
+			<string>Color theme</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>whethertheme</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Trip plan</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>dev.savery.whether.plan</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Color theme</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>dev.savery.whether.theme</string>
+			</array>
+		</dict>
+	</array>
+	<!-- Opens the app (not a web page) when someone taps an invitation to a shared plan. -->
+	<key>CKSharingSupported</key>
+	<true/>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<!-- CloudKit's silent pushes when a shared plan changes. -->
+		<string>remote-notification</string>
+	</array>
+</dict>
+</plist>

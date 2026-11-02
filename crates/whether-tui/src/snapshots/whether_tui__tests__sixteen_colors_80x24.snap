@@ -1,0 +1,66 @@
+---
+source: crates/whether-tui/src/tests.rs
+assertion_line: 418
+expression: dump
+---
+0: 0..8 Cyan Reset BOLD
+0: 8..33 DarkGray Reset NONE
+0: 51..80 DarkGray Reset NONE
+1: 0..1 DarkGray Reset NONE
+1: 1..6 Cyan Reset BOLD
+1: 6..80 DarkGray Reset NONE
+2: 0..1 DarkGray Reset NONE
+2: 1..4 Reset Reset BOLD
+2: 79..80 DarkGray Reset NONE
+3: 0..15 DarkGray Reset NONE
+3: 79..80 DarkGray Reset NONE
+4: 0..3 DarkGray Reset NONE
+4: 6..10 DarkGray Reset NONE
+4: 79..80 DarkGray Reset NONE
+5: 0..1 DarkGray Reset NONE
+5: 79..80 DarkGray Reset NONE
+6: 0..80 DarkGray Reset NONE
+7: 5..8 DarkGray Reset NONE
+7: 18..23 DarkGray Reset NONE
+7: 31..36 DarkGray Reset NONE
+7: 44..49 DarkGray Reset NONE
+7: 58..63 DarkGray Reset NONE
+7: 71..76 DarkGray Reset NONE
+9: 5..8 Reset Reset BOLD
+9: 19..22 DarkGray Reset BOLD
+9: 32..35 DarkGray Reset BOLD
+9: 45..48 DarkGray Reset BOLD
+9: 59..62 DarkGray Reset BOLD
+9: 72..75 DarkGray Reset BOLD
+10: 0..1 DarkGray Reset NONE
+10: 1..7 Cyan Reset BOLD
+10: 7..80 DarkGray Reset NONE
+11: 0..1 DarkGray Reset NONE
+11: 30..35 LightBlue Reset NONE
+11: 36..42 DarkGray Reset NONE
+11: 43..53 LightBlue Reset NONE
+11: 53..63 DarkGray Reset NONE
+11: 63..65 LightRed Reset NONE
+11: 65..72 DarkGray Reset NONE
+11: 73..79 DarkGray Reset BOLD
+11: 79..80 DarkGray Reset NONE
+12: 0..1 DarkGray Reset NONE
+12: 30..35 LightBlue Reset NONE
+12: 36..42 DarkGray Reset NONE
+12: 43..47 DarkGray Reset NONE
+12: 47..53 LightBlue Reset NONE
+12: 53..72 DarkGray Reset NONE
+12: 73..79 DarkGray Reset BOLD
+12: 79..80 DarkGray Reset NONE
+13: 0..1 DarkGray Reset NONE
+13: 30..35 LightBlue Reset NONE
+13: 36..42 DarkGray Reset NONE
+13: 43..45 DarkGray Reset NONE
+13: 45..53 LightBlue Reset NONE
+13: 53..63 DarkGray Reset NONE
+13: 63..68 LightRed Reset NONE
+13: 68..72 DarkGray Reset NONE
+13: 73..79 DarkGray Reset BOLD
+13: 79..80 DarkGray Reset NONE
+14: 0..80 DarkGray Reset NONE
+23: 0..80 DarkGray Reset NONE

@@ -1,0 +1,199 @@
+// Desktop-only widgets. These use `Path`, so the MCU build must never import them.
+
+import { Button, ComboBox, Spinner } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+import { StatusUi } from "structs.slint";
+
+// The hourly chart: a line and a filled area from Rust-built commands in a 0..100
+// viewbox, with Temperature / Precipitation / Wind toggles.
+export component HourlyChart inherits VerticalLayout {
+    in property <string> line;
+    in property <string> area;
+    in property <string> first-label;
+    in property <string> mid-label;
+    in property <string> last-label;
+    in-out property <int> metric;
+    callback metric-changed(int);
+    spacing: 6px;
+
+    HorizontalLayout {
+        spacing: 6px;
+        alignment: start;
+        for name[i] in ["Temperature", "Precipitation", "Wind"]: Rectangle {
+            width: label.preferred-width + 20px;
+            height: label.preferred-height + 8px;
+            border-radius: self.height / 2;
+            background: i == root.metric ? #FFFFFF40 : transparent;
+            label := Text {
+                text: name;
+                color: i == root.metric ? Theme.text : Theme.text-muted;
+                font-size: Theme.font(12px);
+            }
+            TouchArea {
+                clicked => {
+                    root.metric = i;
+                    root.metric-changed(i);
+                }
+            }
+        }
+    }
+
+    Rectangle {
+        min-height: 100px;
+        Path {
+            width: parent.width;
+            height: parent.height;
+            viewbox-width: 100;
+            viewbox-height: 100;
+            fit: fill;
+            commands: root.area;
+            fill: @linear-gradient(180deg, #FFFFFF55 0%, #FFFFFF00 100%);
+            stroke-width: 0;
+        }
+        Path {
+            width: parent.width;
+            height: parent.height;
+            viewbox-width: 100;
+            viewbox-height: 100;
+            fit: fill;
+            commands: root.line;
+            stroke: Theme.text;
+            stroke-width: 2px;
+        }
+    }
+
+    HorizontalLayout {
+        Text { text: root.first-label; color: Theme.text-muted; font-size: Theme.font(11px); }
+        Text { text: root.mid-label; color: Theme.text-muted; font-size: Theme.font(11px); horizontal-alignment: center; }
+        Text { text: root.last-label; color: Theme.text-muted; font-size: Theme.font(11px); horizontal-alignment: right; }
+    }
+}
+
+// A 270° gauge (value 0..1) with a centered label.
+export component ArcGauge inherits Rectangle {
+    in property <float> value;
+    in property <color> tint: Theme.accent;
+    in property <string> label;
+    width: self.height;
+    min-height: 64px;
+
+    pure function point(a: angle) -> string {
+        return (50 + 40 * Math.cos(a)) + " " + (50 + 40 * Math.sin(a));
+    }
+
+    property <angle> sweep: 270deg * clamp(root.value, 0, 1);
+
+    Path {
+        width: parent.width;
+        height: parent.height;
+        viewbox-width: 100;
+        viewbox-height: 100;
+        commands: "M " + root.point(135deg) + " A 40 40 0 1 1 " + root.point(45deg);
+        stroke: #FFFFFF33;
+        stroke-width: 6px;
+    }
+    if root.value > 0.005: Path {
+        width: parent.width;
+        height: parent.height;
+        viewbox-width: 100;
+        viewbox-height: 100;
+        commands: "M " + root.point(135deg) + " A 40 40 0 " + (root.sweep > 180deg ? "1" : "0") + " 1 " + root.point(135deg + root.sweep);
+        stroke: root.tint;
+        stroke-width: 6px;
+    }
+    Text {
+        text: root.label;
+        color: Theme.text;
+        font-size: Theme.font(14px);
+    }
+}
+
+// The sun's path from sunrise to sunset with a dot at `progress` (0..1).
+export component SunArc inherits Rectangle {
+    in property <float> progress;
+    in property <bool> is-day;
+    min-height: 60px;
+
+    property <angle> at: 180deg + 180deg * clamp(root.progress, 0, 1);
+
+    Path {
+        width: parent.width;
+        height: parent.height;
+        viewbox-width: 100;
+        viewbox-height: 50;
+        fit: fill;
+        commands: "M 5 48 A 45 45 0 0 1 95 48";
+        stroke: #FFFFFF55;
+        stroke-width: 2px;
+    }
+    if root.is-day: Rectangle {
+        width: 14px;
+        height: 14px;
+        border-radius: 7px;
+        background: Theme.accent;
+        x: parent.width * (50 + 45 * Math.cos(root.at)) / 100 - self.width / 2;
+        y: parent.height * (48 + 45 * Math.sin(root.at)) / 50 - self.height / 2;
+    }
+}
+
+// A compass dial with a needle pointing where the wind blows to (drawn as a path,
+// which every renderer supports, unlike rotated text).
+export component Compass inherits Rectangle {
+    in property <float> direction;
+    width: self.height;
+    min-height: 56px;
+    border-radius: self.height / 2;
+    border-width: 1px;
+    border-color: Theme.card-border;
+
+    property <angle> to: (root.direction + 180 - 90) * 1deg;
+
+    pure function at(a: angle, r: float) -> string {
+        return (50 + r * Math.cos(a)) + " " + (50 + r * Math.sin(a));
+    }
+
+    Text { text: "N"; y: 2px; color: Theme.text-muted; font-size: Theme.font(10px); }
+    Path {
+        width: parent.width;
+        height: parent.height;
+        viewbox-width: 100;
+        viewbox-height: 100;
+        fit: fill;
+        commands: "M " + root.at(root.to + 180deg, 22) + " L " + root.at(root.to, 30)
+            + " M " + root.at(root.to - 25deg, 18) + " L " + root.at(root.to, 30) + " L " + root.at(root.to + 25deg, 18);
+        stroke: Theme.accent;
+        stroke-width: 3px;
+    }
+}
+
+// Location tabs, refresh with progress, units toggle, add, settings and about.
+export component LocationHeader inherits HorizontalLayout {
+    in property <[string]> locations;
+    in-out property <int> current;
+    in property <StatusUi> status;
+    in property <string> units-label;
+    callback location-selected(int);
+    callback refresh();
+    callback toggle-units();
+    callback add-location();
+    callback remove-location();
+    callback settings();
+    callback about();
+    spacing: Theme.spacing;
+
+    ComboBox {
+        model: root.locations;
+        current-index <=> root.current;
+        selected => {
+            root.location-selected(self.current-index);
+        }
+    }
+    Rectangle { horizontal-stretch: 1; }
+    if root.status.refreshing: Spinner { indeterminate: true; width: 24px; height: 24px; }
+    Button { text: "Refresh"; clicked => { root.refresh(); } }
+    Button { text: root.units-label; clicked => { root.toggle-units(); } }
+    Button { text: "+"; clicked => { root.add-location(); } }
+    Button { text: "−"; enabled: root.locations.length > 1; clicked => { root.remove-location(); } }
+    Button { text: "Settings"; clicked => { root.settings(); } }
+    Button { text: "About"; clicked => { root.about(); } }
+}

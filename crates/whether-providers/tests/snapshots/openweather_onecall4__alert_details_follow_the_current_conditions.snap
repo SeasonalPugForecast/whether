@@ -1,0 +1,25 @@
+---
+source: crates/whether-providers/tests/openweather_onecall4.rs
+expression: "s.alerts[0]"
+---
+Alert {
+    id: Some(
+        "8B46C632-DCA7-44D7-8BDF-02445621BAFF",
+    ),
+    title: "Wind Advisory",
+    description: "* WHAT...Southwest winds 15 to 25 mph with gusts up to 45 mph.\n\n* WHERE...New York County.\n\n* WHEN...Until 6 PM EDT this evening.",
+    severity: Moderate,
+    start: UnixTime(
+        1791214200,
+    ),
+    end: UnixTime(
+        1791239400,
+    ),
+    source: "NWS Upton NY",
+    checked_at: Some(
+        UnixTime(
+            1791217800,
+        ),
+    ),
+    url: None,
+}

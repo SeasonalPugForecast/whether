@@ -1,0 +1,32 @@
+// The About dialog. Showing `AboutSlint` here is the condition of Slint's
+// Royalty-free license: never remove it.
+
+import { AboutSlint, Button } from "std-widgets.slint";
+
+export component AboutWindow inherits Window {
+    in property <string> version;
+    in property <string> attribution;
+    callback close-requested();
+    title: "About Whether";
+    preferred-width: 520px;
+    preferred-height: 560px;
+    default-font-family: "Inter";
+    background: #1E2430;
+
+    VerticalLayout {
+        padding: 20px;
+        spacing: 10px;
+        Text { text: "Whether " + root.version; font-size: 24px; color: #FFFFFF; }
+        Text { text: "MIT license · Copyright © Sean Avery"; color: #C8D0DC; }
+        Text { text: "Weather data"; font-size: 14px; font-weight: 600; color: #FFFFFF; }
+        Text { text: root.attribution; color: #C8D0DC; wrap: word-wrap; }
+        Text { text: "Open-Meteo.com (CC BY 4.0) · OpenWeather (CC BY-SA 4.0) · MET Norway (CC BY 4.0)"; color: #C8D0DC; wrap: word-wrap; font-size: 12px; }
+        Text { text: "Credits"; font-size: 14px; font-weight: 600; color: #FFFFFF; }
+        Text { text: "Meteocons by Bas Milius (MIT) · Inter by Rasmus Andersson (SIL OFL 1.1)"; color: #C8D0DC; wrap: word-wrap; font-size: 12px; }
+        AboutSlint { }
+        HorizontalLayout {
+            alignment: end;
+            Button { text: "Close"; clicked => { root.close-requested(); } }
+        }
+    }
+}

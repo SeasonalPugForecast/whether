@@ -1,0 +1,29 @@
+---
+source: crates/whether-tui/src/tests.rs
+assertion_line: 323
+expression: out
+---
+New York                                ! every provider failed ~ Fetching weath
+
+
+
+
+
+
+          ┌──────────────────────────────────────────────────────────┐
+          │                    No weather data yet                   │
+          │                                                          │
+          │                  ! every provider failed                 │
+          │                         Fetching…                        │
+          │                   Fetching weather… ·                    │
+          │                                                          │
+          │                    r retries · q quits                   │
+          └──────────────────────────────────────────────────────────┘
+
+
+
+
+
+
+
+q quit · ←→ location · 1-6 views · r refresh · ? help

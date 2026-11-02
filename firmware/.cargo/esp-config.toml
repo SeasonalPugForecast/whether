@@ -1,0 +1,6 @@
+# Keep user/runtime configuration values in this file.
+[env]
+ESP_LOG="info"
+# Fail the link, not the device, when static data leaves the main stack too
+# small. TLS certificate parsing overflowed a 43.5 KB stack (2026-06-28).
+ESP_HAL_CONFIG_ENSURE_MAIN_STACK_MINIMUM = "57344"

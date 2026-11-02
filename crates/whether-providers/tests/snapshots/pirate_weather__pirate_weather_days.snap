@@ -1,0 +1,174 @@
+---
+source: crates/whether-providers/tests/pirate_weather.rs
+expression: "snap.daily.iter().map(|d|\n(d.date, d.condition, d.temp_max.map(|t| t.0), d.temp_min.map(|t| t.0),\nd.precip_probability_max.map(|p| p.0.round()),\nd.precip_sum.map(|p| (p.0 * 10.0).round() / 10.0),)).collect::<Vec<_>>()"
+---
+[
+    (
+        LocalDate {
+            year: 2026,
+            month: 11,
+            day: 2,
+        },
+        MainlyClear,
+        Some(
+            17.85,
+        ),
+        Some(
+            11.65,
+        ),
+        Some(
+            0.0,
+        ),
+        Some(
+            0.0,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 11,
+            day: 3,
+        },
+        MainlyClear,
+        Some(
+            19.15,
+        ),
+        Some(
+            12.25,
+        ),
+        Some(
+            0.0,
+        ),
+        Some(
+            0.0,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 11,
+            day: 4,
+        },
+        MainlyClear,
+        Some(
+            19.55,
+        ),
+        Some(
+            14.25,
+        ),
+        Some(
+            0.0,
+        ),
+        Some(
+            0.0,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 11,
+            day: 5,
+        },
+        Rain(
+            Light,
+        ),
+        Some(
+            20.15,
+        ),
+        Some(
+            17.35,
+        ),
+        Some(
+            55.0,
+        ),
+        Some(
+            4.4,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 11,
+            day: 6,
+        },
+        Rain(
+            Moderate,
+        ),
+        Some(
+            19.62,
+        ),
+        Some(
+            17.75,
+        ),
+        Some(
+            55.0,
+        ),
+        Some(
+            33.3,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 11,
+            day: 7,
+        },
+        Rain(
+            Light,
+        ),
+        Some(
+            17.65,
+        ),
+        Some(
+            15.35,
+        ),
+        Some(
+            47.0,
+        ),
+        Some(
+            5.2,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 11,
+            day: 8,
+        },
+        MainlyClear,
+        Some(
+            15.75,
+        ),
+        Some(
+            12.55,
+        ),
+        Some(
+            12.0,
+        ),
+        Some(
+            0.0,
+        ),
+    ),
+    (
+        LocalDate {
+            year: 2026,
+            month: 11,
+            day: 9,
+        },
+        Drizzle(
+            Light,
+        ),
+        Some(
+            14.65,
+        ),
+        Some(
+            11.45,
+        ),
+        Some(
+            27.0,
+        ),
+        Some(
+            1.9,
+        ),
+    ),
+]

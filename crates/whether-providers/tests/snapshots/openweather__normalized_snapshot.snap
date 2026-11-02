@@ -1,0 +1,3008 @@
+---
+source: crates/whether-providers/tests/openweather.rs
+expression: snapshot
+---
+WeatherSnapshot {
+    location: ResolvedLocation {
+        name: "New York",
+        region: Some(
+            "US",
+        ),
+        latitude: 40.7143,
+        longitude: -74.006,
+        elevation_m: None,
+        utc_offset: UtcOffset(
+            -14400,
+        ),
+        tz_name: None,
+        tz_abbrev: None,
+        station: None,
+    },
+    provider: OpenWeather,
+    supplemented_by: [],
+    fetched_at: UnixTime(
+        1791212460,
+    ),
+    current: Some(
+        Current {
+            time: UnixTime(
+                1791212400,
+            ),
+            is_day: true,
+            condition: PartlyCloudy,
+            temperature: Some(
+                Celsius(
+                    15.3,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    14.1,
+                ),
+            ),
+            dew_point: Some(
+                Celsius(
+                    8.056656,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    62.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1020.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    40.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.6,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    7.2,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    225.0,
+                ),
+            ),
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            uv_index: None,
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+        },
+    ),
+    hourly: [
+        Hourly {
+            time: UnixTime(
+                1791223200,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    17.8,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    16.7,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.0,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.0,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    200.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1020.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791234000,
+            ),
+            is_day: true,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    17.2,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    16.1,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    10.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.4,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.8,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    207.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    63.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1020.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    10.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791244800,
+            ),
+            is_day: false,
+            condition: PartlyCloudy,
+            temperature: Some(
+                Celsius(
+                    14.35,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    13.25,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    45.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.8,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    7.6,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    214.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    73.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1019.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    45.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791255600,
+            ),
+            is_day: false,
+            condition: Rain(
+                Light,
+            ),
+            temperature: Some(
+                Celsius(
+                    9.8,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    8.7,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    80.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    1.6,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.2,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    8.4,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    221.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    84.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1019.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    80.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791266400,
+            ),
+            is_day: false,
+            condition: Rain(
+                Light,
+            ),
+            temperature: Some(
+                Celsius(
+                    7.0,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    5.9,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    65.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    1.3,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.6,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    9.2,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    228.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    79.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1018.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    65.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791277200,
+            ),
+            is_day: false,
+            condition: PartlyCloudy,
+            temperature: Some(
+                Celsius(
+                    7.6,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    6.5,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    30.000002,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.0,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.0,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    235.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    69.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1018.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    30.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791288000,
+            ),
+            is_day: true,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    11.25,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    10.15,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    10.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.4,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.8,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    242.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    63.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1017.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    10.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791298800,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    15.8,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    14.7,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.8,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    7.6,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    249.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1017.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791309600,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    18.6,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    17.5,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.2,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    8.4,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    256.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1016.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791320400,
+            ),
+            is_day: true,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    18.0,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    16.9,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    10.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.6,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    9.2,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    263.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    63.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1016.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    10.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791331200,
+            ),
+            is_day: false,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    15.15,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    14.05,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    5.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.0,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.0,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    270.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    61.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1015.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    5.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791342000,
+            ),
+            is_day: false,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    10.6,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    9.5,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    10.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.4,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.8,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    277.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    63.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1015.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    10.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791352800,
+            ),
+            is_day: false,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    7.8,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    6.7,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    20.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.8,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    7.6,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    284.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    66.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1014.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    20.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791363600,
+            ),
+            is_day: false,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    8.4,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    7.3,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    15.000001,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.2,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    8.4,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    291.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    64.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1014.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    15.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791374400,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    12.05,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    10.95,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.6,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    9.2,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    298.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1013.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791385200,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    16.6,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    15.5,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.0,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.0,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    305.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1013.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791396000,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    19.4,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    18.3,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.4,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.8,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    312.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1012.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791406800,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    18.8,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    17.7,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.8,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    7.6,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    319.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1012.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791417600,
+            ),
+            is_day: false,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    15.95,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    14.85,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    5.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.2,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    8.4,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    326.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    61.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1011.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    5.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791428400,
+            ),
+            is_day: false,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    11.4,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    10.3,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    10.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.6,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    9.2,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    333.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    63.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1011.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    10.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791439200,
+            ),
+            is_day: false,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    8.6,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    7.5,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    20.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.0,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.0,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    340.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    66.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1010.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    20.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791450000,
+            ),
+            is_day: false,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    9.2,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    8.1,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    15.000001,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.4,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.8,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    347.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    64.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1010.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    15.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791460800,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    12.85,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    11.75,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.8,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    7.6,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    354.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1009.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791471600,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    17.4,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    16.3,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.2,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    8.4,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    1.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1009.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791482400,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    20.2,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    19.1,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.6,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    9.2,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    8.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1008.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791493200,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    19.6,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    18.5,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.0,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.0,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    15.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1008.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791504000,
+            ),
+            is_day: false,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    16.75,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    15.65,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    5.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.4,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.8,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    22.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    61.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1007.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    5.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791514800,
+            ),
+            is_day: false,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    12.2,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    11.1,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    10.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.8,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    7.6,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    29.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    63.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1007.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    10.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791525600,
+            ),
+            is_day: false,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    9.4,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    8.3,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    20.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.2,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    8.4,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    36.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    66.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1006.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    20.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791536400,
+            ),
+            is_day: false,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    10.0,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    8.9,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    15.000001,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.6,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    9.2,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    43.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    64.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1006.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    15.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791547200,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    13.65,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    12.55,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.0,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.0,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    50.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1005.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791558000,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    18.2,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    17.1,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.4,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.8,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    57.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1005.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791568800,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    21.0,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    19.9,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.8,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    7.6,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    64.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1004.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791579600,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    20.4,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    19.3,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.2,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    8.4,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    71.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1004.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791590400,
+            ),
+            is_day: false,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    17.55,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    16.45,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    5.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.6,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    9.2,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    78.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    61.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1003.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    5.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791601200,
+            ),
+            is_day: false,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    13.0,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    11.9,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    10.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.0,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.0,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    85.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    63.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1003.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    10.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791612000,
+            ),
+            is_day: false,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    10.2,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    9.1,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    20.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.4,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    6.8,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    92.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    66.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1002.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    20.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791622800,
+            ),
+            is_day: false,
+            condition: MainlyClear,
+            temperature: Some(
+                Celsius(
+                    10.8,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    9.7,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    15.000001,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    3.8,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    7.6,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    99.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    64.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1002.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    15.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791633600,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    14.45,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    13.35,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.2,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    8.4,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    106.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1001.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+        Hourly {
+            time: UnixTime(
+                1791644400,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    19.0,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    17.9,
+                ),
+            ),
+            precip_probability: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    4.6,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    9.2,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    113.0,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    60.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1001.0,
+                ),
+            ),
+            uv_index: None,
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+        },
+    ],
+    daily: [
+        Daily {
+            date: LocalDate {
+                year: 2026,
+                month: 10,
+                day: 5,
+            },
+            condition: MainlyClear,
+            temp_max: Some(
+                Celsius(
+                    18.2,
+                ),
+            ),
+            temp_min: Some(
+                Celsius(
+                    9.2,
+                ),
+            ),
+            apparent_max: None,
+            apparent_min: None,
+            precip_sum: Some(
+                Mm(
+                    1.6,
+                ),
+            ),
+            precip_probability_max: Some(
+                Percent(
+                    80.0,
+                ),
+            ),
+            sunrise: Some(
+                UnixTime(
+                    1791198192,
+                ),
+            ),
+            sunset: Some(
+                UnixTime(
+                    1791239912,
+                ),
+            ),
+            daylight_s: Some(
+                41720,
+            ),
+            uv_index_max: None,
+            wind_speed_max: Some(
+                Mps(
+                    4.2,
+                ),
+            ),
+            wind_gust_max: Some(
+                Mps(
+                    8.4,
+                ),
+            ),
+            wind_dir_dominant: Some(
+                Degrees(
+                    221.0,
+                ),
+            ),
+            moon_phase: None,
+            moonrise: None,
+            moonset: None,
+        },
+        Daily {
+            date: LocalDate {
+                year: 2026,
+                month: 10,
+                day: 6,
+            },
+            condition: MainlyClear,
+            temp_max: Some(
+                Celsius(
+                    19.0,
+                ),
+            ),
+            temp_min: Some(
+                Celsius(
+                    6.4,
+                ),
+            ),
+            apparent_max: Some(
+                Celsius(
+                    17.5,
+                ),
+            ),
+            apparent_min: Some(
+                Celsius(
+                    5.9,
+                ),
+            ),
+            precip_sum: Some(
+                Mm(
+                    1.3,
+                ),
+            ),
+            precip_probability_max: Some(
+                Percent(
+                    65.0,
+                ),
+            ),
+            sunrise: None,
+            sunset: None,
+            daylight_s: None,
+            uv_index_max: None,
+            wind_speed_max: Some(
+                Mps(
+                    4.6,
+                ),
+            ),
+            wind_gust_max: Some(
+                Mps(
+                    9.2,
+                ),
+            ),
+            wind_dir_dominant: Some(
+                Degrees(
+                    263.0,
+                ),
+            ),
+            moon_phase: None,
+            moonrise: None,
+            moonset: None,
+        },
+        Daily {
+            date: LocalDate {
+                year: 2026,
+                month: 10,
+                day: 7,
+            },
+            condition: Clear,
+            temp_max: Some(
+                Celsius(
+                    19.8,
+                ),
+            ),
+            temp_min: Some(
+                Celsius(
+                    7.2,
+                ),
+            ),
+            apparent_max: Some(
+                Celsius(
+                    18.3,
+                ),
+            ),
+            apparent_min: Some(
+                Celsius(
+                    6.7,
+                ),
+            ),
+            precip_sum: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            precip_probability_max: Some(
+                Percent(
+                    20.0,
+                ),
+            ),
+            sunrise: None,
+            sunset: None,
+            daylight_s: None,
+            uv_index_max: None,
+            wind_speed_max: Some(
+                Mps(
+                    4.6,
+                ),
+            ),
+            wind_gust_max: Some(
+                Mps(
+                    9.2,
+                ),
+            ),
+            wind_dir_dominant: Some(
+                Degrees(
+                    333.0,
+                ),
+            ),
+            moon_phase: None,
+            moonrise: None,
+            moonset: None,
+        },
+        Daily {
+            date: LocalDate {
+                year: 2026,
+                month: 10,
+                day: 8,
+            },
+            condition: Clear,
+            temp_max: Some(
+                Celsius(
+                    20.6,
+                ),
+            ),
+            temp_min: Some(
+                Celsius(
+                    8.0,
+                ),
+            ),
+            apparent_max: Some(
+                Celsius(
+                    19.1,
+                ),
+            ),
+            apparent_min: Some(
+                Celsius(
+                    7.5,
+                ),
+            ),
+            precip_sum: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            precip_probability_max: Some(
+                Percent(
+                    20.0,
+                ),
+            ),
+            sunrise: None,
+            sunset: None,
+            daylight_s: None,
+            uv_index_max: None,
+            wind_speed_max: Some(
+                Mps(
+                    4.6,
+                ),
+            ),
+            wind_gust_max: Some(
+                Mps(
+                    9.2,
+                ),
+            ),
+            wind_dir_dominant: Some(
+                Degrees(
+                    8.0,
+                ),
+            ),
+            moon_phase: None,
+            moonrise: None,
+            moonset: None,
+        },
+        Daily {
+            date: LocalDate {
+                year: 2026,
+                month: 10,
+                day: 9,
+            },
+            condition: Clear,
+            temp_max: Some(
+                Celsius(
+                    21.4,
+                ),
+            ),
+            temp_min: Some(
+                Celsius(
+                    8.8,
+                ),
+            ),
+            apparent_max: Some(
+                Celsius(
+                    19.9,
+                ),
+            ),
+            apparent_min: Some(
+                Celsius(
+                    8.3,
+                ),
+            ),
+            precip_sum: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            precip_probability_max: Some(
+                Percent(
+                    20.0,
+                ),
+            ),
+            sunrise: None,
+            sunset: None,
+            daylight_s: None,
+            uv_index_max: None,
+            wind_speed_max: Some(
+                Mps(
+                    4.6,
+                ),
+            ),
+            wind_gust_max: Some(
+                Mps(
+                    9.2,
+                ),
+            ),
+            wind_dir_dominant: Some(
+                Degrees(
+                    78.0,
+                ),
+            ),
+            moon_phase: None,
+            moonrise: None,
+            moonset: None,
+        },
+        Daily {
+            date: LocalDate {
+                year: 2026,
+                month: 10,
+                day: 10,
+            },
+            condition: Clear,
+            temp_max: Some(
+                Celsius(
+                    19.4,
+                ),
+            ),
+            temp_min: Some(
+                Celsius(
+                    9.6,
+                ),
+            ),
+            apparent_max: None,
+            apparent_min: None,
+            precip_sum: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+            precip_probability_max: Some(
+                Percent(
+                    20.0,
+                ),
+            ),
+            sunrise: None,
+            sunset: None,
+            daylight_s: None,
+            uv_index_max: None,
+            wind_speed_max: Some(
+                Mps(
+                    4.6,
+                ),
+            ),
+            wind_gust_max: Some(
+                Mps(
+                    9.2,
+                ),
+            ),
+            wind_dir_dominant: Some(
+                Degrees(
+                    113.0,
+                ),
+            ),
+            moon_phase: None,
+            moonrise: None,
+            moonset: None,
+        },
+    ],
+    minutely_15: [],
+    minutely_1: [],
+    air_quality: Some(
+        AirQuality {
+            time: UnixTime(
+                1791212400,
+            ),
+            us_aqi: None,
+            european_aqi: None,
+            owm_index: Some(
+                2,
+            ),
+            pm2_5: Some(
+                8.4,
+            ),
+            pm10: Some(
+                14.2,
+            ),
+            o3: Some(
+                61.0,
+            ),
+            no2: Some(
+                12.5,
+            ),
+            so2: Some(
+                2.1,
+            ),
+            co: Some(
+                210.3,
+            ),
+        },
+    ),
+    alerts: [],
+    offset_changes: [],
+    models: [],
+}

@@ -1,0 +1,7 @@
+---
+source: crates/whether-core/src/view/tests.rs
+expression: brief(&vm)
+---
+status: No weather data yet |  | stale=false error=Some("OpenWeather: unauthorized")
+theme: ClearDay day=true widgets: []
+attribution:

@@ -1,0 +1,25 @@
+---
+source: apps/whether/src/commands/providers.rs
+expression: "models_table(Some((\"New York\", new_york)), &configured)"
+---
+Open-Meteo weather models ([providers.open-meteo] models; ✓ = has data for New York)
+  ✓ best_match              Best match (Open-Meteo)          global               16 days
+  ✓ gfs_seamless            NOAA GFS seamless                global               16 days
+  ✓ gfs_global              NOAA GFS global                  global               16 days
+  ✓ ncep_hrrr_conus         NOAA HRRR (3 km)                 lower 48             48 h
+  ✓ ncep_hrrr_conus_15min   NOAA HRRR 15-minute              lower 48             18 h
+  ✓ ncep_nbm_conus          NOAA National Blend of Models    lower 48             11 days
+  ✓ ncep_nam_conus          NOAA NAM (3 km)                  lower 48             60 h
+  ✓ ncep_aigfs025           NOAA AIGFS (AI)                  global               16 days
+  ✓ ecmwf_ifs025            ECMWF IFS 0.25°                  global               15 days
+  ✓ ecmwf_ifs               ECMWF IFS HRES (9 km)            global               15 days
+  ✓ ecmwf_aifs025_single    ECMWF AIFS (AI)                  global               15 days
+  ✓ gem_seamless            Canada GEM seamless              global               10 days
+  ✓ gem_hrdps_continental   Canada HRDPS (2.5 km)            Canada, northern US  48 h
+  ✓ icon_seamless           DWD ICON seamless                global               7 days
+  ✓ ukmo_seamless           UK Met Office seamless           global               7 days
+  ✓ meteofrance_seamless    Météo-France seamless            global               4 days
+  ✓ jma_seamless            JMA seamless                     global               11 days
+
+configured: ncep_hrrr_conus → ncep_nbm_conus
+for New York: ncep_hrrr_conus → ncep_nbm_conus → best_match

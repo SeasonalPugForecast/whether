@@ -1,0 +1,1347 @@
+---
+source: crates/whether-core/src/view/tests.rs
+expression: "view(Some(&snap), &all_widgets(), &ok_status())"
+---
+ViewModel {
+    tabs: [
+        TabVm {
+            name: "New York",
+            temp: "15°",
+            icon: PartlyCloudyDay,
+        },
+    ],
+    active: 0,
+    location: LocationHeaderVm {
+        name: "New York",
+        region: Some(
+            "New York, US",
+        ),
+        local_time: "Mon 11:00",
+    },
+    status: StatusVm {
+        updated: "Updated 5 min ago",
+        provider: "Open-Meteo",
+        stale: false,
+        refreshing: false,
+        error: None,
+        observed: None,
+    },
+    attribution: "Weather data by Open-Meteo.com",
+    theme: ClearDay,
+    is_day: true,
+    feels_like_leads: false,
+    widgets: [
+        Current,
+        Summary,
+        Nowcast,
+        Hourly,
+        Daily,
+        Details,
+        Sun,
+        Moon,
+        AirQuality,
+    ],
+    current: Some(
+        CurrentVm {
+            temperature: Quantity {
+                value: Some(
+                    15.3,
+                ),
+                text: "15°",
+                unit: "°C",
+            },
+            temp_level: Cool,
+            feels_like: Quantity {
+                value: Some(
+                    14.1,
+                ),
+                text: "14°",
+                unit: "°C",
+            },
+            feels_like_label: "Feels like 14°",
+            high: Quantity {
+                value: Some(
+                    18.0,
+                ),
+                text: "18°",
+                unit: "°C",
+            },
+            low: Quantity {
+                value: Some(
+                    8.4,
+                ),
+                text: "8°",
+                unit: "°C",
+            },
+            condition: PartlyCloudy,
+            condition_label: "Partly cloudy",
+            icon: PartlyCloudyDay,
+        },
+    ),
+    summary: Some(
+        "Partly cloudy. High 18°, low 8°. Rain starting in ~45 min.",
+    ),
+    hourly: Some(
+        HourlyVm {
+            hours: [
+                HourVm {
+                    time: UnixTime(
+                        1791212400,
+                    ),
+                    label: "Now",
+                    day: "Today",
+                    date_short: "Oct 5",
+                    icon: Cloudy,
+                    is_day: true,
+                    temperature: Quantity {
+                        value: Some(
+                            15.3,
+                        ),
+                        text: "15°",
+                        unit: "°C",
+                    },
+                    temp_level: Cool,
+                    feels_like: Quantity {
+                        value: Some(
+                            14.1,
+                        ),
+                        text: "14°",
+                        unit: "°C",
+                    },
+                    actual: Quantity {
+                        value: Some(
+                            15.3,
+                        ),
+                        text: "15°",
+                        unit: "°C",
+                    },
+                    precip_probability: Some(
+                        10,
+                    ),
+                    precipitation: Quantity {
+                        value: Some(
+                            0.0,
+                        ),
+                        text: "0.0 mm",
+                        unit: "mm",
+                    },
+                    wind: WindVm {
+                        speed: Quantity {
+                            value: Some(
+                                14.94,
+                            ),
+                            text: "15 km/h",
+                            unit: "km/h",
+                        },
+                        gust: Quantity {
+                            value: Some(
+                                29.88,
+                            ),
+                            text: "30 km/h",
+                            unit: "km/h",
+                        },
+                        direction_deg: Some(
+                            222.0,
+                        ),
+                        compass: "SW",
+                        arrow: '↗',
+                    },
+                    humidity: Some(
+                        58,
+                    ),
+                    uv: Some(
+                        2.6929576,
+                    ),
+                    humidity_text: Some(
+                        "58%",
+                    ),
+                    uv_text: Some(
+                        "3",
+                    ),
+                    condition_label: "Cloudy",
+                    dew_point: Quantity {
+                        value: Some(
+                            7.1620502,
+                        ),
+                        text: "7°",
+                        unit: "°C",
+                    },
+                    pressure: Quantity {
+                        value: Some(
+                            1019.02,
+                        ),
+                        text: "1019 hPa",
+                        unit: "hPa",
+                    },
+                    visibility: Quantity {
+                        value: Some(
+                            24.14,
+                        ),
+                        text: "24 km",
+                        unit: "km",
+                    },
+                    cloud_cover: Quantity {
+                        value: Some(
+                            20.0,
+                        ),
+                        text: "20%",
+                        unit: "%",
+                    },
+                },
+                HourVm {
+                    time: UnixTime(
+                        1791216000,
+                    ),
+                    label: "12:00",
+                    day: "Today",
+                    date_short: "Oct 5",
+                    icon: Cloudy,
+                    is_day: true,
+                    temperature: Quantity {
+                        value: Some(
+                            16.5,
+                        ),
+                        text: "17°",
+                        unit: "°C",
+                    },
+                    temp_level: Mild,
+                    feels_like: Quantity {
+                        value: Some(
+                            15.3,
+                        ),
+                        text: "15°",
+                        unit: "°C",
+                    },
+                    actual: Quantity {
+                        value: Some(
+                            16.5,
+                        ),
+                        text: "17°",
+                        unit: "°C",
+                    },
+                    precip_probability: Some(
+                        10,
+                    ),
+                    precipitation: Quantity {
+                        value: Some(
+                            0.0,
+                        ),
+                        text: "0.0 mm",
+                        unit: "mm",
+                    },
+                    wind: WindVm {
+                        speed: Quantity {
+                            value: Some(
+                                15.4800005,
+                            ),
+                            text: "15 km/h",
+                            unit: "km/h",
+                        },
+                        gust: Quantity {
+                            value: Some(
+                                30.960001,
+                            ),
+                            text: "31 km/h",
+                            unit: "km/h",
+                        },
+                        direction_deg: Some(
+                            224.0,
+                        ),
+                        compass: "SW",
+                        arrow: '↗',
+                    },
+                    humidity: Some(
+                        58,
+                    ),
+                    uv: Some(
+                        3.7583249,
+                    ),
+                    humidity_text: Some(
+                        "58%",
+                    ),
+                    uv_text: Some(
+                        "4",
+                    ),
+                    condition_label: "Cloudy",
+                    dew_point: Quantity {
+                        value: Some(
+                            8.287495,
+                        ),
+                        text: "8°",
+                        unit: "°C",
+                    },
+                    pressure: Quantity {
+                        value: Some(
+                            1018.84,
+                        ),
+                        text: "1019 hPa",
+                        unit: "hPa",
+                    },
+                    visibility: Quantity {
+                        value: Some(
+                            24.14,
+                        ),
+                        text: "24 km",
+                        unit: "km",
+                    },
+                    cloud_cover: Quantity {
+                        value: Some(
+                            20.0,
+                        ),
+                        text: "20%",
+                        unit: "%",
+                    },
+                },
+                HourVm {
+                    time: UnixTime(
+                        1791219600,
+                    ),
+                    label: "13:00",
+                    day: "Today",
+                    date_short: "Oct 5",
+                    icon: Cloudy,
+                    is_day: true,
+                    temperature: Quantity {
+                        value: Some(
+                            17.4,
+                        ),
+                        text: "17°",
+                        unit: "°C",
+                    },
+                    temp_level: Mild,
+                    feels_like: Quantity {
+                        value: Some(
+                            16.199999,
+                        ),
+                        text: "16°",
+                        unit: "°C",
+                    },
+                    actual: Quantity {
+                        value: Some(
+                            17.4,
+                        ),
+                        text: "17°",
+                        unit: "°C",
+                    },
+                    precip_probability: Some(
+                        15,
+                    ),
+                    precipitation: Quantity {
+                        value: Some(
+                            0.0,
+                        ),
+                        text: "0.0 mm",
+                        unit: "mm",
+                    },
+                    wind: WindVm {
+                        speed: Quantity {
+                            value: Some(
+                                16.019999,
+                            ),
+                            text: "16 km/h",
+                            unit: "km/h",
+                        },
+                        gust: Quantity {
+                            value: Some(
+                                32.039997,
+                            ),
+                            text: "32 km/h",
+                            unit: "km/h",
+                        },
+                        direction_deg: Some(
+                            226.0,
+                        ),
+                        compass: "SW",
+                        arrow: '↗',
+                    },
+                    humidity: Some(
+                        60,
+                    ),
+                    uv: Some(
+                        4.2,
+                    ),
+                    humidity_text: Some(
+                        "60%",
+                    ),
+                    uv_text: Some(
+                        "4",
+                    ),
+                    condition_label: "Cloudy",
+                    dew_point: Quantity {
+                        value: Some(
+                            9.550507,
+                        ),
+                        text: "10°",
+                        unit: "°C",
+                    },
+                    pressure: Quantity {
+                        value: Some(
+                            1018.66,
+                        ),
+                        text: "1019 hPa",
+                        unit: "hPa",
+                    },
+                    visibility: Quantity {
+                        value: Some(
+                            24.14,
+                        ),
+                        text: "24 km",
+                        unit: "km",
+                    },
+                    cloud_cover: Quantity {
+                        value: Some(
+                            20.0,
+                        ),
+                        text: "20%",
+                        unit: "%",
+                    },
+                },
+                HourVm {
+                    time: UnixTime(
+                        1791223200,
+                    ),
+                    label: "14:00",
+                    day: "Today",
+                    date_short: "Oct 5",
+                    icon: Cloudy,
+                    is_day: true,
+                    temperature: Quantity {
+                        value: Some(
+                            17.9,
+                        ),
+                        text: "18°",
+                        unit: "°C",
+                    },
+                    temp_level: Mild,
+                    feels_like: Quantity {
+                        value: Some(
+                            16.699999,
+                        ),
+                        text: "17°",
+                        unit: "°C",
+                    },
+                    actual: Quantity {
+                        value: Some(
+                            17.9,
+                        ),
+                        text: "18°",
+                        unit: "°C",
+                    },
+                    precip_probability: Some(
+                        20,
+                    ),
+                    precipitation: Quantity {
+                        value: Some(
+                            0.0,
+                        ),
+                        text: "0.0 mm",
+                        unit: "mm",
+                    },
+                    wind: WindVm {
+                        speed: Quantity {
+                            value: Some(
+                                16.560001,
+                            ),
+                            text: "17 km/h",
+                            unit: "km/h",
+                        },
+                        gust: Quantity {
+                            value: Some(
+                                33.120003,
+                            ),
+                            text: "33 km/h",
+                            unit: "km/h",
+                        },
+                        direction_deg: Some(
+                            228.0,
+                        ),
+                        compass: "SW",
+                        arrow: '↗',
+                    },
+                    humidity: Some(
+                        62,
+                    ),
+                    uv: Some(
+                        3.7583249,
+                    ),
+                    humidity_text: Some(
+                        "62%",
+                    ),
+                    uv_text: Some(
+                        "4",
+                    ),
+                    condition_label: "Cloudy",
+                    dew_point: Quantity {
+                        value: Some(
+                            10.431325,
+                        ),
+                        text: "10°",
+                        unit: "°C",
+                    },
+                    pressure: Quantity {
+                        value: Some(
+                            1018.48,
+                        ),
+                        text: "1018 hPa",
+                        unit: "hPa",
+                    },
+                    visibility: Quantity {
+                        value: Some(
+                            24.14,
+                        ),
+                        text: "24 km",
+                        unit: "km",
+                    },
+                    cloud_cover: Quantity {
+                        value: Some(
+                            20.0,
+                        ),
+                        text: "20%",
+                        unit: "%",
+                    },
+                },
+                HourVm {
+                    time: UnixTime(
+                        1791226800,
+                    ),
+                    label: "15:00",
+                    day: "Today",
+                    date_short: "Oct 5",
+                    icon: OvercastDay,
+                    is_day: true,
+                    temperature: Quantity {
+                        value: Some(
+                            18.0,
+                        ),
+                        text: "18°",
+                        unit: "°C",
+                    },
+                    temp_level: Mild,
+                    feels_like: Quantity {
+                        value: Some(
+                            16.8,
+                        ),
+                        text: "17°",
+                        unit: "°C",
+                    },
+                    actual: Quantity {
+                        value: Some(
+                            18.0,
+                        ),
+                        text: "18°",
+                        unit: "°C",
+                    },
+                    precip_probability: Some(
+                        35,
+                    ),
+                    precipitation: Quantity {
+                        value: Some(
+                            0.0,
+                        ),
+                        text: "0.0 mm",
+                        unit: "mm",
+                    },
+                    wind: WindVm {
+                        speed: Quantity {
+                            value: Some(
+                                17.1,
+                            ),
+                            text: "17 km/h",
+                            unit: "km/h",
+                        },
+                        gust: Quantity {
+                            value: Some(
+                                34.2,
+                            ),
+                            text: "34 km/h",
+                            unit: "km/h",
+                        },
+                        direction_deg: Some(
+                            230.0,
+                        ),
+                        compass: "SW",
+                        arrow: '↗',
+                    },
+                    humidity: Some(
+                        67,
+                    ),
+                    uv: Some(
+                        2.6929576,
+                    ),
+                    humidity_text: Some(
+                        "67%",
+                    ),
+                    uv_text: Some(
+                        "3",
+                    ),
+                    condition_label: "Overcast",
+                    dew_point: Quantity {
+                        value: Some(
+                            11.701982,
+                        ),
+                        text: "12°",
+                        unit: "°C",
+                    },
+                    pressure: Quantity {
+                        value: Some(
+                            1018.3,
+                        ),
+                        text: "1018 hPa",
+                        unit: "hPa",
+                    },
+                    visibility: Quantity {
+                        value: Some(
+                            24.14,
+                        ),
+                        text: "24 km",
+                        unit: "km",
+                    },
+                    cloud_cover: Quantity {
+                        value: Some(
+                            35.0,
+                        ),
+                        text: "35%",
+                        unit: "%",
+                    },
+                },
+                HourVm {
+                    time: UnixTime(
+                        1791230400,
+                    ),
+                    label: "16:00",
+                    day: "Today",
+                    date_short: "Oct 5",
+                    icon: ShowersDay,
+                    is_day: true,
+                    temperature: Quantity {
+                        value: Some(
+                            17.6,
+                        ),
+                        text: "18°",
+                        unit: "°C",
+                    },
+                    temp_level: Mild,
+                    feels_like: Quantity {
+                        value: Some(
+                            16.4,
+                        ),
+                        text: "16°",
+                        unit: "°C",
+                    },
+                    actual: Quantity {
+                        value: Some(
+                            17.6,
+                        ),
+                        text: "18°",
+                        unit: "°C",
+                    },
+                    precip_probability: Some(
+                        55,
+                    ),
+                    precipitation: Quantity {
+                        value: Some(
+                            0.0,
+                        ),
+                        text: "0.0 mm",
+                        unit: "mm",
+                    },
+                    wind: WindVm {
+                        speed: Quantity {
+                            value: Some(
+                                17.64,
+                            ),
+                            text: "18 km/h",
+                            unit: "km/h",
+                        },
+                        gust: Quantity {
+                            value: Some(
+                                35.28,
+                            ),
+                            text: "35 km/h",
+                            unit: "km/h",
+                        },
+                        direction_deg: Some(
+                            232.0,
+                        ),
+                        compass: "SW",
+                        arrow: '↗',
+                    },
+                    humidity: Some(
+                        73,
+                    ),
+                    uv: Some(
+                        1.5450937,
+                    ),
+                    humidity_text: Some(
+                        "73%",
+                    ),
+                    uv_text: Some(
+                        "2",
+                    ),
+                    condition_label: "Light showers",
+                    dew_point: Quantity {
+                        value: Some(
+                            12.769646,
+                        ),
+                        text: "13°",
+                        unit: "°C",
+                    },
+                    pressure: Quantity {
+                        value: Some(
+                            1018.12,
+                        ),
+                        text: "1018 hPa",
+                        unit: "hPa",
+                    },
+                    visibility: Quantity {
+                        value: Some(
+                            24.14,
+                        ),
+                        text: "24 km",
+                        unit: "km",
+                    },
+                    cloud_cover: Quantity {
+                        value: Some(
+                            55.0,
+                        ),
+                        text: "55%",
+                        unit: "%",
+                    },
+                },
+            ],
+            temp_min: 15.3,
+            temp_max: 18.0,
+            precip_max: 0.0,
+            now_index: 0,
+            timeline: [
+                TimelineSpanVm {
+                    start: 0,
+                    len: 5,
+                    group: Cloudy,
+                    label: "Overcast",
+                },
+                TimelineSpanVm {
+                    start: 5,
+                    len: 1,
+                    group: Rain,
+                    label: "Light showers",
+                },
+            ],
+        },
+    ),
+    daily: Some(
+        DailyVm {
+            days: [
+                DayVm {
+                    label: "Today",
+                    date_short: "Oct 5",
+                    icon: Cloudy,
+                    condition_label: "Cloudy",
+                    high: Quantity {
+                        value: Some(
+                            18.0,
+                        ),
+                        text: "18°",
+                        unit: "°C",
+                    },
+                    low: Quantity {
+                        value: Some(
+                            8.4,
+                        ),
+                        text: "8°",
+                        unit: "°C",
+                    },
+                    actual_high: Quantity {
+                        value: Some(
+                            18.0,
+                        ),
+                        text: "18°",
+                        unit: "°C",
+                    },
+                    actual_low: Quantity {
+                        value: Some(
+                            8.4,
+                        ),
+                        text: "8°",
+                        unit: "°C",
+                    },
+                    temp_level_high: Mild,
+                    precip_probability: Some(
+                        80,
+                    ),
+                    precip_sum: Quantity {
+                        value: Some(
+                            8.0,
+                        ),
+                        text: "8.0 mm",
+                        unit: "mm",
+                    },
+                    range: (
+                        0.0,
+                        0.88888884,
+                    ),
+                    sunrise: Some(
+                        "07:03",
+                    ),
+                    sunset: Some(
+                        "18:38",
+                    ),
+                    uv_max: Some(
+                        4.2,
+                    ),
+                    wind_max: Quantity {
+                        value: Some(
+                            21.96,
+                        ),
+                        text: "22 km/h",
+                        unit: "km/h",
+                    },
+                    gust_max: Quantity {
+                        value: Some(
+                            39.6,
+                        ),
+                        text: "40 km/h",
+                        unit: "km/h",
+                    },
+                    precip_text: Some(
+                        "Heavy rain from 16:00 to 21:00.",
+                    ),
+                    outlook: Some(
+                        "Mostly sunny in the morning, then cloudy and mild in the afternoon. Heavy rain from 16:00 to 21:00. Breezy.",
+                    ),
+                    hours: [],
+                    timeline: [],
+                    normal_high: Quantity {
+                        value: None,
+                        text: "—",
+                        unit: "°C",
+                    },
+                    normal_low: Quantity {
+                        value: None,
+                        text: "—",
+                        unit: "°C",
+                    },
+                },
+                DayVm {
+                    label: "Tomorrow",
+                    date_short: "Oct 6",
+                    icon: PartlyCloudyDay,
+                    condition_label: "Partly cloudy",
+                    high: Quantity {
+                        value: Some(
+                            16.4,
+                        ),
+                        text: "16°",
+                        unit: "°C",
+                    },
+                    low: Quantity {
+                        value: Some(
+                            10.2,
+                        ),
+                        text: "10°",
+                        unit: "°C",
+                    },
+                    actual_high: Quantity {
+                        value: Some(
+                            16.4,
+                        ),
+                        text: "16°",
+                        unit: "°C",
+                    },
+                    actual_low: Quantity {
+                        value: Some(
+                            10.2,
+                        ),
+                        text: "10°",
+                        unit: "°C",
+                    },
+                    temp_level_high: Mild,
+                    precip_probability: Some(
+                        45,
+                    ),
+                    precip_sum: Quantity {
+                        value: Some(
+                            0.0,
+                        ),
+                        text: "0.0 mm",
+                        unit: "mm",
+                    },
+                    range: (
+                        0.16666667,
+                        0.74074066,
+                    ),
+                    sunrise: Some(
+                        "07:04",
+                    ),
+                    sunset: Some(
+                        "18:36",
+                    ),
+                    uv_max: Some(
+                        3.9999998,
+                    ),
+                    wind_max: Quantity {
+                        value: Some(
+                            23.4,
+                        ),
+                        text: "23 km/h",
+                        unit: "km/h",
+                    },
+                    gust_max: Quantity {
+                        value: Some(
+                            41.760002,
+                        ),
+                        text: "42 km/h",
+                        unit: "km/h",
+                    },
+                    precip_text: None,
+                    outlook: Some(
+                        "Mostly sunny in the morning, then mostly cloudy and mild in the afternoon. Breezy.",
+                    ),
+                    hours: [],
+                    timeline: [],
+                    normal_high: Quantity {
+                        value: None,
+                        text: "—",
+                        unit: "°C",
+                    },
+                    normal_low: Quantity {
+                        value: None,
+                        text: "—",
+                        unit: "°C",
+                    },
+                },
+                DayVm {
+                    label: "Wed",
+                    date_short: "Oct 7",
+                    icon: PartlyCloudyDay,
+                    condition_label: "Partly cloudy",
+                    high: Quantity {
+                        value: Some(
+                            19.2,
+                        ),
+                        text: "19°",
+                        unit: "°C",
+                    },
+                    low: Quantity {
+                        value: Some(
+                            9.1,
+                        ),
+                        text: "9°",
+                        unit: "°C",
+                    },
+                    actual_high: Quantity {
+                        value: Some(
+                            19.2,
+                        ),
+                        text: "19°",
+                        unit: "°C",
+                    },
+                    actual_low: Quantity {
+                        value: Some(
+                            9.1,
+                        ),
+                        text: "9°",
+                        unit: "°C",
+                    },
+                    temp_level_high: Mild,
+                    precip_probability: Some(
+                        10,
+                    ),
+                    precip_sum: Quantity {
+                        value: Some(
+                            0.0,
+                        ),
+                        text: "0.0 mm",
+                        unit: "mm",
+                    },
+                    range: (
+                        0.06481488,
+                        1.0,
+                    ),
+                    sunrise: Some(
+                        "07:05",
+                    ),
+                    sunset: Some(
+                        "18:35",
+                    ),
+                    uv_max: Some(
+                        3.7999997,
+                    ),
+                    wind_max: Quantity {
+                        value: Some(
+                            24.84,
+                        ),
+                        text: "25 km/h",
+                        unit: "km/h",
+                    },
+                    gust_max: Quantity {
+                        value: Some(
+                            43.92,
+                        ),
+                        text: "44 km/h",
+                        unit: "km/h",
+                    },
+                    precip_text: None,
+                    outlook: Some(
+                        "Partly cloudy and mild. Breezy.",
+                    ),
+                    hours: [],
+                    timeline: [],
+                    normal_high: Quantity {
+                        value: None,
+                        text: "—",
+                        unit: "°C",
+                    },
+                    normal_low: Quantity {
+                        value: None,
+                        text: "—",
+                        unit: "°C",
+                    },
+                },
+            ],
+            period_min: 8.4,
+            period_max: 19.2,
+        },
+    ),
+    details: [
+        DetailVm {
+            kind: Wind,
+            title: "Wind",
+            value: "13 km/h SW",
+            caption: Some(
+                "Gusts 26 km/h",
+            ),
+            level: None,
+            gauge: None,
+            direction_deg: Some(
+                225.0,
+            ),
+            trend: None,
+        },
+        DetailVm {
+            kind: Humidity,
+            title: "Humidity",
+            value: "62%",
+            caption: Some(
+                "Dew point 8°",
+            ),
+            level: None,
+            gauge: Some(
+                0.62,
+            ),
+            direction_deg: None,
+            trend: None,
+        },
+        DetailVm {
+            kind: Pressure,
+            title: "Pressure",
+            value: "1020 hPa",
+            caption: Some(
+                "Steady",
+            ),
+            level: None,
+            gauge: Some(
+                0.6224998,
+            ),
+            direction_deg: None,
+            trend: Some(
+                Steady,
+            ),
+        },
+        DetailVm {
+            kind: Uv,
+            title: "UV index",
+            value: "3",
+            caption: Some(
+                "Moderate",
+            ),
+            level: Some(
+                Moderate,
+            ),
+            gauge: Some(
+                0.3090909,
+            ),
+            direction_deg: None,
+            trend: None,
+        },
+        DetailVm {
+            kind: Visibility,
+            title: "Visibility",
+            value: "24 km",
+            caption: None,
+            level: None,
+            gauge: None,
+            direction_deg: None,
+            trend: None,
+        },
+        DetailVm {
+            kind: DewPoint,
+            title: "Dew point",
+            value: "8°",
+            caption: None,
+            level: None,
+            gauge: None,
+            direction_deg: None,
+            trend: None,
+        },
+        DetailVm {
+            kind: CloudCover,
+            title: "Cloud cover",
+            value: "45%",
+            caption: None,
+            level: None,
+            gauge: Some(
+                0.45,
+            ),
+            direction_deg: None,
+            trend: None,
+        },
+        DetailVm {
+            kind: Precipitation,
+            title: "Precipitation",
+            value: "0.0 mm",
+            caption: Some(
+                "Today 8.0 mm",
+            ),
+            level: None,
+            gauge: None,
+            direction_deg: None,
+            trend: None,
+        },
+    ],
+    air_quality: Some(
+        AirQualityVm {
+            scale: Us,
+            index: 42,
+            category_label: "Good",
+            level: Good,
+            gauge: 0.14,
+            pollutants: [
+                (
+                    "PM2.5",
+                    "8.4 µg/m³",
+                ),
+                (
+                    "PM10",
+                    "14.2 µg/m³",
+                ),
+                (
+                    "O₃",
+                    "61.0 µg/m³",
+                ),
+                (
+                    "NO₂",
+                    "12.5 µg/m³",
+                ),
+                (
+                    "SO₂",
+                    "2.1 µg/m³",
+                ),
+                (
+                    "CO",
+                    "210 µg/m³",
+                ),
+            ],
+        },
+    ),
+    sun: Some(
+        SunVm {
+            sunrise: "07:03",
+            sunset: "18:38",
+            daylight: "11h 35m",
+            progress: Some(
+                0.3405561,
+            ),
+            is_day: true,
+            solar_noon: Some(
+                "12:44",
+            ),
+            twilight: [
+                SunEventVm {
+                    label: "Astronomical dawn",
+                    time: "05:25",
+                    at: UnixTime(
+                        1791192325,
+                    ),
+                    morning: true,
+                    kind: Astronomical,
+                },
+                SunEventVm {
+                    label: "Nautical dawn",
+                    time: "05:57",
+                    at: UnixTime(
+                        1791194239,
+                    ),
+                    morning: true,
+                    kind: Nautical,
+                },
+                SunEventVm {
+                    label: "Civil dawn",
+                    time: "06:29",
+                    at: UnixTime(
+                        1791196140,
+                    ),
+                    morning: true,
+                    kind: Civil,
+                },
+                SunEventVm {
+                    label: "Golden hour ends",
+                    time: "07:32",
+                    at: UnixTime(
+                        1791199968,
+                    ),
+                    morning: true,
+                    kind: Golden,
+                },
+                SunEventVm {
+                    label: "Golden hour begins",
+                    time: "17:55",
+                    at: UnixTime(
+                        1791237353,
+                    ),
+                    morning: false,
+                    kind: Golden,
+                },
+                SunEventVm {
+                    label: "Civil dusk",
+                    time: "18:59",
+                    at: UnixTime(
+                        1791241181,
+                    ),
+                    morning: false,
+                    kind: Civil,
+                },
+                SunEventVm {
+                    label: "Nautical dusk",
+                    time: "19:31",
+                    at: UnixTime(
+                        1791243083,
+                    ),
+                    morning: false,
+                    kind: Nautical,
+                },
+                SunEventVm {
+                    label: "Astronomical dusk",
+                    time: "20:03",
+                    at: UnixTime(
+                        1791244996,
+                    ),
+                    morning: false,
+                    kind: Astronomical,
+                },
+            ],
+            rise: Some(
+                RiseSetVm {
+                    label: "Sunrise",
+                    time: "07:03",
+                    at: UnixTime(
+                        1791198192,
+                    ),
+                },
+            ),
+            set: Some(
+                RiseSetVm {
+                    label: "Sunset",
+                    time: "18:38",
+                    at: UnixTime(
+                        1791239912,
+                    ),
+                },
+            ),
+            noon: Some(
+                RiseSetVm {
+                    label: "Solar noon",
+                    time: "12:44",
+                    at: UnixTime(
+                        1791218661,
+                    ),
+                },
+            ),
+        },
+    ),
+    moon: Some(
+        MoonVm {
+            phase: 0.817,
+            phase_label: "Waning crescent",
+            icon: MoonWaningCrescent,
+            moonrise: Some(
+                "18:09",
+            ),
+            moonset: Some(
+                "10:47",
+            ),
+            illumination: Some(
+                "30% illuminated",
+            ),
+            rise: Some(
+                RiseSetVm {
+                    label: "Moonrise",
+                    time: "18:09",
+                    at: UnixTime(
+                        1791151751,
+                    ),
+                },
+            ),
+            set: Some(
+                RiseSetVm {
+                    label: "Moonset",
+                    time: "10:47",
+                    at: UnixTime(
+                        1791211658,
+                    ),
+                },
+            ),
+        },
+    ),
+    nowcast: Some(
+        NowcastVm {
+            text: "Rain starting in ~45 min.",
+            series_mm: [
+                0.0,
+                0.0,
+                0.0,
+                0.3,
+                0.3,
+                0.3,
+                0.3,
+                0.3,
+            ],
+            intensity: [
+                0.0,
+                0.0,
+                0.0,
+                0.16000001,
+                0.16000001,
+                0.16000001,
+                0.16000001,
+                0.16000001,
+            ],
+            levels: [
+                "Light",
+                "Moderate",
+                "Heavy",
+            ],
+            ticks: [
+                NowcastTickVm {
+                    step: 0,
+                    label: "Now",
+                },
+                NowcastTickVm {
+                    step: 4,
+                    label: "1 h",
+                },
+                NowcastTickVm {
+                    step: 8,
+                    label: "2 h",
+                },
+            ],
+            hours: 2,
+            step_minutes: 15,
+            wet: true,
+        },
+    ),
+    alerts: [],
+    radar: None,
+    precipitation: None,
+    history: None,
+}

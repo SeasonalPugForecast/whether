@@ -1,0 +1,9 @@
+# `cross` (cargo xtask dist --target …). The GUI and kiosk targets use local images
+# with the target libraries, built by xtask from packaging/cross/ (plain `docker
+# build`, so Docker's buildx plugin is not required).
+
+[target.aarch64-unknown-linux-gnu]
+image = "whether-cross:aarch64-unknown-linux-gnu"
+
+[target.armv7-unknown-linux-gnueabihf]
+image = "whether-cross:armv7-unknown-linux-gnueabihf"

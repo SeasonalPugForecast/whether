@@ -1,0 +1,9 @@
+---
+source: apps/whether/tests/cli.rs
+expression: text(&out.stdout)
+---
+tui      interactive  interactive dashboard for terminals
+gui      interactive  desktop window (Mousam-inspired), compact mode and kiosk
+line     prints       one line of text, or waybar JSON, for status bars
+json     prints       the view model or raw snapshot as JSON, for scripts
+exec:*   external     external plugins from [display.exec.<name>] (JSON Lines over stdio)

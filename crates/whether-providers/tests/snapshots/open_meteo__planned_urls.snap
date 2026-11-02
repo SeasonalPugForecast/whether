@@ -1,0 +1,10 @@
+---
+source: crates/whether-providers/tests/open_meteo.rs
+assertion_line: 77
+expression: urls
+---
+[
+    "https://api.open-meteo.com/v1/forecast?latitude=40.7143&longitude=-74.006&current=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,uv_index&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,is_day,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,precipitation_probability_max,sunrise,sunset,daylight_duration,uv_index_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,moon_phase,moonrise,moonset&timezone=auto&timeformat=unixtime&wind_speed_unit=ms&forecast_days=7&forecast_hours=48&past_hours=24&minutely_15=precipitation&forecast_minutely_15=32",
+    "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=40.7143&longitude=-74.006&current=us_aqi,european_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone&timezone=auto&timeformat=unixtime",
+    "https://api.open-meteo.com/v1/forecast?latitude=40.7143&longitude=-74.006&current=temperature_2m,is_day&hourly=temperature_2m&daily=temperature_2m_max&timezone=auto&timeformat=unixtime&wind_speed_unit=ms&forecast_days=5&forecast_hours=12",
+]

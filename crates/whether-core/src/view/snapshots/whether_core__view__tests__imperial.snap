@@ -1,0 +1,21 @@
+---
+source: crates/whether-core/src/view/tests.rs
+assertion_line: 158
+expression: "brief(&view(Some(&snap), &p, &ok_status()))"
+---
+status: Updated 5 min ago | Open-Meteo | stale=false error=None
+theme: ClearDay day=true widgets: [Current, Summary, Hourly, Precipitation, Daily, Details, Sun, AirQuality]
+current: 60° Partly cloudy | Feels like 57° | H 64° L 47°
+summary: Partly cloudy. High 64°, low 47°. Rain starting in ~45 min.
+hourly: Now 60° Some(10)%, 12:00 62° Some(10)%, 13:00 63° Some(15)%, 14:00 64° Some(20)% | range 48.9..64.4
+daily: Today Oct 5 64°/47°, Tomorrow Oct 6 62°/50°, Wed Oct 7 67°/48°, Thu Oct 8 71°/46°, Fri Oct 9 68°/53°, Sat Oct 10 63°/54°, Sun Oct 11 60°/51°
+detail: Wind = 8 mph SW (Some("Gusts 16 mph"))
+detail: Humidity = 62% (Some("Dew point 47°"))
+detail: Pressure = 30.11 inHg (Some("Steady"))
+detail: UV index = 3 (Some("Moderate"))
+detail: Visibility = 15 mi (None)
+detail: Dew point = 47° (None)
+detail: Cloud cover = 45% (None)
+detail: Precipitation = 0.00 in (Some("Today 0.31 in"))
+sun: 07:03 - 18:38 (11h 35m) progress=Some(34)
+attribution: Weather data by Open-Meteo.com

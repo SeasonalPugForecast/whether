@@ -1,0 +1,5 @@
+# The kiosk service user (systemd-sysusers).
+u whether - "whether kiosk" /var/lib/whether
+m whether video
+m whether input
+m whether render

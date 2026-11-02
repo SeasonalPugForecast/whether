@@ -1,0 +1,3119 @@
+{
+  "$defs": {
+    "AirQuality": {
+      "description": "Air quality now. Pollutants are in µg/m³.",
+      "properties": {
+        "co": {
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "european_aqi": {
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "no2": {
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "o3": {
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "owm_index": {
+          "description": "OpenWeather's 1–5 index.",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "pm10": {
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "pm2_5": {
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "so2": {
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "time": {
+          "$ref": "#/$defs/UnixTime"
+        },
+        "us_aqi": {
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "time"
+      ],
+      "type": "object"
+    },
+    "AirQualityVm": {
+      "description": "Air quality.",
+      "properties": {
+        "category_label": {
+          "description": "Category name.",
+          "type": "string"
+        },
+        "gauge": {
+          "description": "Gauge fill in 0..=1.",
+          "format": "float",
+          "type": "number"
+        },
+        "index": {
+          "description": "Index value.",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "level": {
+          "$ref": "#/$defs/Level",
+          "description": "Severity."
+        },
+        "pollutants": {
+          "description": "`(name, value)` pairs, e.g. `(\"PM2.5\", \"8.4 µg/m³\")`.",
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "scale": {
+          "$ref": "#/$defs/AqiScale",
+          "description": "The index shown."
+        }
+      },
+      "required": [
+        "scale",
+        "index",
+        "category_label",
+        "level",
+        "gauge",
+        "pollutants"
+      ],
+      "type": "object"
+    },
+    "Alert": {
+      "description": "An official weather warning.",
+      "properties": {
+        "checked_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnixTime"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "When the provider last sent this alert's details (`None` when unknown, as in\ncaches written before this change). A fetch re-requests details older than an hour\nso updates reach the app while the alert lasts."
+        },
+        "description": {
+          "type": "string"
+        },
+        "end": {
+          "$ref": "#/$defs/UnixTime"
+        },
+        "id": {
+          "description": "The provider's identifier, when it has one: deduplicates alerts and lets a\nlater fetch reuse details it already has.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "severity": {
+          "$ref": "#/$defs/Level"
+        },
+        "source": {
+          "type": "string"
+        },
+        "start": {
+          "$ref": "#/$defs/UnixTime"
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "description": "A page with the alert's details, when the source gives one.\nCaches written earlier have none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "title",
+        "description",
+        "severity",
+        "start",
+        "end",
+        "source"
+      ],
+      "type": "object"
+    },
+    "AlertVm": {
+      "description": "An official warning.",
+      "properties": {
+        "body": {
+          "type": "string"
+        },
+        "end": {
+          "$ref": "#/$defs/UnixTime",
+          "description": "When the alert ends, for comparing updates (shown only through `period`)."
+        },
+        "id": {
+          "description": "The provider's identifier (`Alert.id`), stable while the alert lasts even when\nits text changes: the key for telling alerts apart.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "level": {
+          "$ref": "#/$defs/Level"
+        },
+        "period": {
+          "description": "\"Mon 14:00 – Tue 06:00\".",
+          "type": "string"
+        },
+        "source": {
+          "description": "Who issued it (`Alert.source`: \"NWS Upton NY\"); additive and optional\nin plugin protocol v1, absent when the source is unnamed.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "description": "A page with the alert's details (`Alert.url`; additive and optional in\nplugin protocol v1).",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "title",
+        "body",
+        "level",
+        "period",
+        "end"
+      ],
+      "type": "object"
+    },
+    "AqiScale": {
+      "description": "Which air-quality index a value belongs to.",
+      "oneOf": [
+        {
+          "const": "us",
+          "description": "US EPA AQI, 0–500.",
+          "type": "string"
+        },
+        {
+          "const": "european",
+          "description": "European AQI, 0–100+.",
+          "type": "string"
+        },
+        {
+          "const": "owm",
+          "description": "OpenWeather's 1–5 index.",
+          "type": "string"
+        }
+      ]
+    },
+    "Celsius": {
+      "description": "Temperature in degrees Celsius.",
+      "format": "float",
+      "type": "number"
+    },
+    "ClimateVm": {
+      "description": "A date's climate: averages, records and how often it rained or snowed.",
+      "properties": {
+        "normal_high": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "normal_low": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "normal_text": {
+          "description": "\"Normal 69° / 55°\".",
+          "type": "string"
+        },
+        "precip_chance": {
+          "description": "\"Rain or snow on this date in 23% of years\".",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "record_high": {
+          "description": "\"94° in 1941\".",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "record_low": {
+          "description": "\"35° in 1881\".",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "normal_high",
+        "normal_low",
+        "normal_text"
+      ],
+      "type": "object"
+    },
+    "CommandMsg": {
+      "description": "A request from the plugin to the app.",
+      "oneOf": [
+        {
+          "description": "Fetch now (one location, or all), within the refresh floor and call budgets.",
+          "properties": {
+            "kind": {
+              "const": "refresh",
+              "type": "string"
+            },
+            "location": {
+              "default": null,
+              "description": "Location index, or all when absent.",
+              "format": "uint",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Show another location.",
+          "properties": {
+            "index": {
+              "description": "Location index.",
+              "format": "uint",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "select_location",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "index"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Stop (when the plugin is the main display).",
+          "properties": {
+            "kind": {
+              "const": "quit",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Condition": {
+      "description": "Sky and precipitation state, normalized across WMO codes, OpenWeather ids and\nMET Norway symbol codes.",
+      "oneOf": [
+        {
+          "enum": [
+            "clear",
+            "mainly_clear",
+            "partly_cloudy",
+            "cloudy",
+            "overcast",
+            "fog",
+            "haze",
+            "smoke",
+            "dust",
+            "snow_grains",
+            "squall",
+            "tornado",
+            "unknown"
+          ],
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "drizzle": {
+              "$ref": "#/$defs/Intensity"
+            }
+          },
+          "required": [
+            "drizzle"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "freezing_drizzle": {
+              "$ref": "#/$defs/Intensity"
+            }
+          },
+          "required": [
+            "freezing_drizzle"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "rain": {
+              "$ref": "#/$defs/Intensity"
+            }
+          },
+          "required": [
+            "rain"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "freezing_rain": {
+              "$ref": "#/$defs/Intensity"
+            }
+          },
+          "required": [
+            "freezing_rain"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "rain_showers": {
+              "$ref": "#/$defs/Intensity"
+            }
+          },
+          "required": [
+            "rain_showers"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "sleet": {
+              "$ref": "#/$defs/Intensity"
+            }
+          },
+          "required": [
+            "sleet"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "sleet_showers": {
+              "$ref": "#/$defs/Intensity"
+            }
+          },
+          "required": [
+            "sleet_showers"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "snow": {
+              "$ref": "#/$defs/Intensity"
+            }
+          },
+          "required": [
+            "snow"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "snow_showers": {
+              "$ref": "#/$defs/Intensity"
+            }
+          },
+          "required": [
+            "snow_showers"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "thunderstorm": {
+              "$ref": "#/$defs/Intensity"
+            }
+          },
+          "required": [
+            "thunderstorm"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "thunderstorm_hail": {
+              "$ref": "#/$defs/Intensity"
+            }
+          },
+          "required": [
+            "thunderstorm_hail"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Current": {
+      "description": "Conditions now.",
+      "properties": {
+        "apparent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Celsius"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cloud_cover": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Percent"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "condition": {
+          "$ref": "#/$defs/Condition"
+        },
+        "dew_point": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Celsius"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "humidity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Percent"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "is_day": {
+          "type": "boolean"
+        },
+        "precipitation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Mm"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pressure_msl": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Hpa"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Celsius"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "time": {
+          "$ref": "#/$defs/UnixTime"
+        },
+        "uv_index": {
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Meters"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wind_dir": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Degrees"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wind_gust": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Mps"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wind_speed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Mps"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "time",
+        "is_day",
+        "condition"
+      ],
+      "type": "object"
+    },
+    "CurrentVm": {
+      "description": "Current conditions.",
+      "properties": {
+        "condition": {
+          "$ref": "#/$defs/Condition"
+        },
+        "condition_label": {
+          "type": "string"
+        },
+        "feels_like": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "feels_like_label": {
+          "description": "\"Feels like 14°\".",
+          "type": "string"
+        },
+        "high": {
+          "$ref": "#/$defs/Quantity",
+          "description": "Today's high."
+        },
+        "icon": {
+          "$ref": "#/$defs/IconId"
+        },
+        "low": {
+          "$ref": "#/$defs/Quantity",
+          "description": "Today's low."
+        },
+        "temp_level": {
+          "$ref": "#/$defs/TempLevel"
+        },
+        "temperature": {
+          "$ref": "#/$defs/Quantity"
+        }
+      },
+      "required": [
+        "temperature",
+        "temp_level",
+        "feels_like",
+        "feels_like_label",
+        "high",
+        "low",
+        "condition",
+        "condition_label",
+        "icon"
+      ],
+      "type": "object"
+    },
+    "Daily": {
+      "description": "One local calendar day.",
+      "properties": {
+        "apparent_max": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Celsius"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The day's highest and lowest \"feels like\" temperatures."
+        },
+        "apparent_min": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Celsius"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "condition": {
+          "$ref": "#/$defs/Condition"
+        },
+        "date": {
+          "$ref": "#/$defs/LocalDate"
+        },
+        "daylight_s": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "moon_phase": {
+          "description": "Phase fraction: 0 new, 0.5 full.",
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "moonrise": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnixTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "moonset": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnixTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "precip_probability_max": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Percent"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "precip_sum": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Mm"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sunrise": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnixTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sunset": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnixTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "temp_max": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Celsius"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "temp_min": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Celsius"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "uv_index_max": {
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "wind_dir_dominant": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Degrees"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wind_gust_max": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Mps"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wind_speed_max": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Mps"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "date",
+        "condition"
+      ],
+      "type": "object"
+    },
+    "DailyVm": {
+      "description": "The daily forecast.",
+      "properties": {
+        "days": {
+          "description": "Rows from today.",
+          "items": {
+            "$ref": "#/$defs/DayVm"
+          },
+          "type": "array"
+        },
+        "period_max": {
+          "description": "Highest temperature of the period (display units).",
+          "format": "float",
+          "type": "number"
+        },
+        "period_min": {
+          "description": "Lowest temperature of the period (display units).",
+          "format": "float",
+          "type": "number"
+        }
+      },
+      "required": [
+        "days",
+        "period_min",
+        "period_max"
+      ],
+      "type": "object"
+    },
+    "DayVm": {
+      "description": "One daily row.",
+      "properties": {
+        "actual_high": {
+          "$ref": "#/$defs/Quantity",
+          "description": "The air temperature's high and low, whichever leads."
+        },
+        "actual_low": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "condition_label": {
+          "type": "string"
+        },
+        "date_short": {
+          "description": "\"Oct 7\".",
+          "type": "string"
+        },
+        "gust_max": {
+          "$ref": "#/$defs/Quantity",
+          "description": "The strongest gust: the day's own, else its hours' strongest."
+        },
+        "high": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "hours": {
+          "description": "Its hours, midnight to midnight as far as the forecast goes, when\n`daily_hours` is set (for expanding the day).",
+          "items": {
+            "$ref": "#/$defs/HourVm"
+          },
+          "type": "array"
+        },
+        "icon": {
+          "$ref": "#/$defs/IconId"
+        },
+        "label": {
+          "description": "\"Today\", \"Tomorrow\" or a weekday.",
+          "type": "string"
+        },
+        "low": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "normal_high": {
+          "$ref": "#/$defs/Quantity",
+          "description": "The day's normal high, when history is fetched."
+        },
+        "normal_low": {
+          "$ref": "#/$defs/Quantity",
+          "description": "The day's normal low."
+        },
+        "outlook": {
+          "description": "The day in a forecaster's words: \"Cold in the morning, then sunny and\nwarm in the afternoon. Breezy.\" (with `precip_text` in it). `None`\nwithout daytime hours.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "precip_probability": {
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "precip_sum": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "precip_text": {
+          "description": "When its precipitation falls, from its hours: \"Light drizzle in the\nearly afternoon.\" `None` when dry or without hourly data.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "range": {
+          "description": "Low and high positions in 0..=1 relative to the period's range.",
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "format": "float",
+              "type": "number"
+            },
+            {
+              "format": "float",
+              "type": "number"
+            }
+          ],
+          "type": "array"
+        },
+        "sunrise": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sunset": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "temp_level_high": {
+          "$ref": "#/$defs/TempLevel"
+        },
+        "timeline": {
+          "description": "Those hours as stretches of one kind of weather.",
+          "items": {
+            "$ref": "#/$defs/TimelineSpanVm"
+          },
+          "type": "array"
+        },
+        "uv_max": {
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "wind_max": {
+          "$ref": "#/$defs/Quantity"
+        }
+      },
+      "required": [
+        "label",
+        "date_short",
+        "icon",
+        "condition_label",
+        "high",
+        "low",
+        "actual_high",
+        "actual_low",
+        "temp_level_high",
+        "precip_sum",
+        "range",
+        "wind_max",
+        "gust_max",
+        "hours",
+        "timeline",
+        "normal_high",
+        "normal_low"
+      ],
+      "type": "object"
+    },
+    "Degrees": {
+      "description": "An angle in degrees; for wind, the direction the wind blows *from*.",
+      "format": "float",
+      "type": "number"
+    },
+    "DetailKind": {
+      "description": "One card in the details widget.",
+      "enum": [
+        "wind",
+        "gusts",
+        "humidity",
+        "dew_point",
+        "pressure",
+        "uv",
+        "visibility",
+        "cloud_cover",
+        "precipitation",
+        "feels_like",
+        "normals",
+        "records"
+      ],
+      "type": "string"
+    },
+    "DetailVm": {
+      "description": "One details card.",
+      "properties": {
+        "caption": {
+          "description": "Secondary line.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "direction_deg": {
+          "description": "Direction for compass cards.",
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "gauge": {
+          "description": "Gauge fill in 0..=1.",
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "kind": {
+          "$ref": "#/$defs/DetailKind",
+          "description": "Which card."
+        },
+        "level": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Level"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Severity for coloring."
+        },
+        "title": {
+          "description": "Card title.",
+          "type": "string"
+        },
+        "trend": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Trend"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Where the value is heading (pressure over the next three hours), for an\narrow; the caption says the same in words."
+        },
+        "value": {
+          "description": "Main value.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "title",
+        "value"
+      ],
+      "type": "object"
+    },
+    "HistoryVm": {
+      "description": "The history widget: the last days as observed, against normal.",
+      "properties": {
+        "credit": {
+          "description": "Where it comes from: \"NY City Central Park, 7.8 km · Normals 1991–2020\".",
+          "type": "string"
+        },
+        "days": {
+          "description": "Observed days, oldest first; days without a report show \"—\".",
+          "items": {
+            "$ref": "#/$defs/PastDayVm"
+          },
+          "type": "array"
+        },
+        "month_to_date": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MonthToDateVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Precipitation since the 1st against normal."
+        },
+        "today": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ClimateVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Today's normals, records and chance of precipitation."
+        },
+        "yesterday_delta": {
+          "description": "\"4° warmer than yesterday\": today's forecast high against yesterday's.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "days",
+        "credit"
+      ],
+      "type": "object"
+    },
+    "HostMessage": {
+      "description": "Host → plugin.",
+      "oneOf": [
+        {
+          "description": "The first message: protocol version, app version and the plugin's config.",
+          "properties": {
+            "app_version": {
+              "description": "The app's version.",
+              "type": "string"
+            },
+            "config": {
+              "description": "`[display.exec.<name>].config`, passed verbatim (never secrets)."
+            },
+            "plugin_name": {
+              "description": "The plugin's name (`exec:<name>`).",
+              "type": "string"
+            },
+            "protocol": {
+              "description": "[`crate::PROTOCOL_VERSION`].",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "type": {
+              "const": "hello",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "protocol",
+            "app_version",
+            "plugin_name",
+            "config"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "What to show, sent on every change.",
+          "properties": {
+            "active": {
+              "description": "The shown location.",
+              "format": "uint",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "seq": {
+              "description": "Increases with every state message.",
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "snapshots": {
+              "description": "Raw data per location, only with `send_snapshot = true`.",
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/WeatherSnapshot"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            },
+            "type": {
+              "const": "state",
+              "type": "string"
+            },
+            "view": {
+              "$ref": "#/$defs/ViewModel",
+              "description": "The formatted view of the active location (boxed: it is large)."
+            }
+          },
+          "required": [
+            "type",
+            "seq",
+            "active",
+            "view"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "The host is stopping; exit promptly.",
+          "properties": {
+            "type": {
+              "const": "shutdown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "HourVm": {
+      "description": "One hourly column.",
+      "properties": {
+        "actual": {
+          "$ref": "#/$defs/Quantity",
+          "description": "The air temperature, whichever leads."
+        },
+        "cloud_cover": {
+          "$ref": "#/$defs/Quantity",
+          "description": "Cloud cover, `\"40%\"`."
+        },
+        "condition_label": {
+          "description": "The hour's condition, `\"Light rain\"`.",
+          "type": "string"
+        },
+        "date_short": {
+          "description": "Its date, \"Nov 1\" (`date_format`).",
+          "type": "string"
+        },
+        "day": {
+          "description": "Its day: \"Today\", \"Tomorrow\" or the weekday.",
+          "type": "string"
+        },
+        "dew_point": {
+          "$ref": "#/$defs/Quantity",
+          "description": "Dew point (from the temperature and humidity)."
+        },
+        "feels_like": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "humidity": {
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "humidity_text": {
+          "description": "Humidity as text, `\"62%\"`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "icon": {
+          "$ref": "#/$defs/IconId"
+        },
+        "is_day": {
+          "type": "boolean"
+        },
+        "label": {
+          "description": "\"Now\", \"14:00\" or \"2 PM\".",
+          "type": "string"
+        },
+        "precip_probability": {
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "precipitation": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "pressure": {
+          "$ref": "#/$defs/Quantity",
+          "description": "Sea-level pressure."
+        },
+        "temp_level": {
+          "$ref": "#/$defs/TempLevel"
+        },
+        "temperature": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "time": {
+          "$ref": "#/$defs/UnixTime"
+        },
+        "uv": {
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "uv_text": {
+          "description": "UV index as text, `\"3\"`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "visibility": {
+          "$ref": "#/$defs/Quantity",
+          "description": "Visibility."
+        },
+        "wind": {
+          "$ref": "#/$defs/WindVm"
+        }
+      },
+      "required": [
+        "time",
+        "label",
+        "day",
+        "date_short",
+        "icon",
+        "is_day",
+        "temperature",
+        "temp_level",
+        "feels_like",
+        "actual",
+        "precipitation",
+        "wind",
+        "condition_label",
+        "dew_point",
+        "pressure",
+        "visibility",
+        "cloud_cover"
+      ],
+      "type": "object"
+    },
+    "Hourly": {
+      "description": "One forecast step (1 h; 3 h for OpenWeather's free API).",
+      "properties": {
+        "apparent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Celsius"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cloud_cover": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Percent"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "condition": {
+          "$ref": "#/$defs/Condition"
+        },
+        "humidity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Percent"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "is_day": {
+          "type": "boolean"
+        },
+        "precip_probability": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Percent"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "precipitation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Mm"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pressure_msl": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Hpa"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Celsius"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "time": {
+          "$ref": "#/$defs/UnixTime"
+        },
+        "uv_index": {
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "visibility": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Meters"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wind_dir": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Degrees"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wind_gust": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Mps"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "wind_speed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Mps"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "time",
+        "is_day",
+        "condition"
+      ],
+      "type": "object"
+    },
+    "HourlyVm": {
+      "description": "The hourly forecast.",
+      "properties": {
+        "hours": {
+          "description": "Columns from the current hour.",
+          "items": {
+            "$ref": "#/$defs/HourVm"
+          },
+          "type": "array"
+        },
+        "now_index": {
+          "description": "Index of the column containing now.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "precip_max": {
+          "description": "Largest shown precipitation (display units).",
+          "format": "float",
+          "type": "number"
+        },
+        "temp_max": {
+          "description": "Highest shown temperature (display units).",
+          "format": "float",
+          "type": "number"
+        },
+        "temp_min": {
+          "description": "Lowest shown temperature (display units).",
+          "format": "float",
+          "type": "number"
+        },
+        "timeline": {
+          "description": "The first 24 hours as stretches of one kind of weather (Dark Sky's bar).",
+          "items": {
+            "$ref": "#/$defs/TimelineSpanVm"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "hours",
+        "temp_min",
+        "temp_max",
+        "precip_max",
+        "now_index",
+        "timeline"
+      ],
+      "type": "object"
+    },
+    "Hpa": {
+      "description": "Pressure in hectopascals.",
+      "format": "float",
+      "type": "number"
+    },
+    "IconId": {
+      "description": "Weather condition icons, with day and night variants where the art differs.",
+      "enum": [
+        "clear_day",
+        "clear_night",
+        "partly_cloudy_day",
+        "partly_cloudy_night",
+        "cloudy",
+        "overcast_day",
+        "overcast_night",
+        "fog_day",
+        "fog_night",
+        "haze",
+        "smoke",
+        "dust",
+        "drizzle",
+        "rain",
+        "extreme_rain",
+        "showers_day",
+        "showers_night",
+        "sleet",
+        "snow",
+        "extreme_snow",
+        "snow_showers_day",
+        "snow_showers_night",
+        "thunderstorms_day",
+        "thunderstorms_night",
+        "thunderstorms_rain",
+        "hail",
+        "wind",
+        "tornado",
+        "not_available"
+      ],
+      "type": "string"
+    },
+    "Intensity": {
+      "description": "Strength of precipitation or a storm.",
+      "enum": [
+        "light",
+        "moderate",
+        "heavy"
+      ],
+      "type": "string"
+    },
+    "Level": {
+      "description": "One severity scale that every display maps to colors (UV, air quality, alerts).",
+      "enum": [
+        "good",
+        "fair",
+        "moderate",
+        "poor",
+        "very_poor",
+        "extreme"
+      ],
+      "type": "string"
+    },
+    "LocalDate": {
+      "description": "A calendar date in the location's local time.",
+      "properties": {
+        "day": {
+          "description": "Day of the month, 1–31.",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "month": {
+          "description": "Month, 1–12.",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "year": {
+          "description": "Proleptic Gregorian year.",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "year",
+        "month",
+        "day"
+      ],
+      "type": "object"
+    },
+    "LocationHeaderVm": {
+      "description": "The header of the shown location.",
+      "properties": {
+        "local_time": {
+          "description": "Local weekday and time, e.g. \"Mon 11:00\".",
+          "type": "string"
+        },
+        "name": {
+          "description": "Location name.",
+          "type": "string"
+        },
+        "region": {
+          "description": "Region line.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "local_time"
+      ],
+      "type": "object"
+    },
+    "LogLevel": {
+      "description": "Severity of a plugin log line.",
+      "oneOf": [
+        {
+          "const": "error",
+          "description": "Something failed.",
+          "type": "string"
+        },
+        {
+          "const": "warn",
+          "description": "Something is off.",
+          "type": "string"
+        },
+        {
+          "const": "info",
+          "description": "Progress.",
+          "type": "string"
+        },
+        {
+          "const": "debug",
+          "description": "Details.",
+          "type": "string"
+        }
+      ]
+    },
+    "Meters": {
+      "description": "Distance in metres.",
+      "format": "float",
+      "type": "number"
+    },
+    "Minutely": {
+      "description": "One 15-minute precipitation step (nowcast).",
+      "properties": {
+        "precipitation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Mm"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "time": {
+          "$ref": "#/$defs/UnixTime"
+        }
+      },
+      "required": [
+        "time"
+      ],
+      "type": "object"
+    },
+    "Mm": {
+      "description": "Precipitation depth in millimetres.",
+      "format": "float",
+      "type": "number"
+    },
+    "MonthToDateVm": {
+      "description": "Precipitation since the 1st of the month.",
+      "properties": {
+        "normal": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "precipitation": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "text": {
+          "description": "\"2.10 in this month, 2.90 in normal\".",
+          "type": "string"
+        }
+      },
+      "required": [
+        "precipitation",
+        "normal",
+        "text"
+      ],
+      "type": "object"
+    },
+    "MoonVm": {
+      "description": "Moon phase and times.",
+      "properties": {
+        "icon": {
+          "$ref": "#/$defs/UiIcon"
+        },
+        "illumination": {
+          "description": "How much of the disc is lit: \"62% illuminated\".",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "moonrise": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "moonset": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "phase": {
+          "format": "float",
+          "type": "number"
+        },
+        "phase_label": {
+          "type": "string"
+        },
+        "rise": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RiseSetVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Today's moonrise with its label and instant, when the moon rises today."
+        },
+        "set": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RiseSetVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Today's moonset, likewise."
+        }
+      },
+      "required": [
+        "phase",
+        "phase_label",
+        "icon"
+      ],
+      "type": "object"
+    },
+    "Mps": {
+      "description": "Speed in metres per second.",
+      "format": "float",
+      "type": "number"
+    },
+    "NowcastTickVm": {
+      "description": "A label on the nowcast's time axis.",
+      "properties": {
+        "label": {
+          "description": "\"Now\", \"30 min\", \"2 h\".",
+          "type": "string"
+        },
+        "step": {
+          "description": "The step it marks.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "step",
+        "label"
+      ],
+      "type": "object"
+    },
+    "NowcastVm": {
+      "description": "Precipitation nowcast.",
+      "properties": {
+        "hours": {
+          "description": "Hours covered (`nowcast_hours`).",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "intensity": {
+          "description": "How hard each step falls, 0–1 on Dark Sky's scale: a third at light\n(2.5 mm an hour), two thirds at moderate (7.6), full at heavy (50).",
+          "items": {
+            "format": "float",
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "levels": {
+          "description": "The scale's lines from a third up: \"Light\", \"Moderate\", \"Heavy\".",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "series_mm": {
+          "description": "Precipitation per 15-minute step, in millimetres.",
+          "items": {
+            "format": "float",
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "step_minutes": {
+          "description": "Minutes per step: 15, or 1 for an hour of minute data (WeatherKit).",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "text": {
+          "description": "\"Rain starting in ~45 min.\"",
+          "type": "string"
+        },
+        "ticks": {
+          "description": "Time axis labels; `step` 0 is now, `series_mm.len()` the end.",
+          "items": {
+            "$ref": "#/$defs/NowcastTickVm"
+          },
+          "type": "array"
+        },
+        "wet": {
+          "description": "Whether any step has precipitation.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "text",
+        "series_mm",
+        "intensity",
+        "levels",
+        "ticks",
+        "hours",
+        "step_minutes",
+        "wet"
+      ],
+      "type": "object"
+    },
+    "OffsetChange": {
+      "description": "From `at` on, local times use `offset`.",
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/UnixTime",
+          "description": "When the new offset takes effect."
+        },
+        "offset": {
+          "$ref": "#/$defs/UtcOffset",
+          "description": "The offset from then on."
+        }
+      },
+      "required": [
+        "at",
+        "offset"
+      ],
+      "type": "object"
+    },
+    "PastDayVm": {
+      "description": "One observed day.",
+      "properties": {
+        "date_short": {
+          "description": "\"Oct 3\".",
+          "type": "string"
+        },
+        "departure": {
+          "$ref": "#/$defs/Quantity",
+          "description": "The high against normal, in display units: \"+5°\"."
+        },
+        "high": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "label": {
+          "description": "\"Yesterday\", \"Sat\".",
+          "type": "string"
+        },
+        "low": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "low_departure": {
+          "$ref": "#/$defs/Quantity",
+          "description": "The low against normal: \"+3°\"."
+        },
+        "normal_high": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "normal_low": {
+          "$ref": "#/$defs/Quantity"
+        },
+        "normal_precip": {
+          "$ref": "#/$defs/Quantity",
+          "description": "The date's normal precipitation."
+        },
+        "precipitation": {
+          "$ref": "#/$defs/Quantity",
+          "description": "Rain and melted snow; \"Trace\" when too little to measure."
+        },
+        "record_high": {
+          "description": "The date's record high and low: \"94° in 1941\".",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "record_low": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "snow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Quantity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Snowfall, when any fell."
+        },
+        "summary": {
+          "description": "The day in a sentence or two: \"9° warmer than normal. 0.24 in of rain.\"\nwith \"A record high for the date.\" when it set one. `None` without a\nreport.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "label",
+        "date_short",
+        "high",
+        "low",
+        "precipitation",
+        "departure",
+        "normal_high",
+        "normal_low",
+        "low_departure",
+        "normal_precip"
+      ],
+      "type": "object"
+    },
+    "Percent": {
+      "description": "A percentage in `0.0..=100.0`.",
+      "format": "float",
+      "type": "number"
+    },
+    "PluginMessage": {
+      "description": "Plugin → host.",
+      "oneOf": [
+        {
+          "description": "The answer to `hello`, within 5 seconds.",
+          "properties": {
+            "name": {
+              "description": "The plugin's own name.",
+              "type": "string"
+            },
+            "protocol": {
+              "description": "The protocol version it speaks.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "type": {
+              "const": "ready",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "protocol"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A request to the app.",
+          "properties": {
+            "command": {
+              "$ref": "#/$defs/CommandMsg",
+              "description": "What to do."
+            },
+            "type": {
+              "const": "command",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "command"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A line for the app's log (stdout is the protocol channel).",
+          "properties": {
+            "level": {
+              "$ref": "#/$defs/LogLevel",
+              "description": "Severity."
+            },
+            "message": {
+              "description": "The text.",
+              "type": "string"
+            },
+            "type": {
+              "const": "log",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "level",
+            "message"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "PrecipHourVm": {
+      "description": "One hour of the precipitation table.",
+      "properties": {
+        "amount": {
+          "$ref": "#/$defs/Quantity",
+          "description": "The amount in this hour."
+        },
+        "chance": {
+          "description": "Chance of precipitation, `\"40%\"`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "chance_value": {
+          "description": "The chance as a number, for drawing.",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "frozen": {
+          "description": "Frozen (snow, sleet, freezing rain).",
+          "type": "boolean"
+        },
+        "intensity": {
+          "description": "How hard it falls, 0–1 (1 at 7.6 mm an hour, heavy rain).",
+          "format": "float",
+          "type": "number"
+        },
+        "label": {
+          "description": "\"Now\", \"3 PM\".",
+          "type": "string"
+        },
+        "time": {
+          "$ref": "#/$defs/UnixTime",
+          "description": "The hour's start."
+        }
+      },
+      "required": [
+        "time",
+        "label",
+        "amount",
+        "intensity",
+        "frozen"
+      ],
+      "type": "object"
+    },
+    "PrecipVm": {
+      "description": "The precipitation table: the next `precip_hours` hours.",
+      "properties": {
+        "dry": {
+          "description": "\"No precipitation in the next 12 hours.\" when every hour is dry (no\namount and a chance under 15%), else `None`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hours": {
+          "description": "The hours, from the current one.",
+          "items": {
+            "$ref": "#/$defs/PrecipHourVm"
+          },
+          "type": "array"
+        },
+        "max_chance": {
+          "description": "The highest chance among them, `\"70%\"`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "total": {
+          "$ref": "#/$defs/Quantity",
+          "description": "The amount over all of them."
+        }
+      },
+      "required": [
+        "hours",
+        "total"
+      ],
+      "type": "object"
+    },
+    "ProviderId": {
+      "description": "A weather data provider.",
+      "oneOf": [
+        {
+          "const": "openweather",
+          "description": "OpenWeather (openweathermap.org).",
+          "type": "string"
+        },
+        {
+          "const": "open-meteo",
+          "description": "Open-Meteo (open-meteo.com).",
+          "type": "string"
+        },
+        {
+          "const": "met-norway",
+          "description": "MET Norway (api.met.no).",
+          "type": "string"
+        },
+        {
+          "const": "nws",
+          "description": "The US National Weather Service (api.weather.gov): official alerts as a\nsupplement, and the forecast as a primary provider.",
+          "type": "string"
+        },
+        {
+          "const": "acis",
+          "description": "NOAA's Regional Climate Centers (data.rcc-acis.org): station history,\nnormals and records for US places; never a forecast.",
+          "type": "string"
+        },
+        {
+          "const": "pirate-weather",
+          "description": "Pirate Weather (pirateweather.net): a keyed Dark Sky-style forecast from a\nblend of NOAA and other models, billed per month.",
+          "type": "string"
+        }
+      ]
+    },
+    "Quantity": {
+      "description": "A formatted value: the number in display units (for charts and gauges), the text\nto show, and the unit symbol.",
+      "properties": {
+        "text": {
+          "description": "The display text, e.g. \"21°\", \"13 km/h\" or the missing placeholder.",
+          "type": "string"
+        },
+        "unit": {
+          "description": "The unit symbol, e.g. \"°C\" or \"km/h\".",
+          "type": "string"
+        },
+        "value": {
+          "description": "The value in display units, if known.",
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "text",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "RadarVm": {
+      "description": "A radar loop's text: one label per frame, oldest first.",
+      "properties": {
+        "attribution": {
+          "description": "The required credit (radar source and base map).",
+          "type": "string"
+        },
+        "frames": {
+          "description": "Frame times, \"14:35\".",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "frames",
+        "attribution"
+      ],
+      "type": "object"
+    },
+    "ResolvedLocation": {
+      "description": "A location resolved to coordinates and a UTC offset.",
+      "properties": {
+        "elevation_m": {
+          "description": "Elevation in metres.",
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "latitude": {
+          "description": "Latitude in degrees.",
+          "format": "double",
+          "type": "number"
+        },
+        "longitude": {
+          "description": "Longitude in degrees.",
+          "format": "double",
+          "type": "number"
+        },
+        "name": {
+          "description": "Display name, e.g. \"New York\".",
+          "type": "string"
+        },
+        "region": {
+          "description": "Region line, e.g. \"New York, US\".",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "station": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Station"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The weather station whose observation gave the current conditions\n(the NWS); `None` when they are a forecast."
+        },
+        "tz_abbrev": {
+          "description": "Time-zone abbreviation, e.g. \"EDT\".",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tz_name": {
+          "description": "IANA time-zone name, when known.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "utc_offset": {
+          "$ref": "#/$defs/UtcOffset",
+          "description": "The location's UTC offset at fetch time."
+        }
+      },
+      "required": [
+        "name",
+        "latitude",
+        "longitude",
+        "utc_offset"
+      ],
+      "type": "object"
+    },
+    "RiseSetVm": {
+      "description": "A sunrise, sunset, solar noon, moonrise or moonset: the words, the clock time and the\ninstant, for listing in time order and drawing on a day's bar or arc.",
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/UnixTime",
+          "description": "When."
+        },
+        "label": {
+          "description": "\"Sunrise\", \"Moonset\".",
+          "type": "string"
+        },
+        "time": {
+          "description": "\"6:49 AM\".",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "time",
+        "at"
+      ],
+      "type": "object"
+    },
+    "SkyTheme": {
+      "description": "The sky mood used for gradients (GUI), accents (TUI) and backgrounds (panels).",
+      "enum": [
+        "clear_day",
+        "clear_night",
+        "cloudy_day",
+        "cloudy_night",
+        "rain",
+        "snow",
+        "storm",
+        "fog",
+        "twilight"
+      ],
+      "type": "string"
+    },
+    "Station": {
+      "description": "A weather station that reported the current conditions.",
+      "properties": {
+        "distance_m": {
+          "description": "How far it is from the place, in metres.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "id": {
+          "description": "Its identifier, e.g. \"KNYC\".",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name, e.g. \"Central Park\".",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "type": "object"
+    },
+    "StatusVm": {
+      "description": "The fetch status line.",
+      "properties": {
+        "error": {
+          "description": "The last error.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "observed": {
+          "description": "\"Observed at Central Park, 8:55 AM\" when a station measured\nthe current conditions.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "provider": {
+          "description": "Primary provider name.",
+          "type": "string"
+        },
+        "refreshing": {
+          "description": "A fetch is running.",
+          "type": "boolean"
+        },
+        "stale": {
+          "description": "The data is old.",
+          "type": "boolean"
+        },
+        "updated": {
+          "description": "\"Updated 3 min ago\", \"Fetching weather…\" or \"No weather data yet\".",
+          "type": "string"
+        }
+      },
+      "required": [
+        "updated",
+        "provider",
+        "stale",
+        "refreshing"
+      ],
+      "type": "object"
+    },
+    "SunEventVm": {
+      "description": "One moment of the day's light.",
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/UnixTime",
+          "description": "When, for ordering and drawing."
+        },
+        "kind": {
+          "$ref": "#/$defs/TwilightKind",
+          "description": "Which crossing: how far the sun is below (or above) the horizon."
+        },
+        "label": {
+          "description": "\"Civil dawn\".",
+          "type": "string"
+        },
+        "morning": {
+          "description": "Before solar noon.",
+          "type": "boolean"
+        },
+        "time": {
+          "description": "\"6:49 AM\".",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "time",
+        "at",
+        "morning",
+        "kind"
+      ],
+      "type": "object"
+    },
+    "SunVm": {
+      "description": "Sun times.",
+      "properties": {
+        "daylight": {
+          "description": "\"11h 35m\".",
+          "type": "string"
+        },
+        "is_day": {
+          "description": "Whether the sun is up.",
+          "type": "boolean"
+        },
+        "noon": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RiseSetVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Solar noon with its label and instant (\"Solar noon\", \"1:15 PM\")."
+        },
+        "progress": {
+          "description": "Fraction of daylight elapsed, during the day.",
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "rise": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RiseSetVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Today's sunrise with its label and instant, when the place has one."
+        },
+        "set": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RiseSetVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Today's sunset, likewise."
+        },
+        "solar_noon": {
+          "description": "Solar noon, when the sun is highest.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sunrise": {
+          "description": "Sunrise time or the missing placeholder.",
+          "type": "string"
+        },
+        "sunset": {
+          "description": "Sunset time or the missing placeholder.",
+          "type": "string"
+        },
+        "twilight": {
+          "description": "The day's light from dawn to dusk, in time order: astronomical,\nnautical and civil dawn, the morning golden hour's end, the evening\ngolden hour's start, civil, nautical and astronomical dusk. Only those\nthe place has today (none of the deep ones in a northern summer night).",
+          "items": {
+            "$ref": "#/$defs/SunEventVm"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "sunrise",
+        "sunset",
+        "daylight",
+        "is_day",
+        "twilight"
+      ],
+      "type": "object"
+    },
+    "TabVm": {
+      "description": "A location tab.",
+      "properties": {
+        "icon": {
+          "$ref": "#/$defs/IconId"
+        },
+        "name": {
+          "type": "string"
+        },
+        "temp": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "temp",
+        "icon"
+      ],
+      "type": "object"
+    },
+    "TempLevel": {
+      "description": "Temperature band, computed from Celsius so displays never color by display units.",
+      "enum": [
+        "freezing",
+        "cold",
+        "cool",
+        "mild",
+        "warm",
+        "hot"
+      ],
+      "type": "string"
+    },
+    "TimelineGroup": {
+      "description": "The kind of weather a timeline stretch shows (its color).",
+      "enum": [
+        "clear",
+        "partly_cloudy",
+        "cloudy",
+        "fog",
+        "drizzle",
+        "rain",
+        "heavy_rain",
+        "snow",
+        "storm"
+      ],
+      "type": "string"
+    },
+    "TimelineSpanVm": {
+      "description": "A stretch of hours with one kind of weather.",
+      "properties": {
+        "group": {
+          "$ref": "#/$defs/TimelineGroup",
+          "description": "Its kind of weather."
+        },
+        "label": {
+          "description": "Its most severe condition, `\"Light rain\"`.",
+          "type": "string"
+        },
+        "len": {
+          "description": "Hours it lasts.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "start": {
+          "description": "The first hour, an index into `HourlyVm.hours`.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start",
+        "len",
+        "group",
+        "label"
+      ],
+      "type": "object"
+    },
+    "Trend": {
+      "description": "Direction of the pressure change over the next three hours.",
+      "enum": [
+        "rising",
+        "falling",
+        "steady"
+      ],
+      "type": "string"
+    },
+    "TwilightKind": {
+      "description": "The sun's altitude at a [`SunEventVm`].",
+      "oneOf": [
+        {
+          "const": "astronomical",
+          "description": "18° below: full night beyond it.",
+          "type": "string"
+        },
+        {
+          "const": "nautical",
+          "description": "12° below.",
+          "type": "string"
+        },
+        {
+          "const": "civil",
+          "description": "6° below.",
+          "type": "string"
+        },
+        {
+          "const": "golden",
+          "description": "6° above: the golden hour's edge.",
+          "type": "string"
+        }
+      ]
+    },
+    "UiIcon": {
+      "description": "Icons for interface elements: sun and moon events, measurements and moon phases.",
+      "enum": [
+        "sunrise",
+        "sunset",
+        "moonrise",
+        "moonset",
+        "thermometer",
+        "humidity",
+        "barometer",
+        "wind",
+        "raindrop",
+        "uv_index",
+        "visibility",
+        "cloud",
+        "moon_new",
+        "moon_waxing_crescent",
+        "moon_first_quarter",
+        "moon_waxing_gibbous",
+        "moon_full",
+        "moon_waning_gibbous",
+        "moon_last_quarter",
+        "moon_waning_crescent"
+      ],
+      "type": "string"
+    },
+    "UnixTime": {
+      "description": "Seconds since 1970-01-01T00:00:00Z.",
+      "format": "int64",
+      "type": "integer"
+    },
+    "UtcOffset": {
+      "description": "A fixed offset from UTC, in seconds east of UTC.",
+      "format": "int32",
+      "type": "integer"
+    },
+    "ViewModel": {
+      "description": "The display contract: everything a display shows, already formatted.",
+      "properties": {
+        "active": {
+          "description": "The shown location.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "air_quality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AirQualityVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Air quality."
+        },
+        "alerts": {
+          "description": "Official warnings.",
+          "items": {
+            "$ref": "#/$defs/AlertVm"
+          },
+          "type": "array"
+        },
+        "attribution": {
+          "description": "The required data attribution; every display shows it.",
+          "type": "string"
+        },
+        "current": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CurrentVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Current conditions."
+        },
+        "daily": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DailyVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Daily forecast."
+        },
+        "details": {
+          "description": "Detail cards in the configured order.",
+          "items": {
+            "$ref": "#/$defs/DetailVm"
+          },
+          "type": "array"
+        },
+        "feels_like_leads": {
+          "description": "Whether the temperatures that lead (the big number, the hours' and the\ndays' `temperature`, `high` and `low`) are feels-like ones, so displays\ncan say so; the air temperature is then in `actual`, `actual_high` and\n`actual_low`.",
+          "type": "boolean"
+        },
+        "history": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HistoryVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The last days as observed, against normal."
+        },
+        "hourly": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HourlyVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Hourly forecast."
+        },
+        "is_day": {
+          "description": "Whether it is day at the location.",
+          "type": "boolean"
+        },
+        "location": {
+          "$ref": "#/$defs/LocationHeaderVm",
+          "description": "The shown location's header."
+        },
+        "moon": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MoonVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Moon phase and times."
+        },
+        "nowcast": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NowcastVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Two-hour precipitation nowcast."
+        },
+        "precipitation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrecipVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The next hours' rain and snow, hour by hour."
+        },
+        "radar": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RadarVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Radar loop labels, when imagery exists (the pixels travel beside the view)."
+        },
+        "status": {
+          "$ref": "#/$defs/StatusVm",
+          "description": "Fetch status line."
+        },
+        "summary": {
+          "description": "A one-sentence outlook.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sun": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SunVm"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Sunrise, sunset and daylight."
+        },
+        "tabs": {
+          "description": "One tab per location.",
+          "items": {
+            "$ref": "#/$defs/TabVm"
+          },
+          "type": "array"
+        },
+        "theme": {
+          "$ref": "#/$defs/SkyTheme",
+          "description": "Sky mood for backgrounds and accents."
+        },
+        "widgets": {
+          "description": "Enabled widgets with data, in the configured order.",
+          "items": {
+            "$ref": "#/$defs/WidgetKind"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "tabs",
+        "active",
+        "location",
+        "status",
+        "attribution",
+        "theme",
+        "is_day",
+        "feels_like_leads",
+        "widgets",
+        "details",
+        "alerts"
+      ],
+      "type": "object"
+    },
+    "WeatherSnapshot": {
+      "description": "Everything known about one location's weather from one fetch.",
+      "properties": {
+        "air_quality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AirQuality"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Air quality now."
+        },
+        "alerts": {
+          "description": "Official warnings.",
+          "items": {
+            "$ref": "#/$defs/Alert"
+          },
+          "type": "array"
+        },
+        "current": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Current"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Conditions now."
+        },
+        "daily": {
+          "description": "Ascending local days.",
+          "items": {
+            "$ref": "#/$defs/Daily"
+          },
+          "type": "array"
+        },
+        "fetched_at": {
+          "$ref": "#/$defs/UnixTime",
+          "description": "When the data was received."
+        },
+        "hourly": {
+          "description": "Ascending forecast steps.",
+          "items": {
+            "$ref": "#/$defs/Hourly"
+          },
+          "type": "array"
+        },
+        "location": {
+          "$ref": "#/$defs/ResolvedLocation",
+          "description": "Where the data applies."
+        },
+        "minutely_1": {
+          "description": "Ascending one-minute precipitation steps for the next hour, from a minute\nnowcast the app adds (Apple's WeatherKit on the iPhone); usually\nempty.",
+          "items": {
+            "$ref": "#/$defs/Minutely"
+          },
+          "type": "array"
+        },
+        "minutely_15": {
+          "description": "Ascending 15-minute precipitation steps; may be empty.",
+          "items": {
+            "$ref": "#/$defs/Minutely"
+          },
+          "type": "array"
+        },
+        "models": {
+          "description": "The weather models that supplied the forecast, in priority order (Open-Meteo\nids); empty when the provider chose its own.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "offset_changes": {
+          "default": [],
+          "description": "UTC offset changes (DST) within the forecast period, ascending; empty when\none offset (`location.utc_offset`) applies throughout.",
+          "items": {
+            "$ref": "#/$defs/OffsetChange"
+          },
+          "type": "array"
+        },
+        "provider": {
+          "$ref": "#/$defs/ProviderId",
+          "description": "The primary source."
+        },
+        "supplemented_by": {
+          "description": "Providers that filled gaps; all are credited.",
+          "items": {
+            "$ref": "#/$defs/ProviderId"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "location",
+        "provider",
+        "supplemented_by",
+        "fetched_at",
+        "hourly",
+        "daily",
+        "minutely_15",
+        "alerts"
+      ],
+      "type": "object"
+    },
+    "WidgetKind": {
+      "description": "A block of information that displays can show. Displays arrange them; the order\nhere is the user's preferred order.",
+      "enum": [
+        "current",
+        "summary",
+        "hourly",
+        "daily",
+        "details",
+        "air_quality",
+        "sun",
+        "moon",
+        "nowcast",
+        "alerts",
+        "radar",
+        "precipitation",
+        "history"
+      ],
+      "type": "string"
+    },
+    "WindVm": {
+      "description": "Wind speed and direction.",
+      "properties": {
+        "arrow": {
+          "description": "Arrow pointing downwind, or a space.",
+          "maxLength": 1,
+          "minLength": 1,
+          "type": "string"
+        },
+        "compass": {
+          "description": "16-point compass abbreviation, or empty.",
+          "type": "string"
+        },
+        "direction_deg": {
+          "description": "Direction the wind blows from, in degrees.",
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "gust": {
+          "$ref": "#/$defs/Quantity",
+          "description": "Gusts."
+        },
+        "speed": {
+          "$ref": "#/$defs/Quantity",
+          "description": "Speed."
+        }
+      },
+      "required": [
+        "speed",
+        "gust",
+        "compass",
+        "arrow"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "$ref": "#/$defs/HostMessage"
+    },
+    {
+      "$ref": "#/$defs/PluginMessage"
+    }
+  ],
+  "description": "Either direction, for the combined JSON Schema.",
+  "title": "whether plugin protocol v1"
+}

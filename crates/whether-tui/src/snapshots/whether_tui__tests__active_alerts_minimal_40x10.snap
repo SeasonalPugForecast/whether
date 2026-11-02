@@ -1,0 +1,15 @@
+---
+source: crates/whether-tui/src/tests.rs
+assertion_line: 309
+expression: "alert_snapshot(40, 10, LayoutPreset::Minimal)"
+---
+New York  Mon 11:00     Updated just now
+15° PCLD Partly cloudy
+! Flood Warning
+Partly cloudy. High 18°, low 8°. Rain
+starting in ~45 min.
+
+
+
+
+q quit ·  Weather data by Open-Meteo.com

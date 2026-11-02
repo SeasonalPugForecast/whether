@@ -1,0 +1,29 @@
+---
+source: crates/whether-tui/src/tests.rs
+assertion_line: 588
+expression: out
+---
+New York, New York, US  Mon 11:00                  Updated just now · Open-Meteo
+┌ Radar ───────────────────────────────────────────────────────────────────────┐
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                       +                                      │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│> 11:00  ######                                                               │
+│       Radar: NOAA NEXRAD via Iowa Environmental Mesonet · Map © OpenStreetMap│
+│                                                                  contributors│
+└──────────────────────────────────────────────────────────────────────────────┘
+q quit · ←→ location · 1-6 views · r refresh · ?  Weather data by Open-Meteo.com

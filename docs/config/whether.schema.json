@@ -1,0 +1,1792 @@
+{
+  "$defs": {
+    "AcisToml": {
+      "additionalProperties": false,
+      "description": "`[history.acis]`.",
+      "properties": {
+        "base_url": {
+          "description": "API base URL.",
+          "type": "string"
+        },
+        "records_station": {
+          "description": "A station id for the records (`\"LGAthr\"`, a city's threaded record)\ninstead of the station's own threaded record.",
+          "type": "string"
+        },
+        "station": {
+          "description": "A station id to use instead of the nearest suitable one (`\"LGA\"`,\n`\"USW00014732\"`; `whether history --station` lists them).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "AqiScalePref": {
+      "description": "The preferred air-quality index.",
+      "oneOf": [
+        {
+          "const": "us",
+          "description": "US EPA AQI.",
+          "type": "string"
+        },
+        {
+          "const": "european",
+          "description": "European AQI.",
+          "type": "string"
+        }
+      ]
+    },
+    "DailyIcon": {
+      "description": "What a day's icon and condition describe.",
+      "oneOf": [
+        {
+          "const": "daylight",
+          "description": "The hours between sunrise and sunset, from the hourly forecast: rain at\n1 AM does not make a sunny day rainy. Days without hourly data use the\nprovider's.",
+          "type": "string"
+        },
+        {
+          "const": "provider",
+          "description": "The provider's daily code (often the worst weather of all 24 hours).",
+          "type": "string"
+        }
+      ]
+    },
+    "DateFormat": {
+      "description": "How a calendar date is written, shown for 1 November (month names come from\nthe active strings).",
+      "oneOf": [
+        {
+          "const": "mmm d",
+          "description": "`Nov 1`.",
+          "type": "string"
+        },
+        {
+          "const": "d mmm",
+          "description": "`1 Nov`.",
+          "type": "string"
+        },
+        {
+          "const": "MMMd",
+          "description": "`NOV1`.",
+          "type": "string"
+        },
+        {
+          "const": "m/d",
+          "description": "`11/1`.",
+          "type": "string"
+        },
+        {
+          "const": "mm/dd",
+          "description": "`11/01`.",
+          "type": "string"
+        },
+        {
+          "const": "d/m",
+          "description": "`1/11`.",
+          "type": "string"
+        },
+        {
+          "const": "dd/mm",
+          "description": "`01/11`.",
+          "type": "string"
+        },
+        {
+          "const": "dd.mm.",
+          "description": "`01.11.`.",
+          "type": "string"
+        },
+        {
+          "const": "yyyy-mm-dd",
+          "description": "`2026-11-01`.",
+          "type": "string"
+        }
+      ]
+    },
+    "DetailKind": {
+      "description": "One card in the details widget.",
+      "enum": [
+        "wind",
+        "gusts",
+        "humidity",
+        "dew_point",
+        "pressure",
+        "uv",
+        "visibility",
+        "cloud_cover",
+        "precipitation",
+        "feels_like",
+        "normals",
+        "records"
+      ],
+      "type": "string"
+    },
+    "DisplayTables": {
+      "additionalProperties": {
+        "type": "object"
+      },
+      "description": "`[display]`: `default` plus one table per display plugin (added by [`compose`]).",
+      "properties": {
+        "default": {
+          "anyOf": [
+            {
+              "enum": [
+                "tui",
+                "gui",
+                "line",
+                "json",
+                "exec"
+              ],
+              "type": "string"
+            },
+            {
+              "pattern": "^exec:[A-Za-z0-9_-]+$",
+              "type": "string"
+            }
+          ],
+          "description": "The display used when none is named on the command line: a built-in, or an external plugin as `exec:<name>`."
+        },
+        "exec": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "description": "`[display.exec.<name>]`.",
+            "properties": {
+              "command": {
+                "description": "The program and its arguments (no shell).",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "config": {
+                "additionalProperties": true,
+                "default": {},
+                "description": "Passed verbatim in `hello` (never secrets).",
+                "type": "object"
+              },
+              "env": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "default": {},
+                "description": "Extra environment variables.",
+                "type": "object"
+              },
+              "restart": {
+                "$ref": "#/$defs/exec.Restart",
+                "description": "When to restart the plugin."
+              },
+              "send_snapshot": {
+                "default": false,
+                "description": "Also send the raw snapshots, not only the formatted view.",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "command"
+            ],
+            "title": "ExecConfig",
+            "type": "object"
+          },
+          "description": "External display plugins by name: `exec:<name>`.",
+          "properties": {
+            "presentation": {
+              "$ref": "#/$defs/PresentationToml"
+            }
+          },
+          "type": "object"
+        },
+        "gui": {
+          "additionalProperties": false,
+          "description": "`[display.gui]`.",
+          "properties": {
+            "accent": {
+              "description": "Accent color (`#rrggbb`) for highlights, checkboxes and the sun; unset:\nsun yellow.",
+              "type": "string"
+            },
+            "cycle_locations": {
+              "default": "0s",
+              "description": "Rotate through locations (`\"0s\"` = off).",
+              "pattern": "^(\\d+h)?(\\d+m)?(\\d+s)?$",
+              "type": "string"
+            },
+            "dynamic_background": {
+              "default": true,
+              "description": "Sky gradient follows conditions and time of day.",
+              "type": "boolean"
+            },
+            "font_scale": {
+              "$ref": "#/$defs/gui.FontScale",
+              "default": "auto",
+              "description": "Font scale."
+            },
+            "kiosk": {
+              "default": false,
+              "description": "Full screen without decorations.",
+              "type": "boolean"
+            },
+            "layout": {
+              "$ref": "#/$defs/gui.LayoutToml",
+              "default": {},
+              "description": "Per-tier columns (default: each card in its usual column)."
+            },
+            "mode": {
+              "$ref": "#/$defs/gui.GuiMode",
+              "default": "desktop",
+              "description": "Window kind."
+            },
+            "page_interval": {
+              "default": "0s",
+              "description": "Compact mode: turn the pages on a timer (`\"0s\"` = off), for screens\nwithout touch.",
+              "pattern": "^(\\d+h)?(\\d+m)?(\\d+s)?$",
+              "type": "string"
+            },
+            "palette": {
+              "additionalProperties": {
+                "$ref": "#/$defs/gui.SkyToml"
+              },
+              "default": {},
+              "description": "Sky palette overrides by theme name (`clear_day`, `rain`, …).",
+              "type": "object"
+            },
+            "presentation": {
+              "$ref": "#/$defs/PresentationToml"
+            },
+            "sections": {
+              "default": [
+                "current",
+                "nowcast",
+                "hourly",
+                "precipitation",
+                "radar",
+                "details",
+                "daily",
+                "history",
+                "sun",
+                "air_quality"
+              ],
+              "description": "Desktop cards to show, in order (within each column of wider windows).",
+              "items": {
+                "$ref": "#/$defs/gui.Section"
+              },
+              "type": "array"
+            },
+            "size": {
+              "default": [
+                1000,
+                720
+              ],
+              "description": "Initial window size (desktop mode).",
+              "items": {
+                "format": "uint32",
+                "minimum": 0,
+                "type": "integer"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            },
+            "sky_style": {
+              "$ref": "#/$defs/gui.SkyStyle",
+              "default": "default",
+              "description": "Sky gradients as designed, muted or vivid."
+            },
+            "theme": {
+              "$ref": "#/$defs/gui.FixedTheme",
+              "default": "auto",
+              "description": "Palette when the background is not dynamic."
+            }
+          },
+          "title": "GuiConfig",
+          "type": "object"
+        },
+        "json": {
+          "additionalProperties": false,
+          "description": "`[display.json]` (the CLI sets `snapshot` and `compact` from its flags).",
+          "properties": {
+            "compact": {
+              "default": false,
+              "description": "One line instead of pretty JSON.",
+              "type": "boolean"
+            },
+            "location": {
+              "description": "The location to show by name (default: the first).",
+              "type": "string"
+            },
+            "presentation": {
+              "$ref": "#/$defs/PresentationToml"
+            },
+            "snapshot": {
+              "default": false,
+              "description": "Print the raw `WeatherSnapshot` instead of the `ViewModel`.",
+              "type": "boolean"
+            }
+          },
+          "title": "JsonConfig",
+          "type": "object"
+        },
+        "line": {
+          "additionalProperties": false,
+          "description": "`[display.line]`.",
+          "properties": {
+            "format": {
+              "default": "{icon} {temp} {condition}",
+              "description": "The text template.",
+              "type": "string"
+            },
+            "icons": {
+              "$ref": "#/$defs/line.IconStyle",
+              "default": "emoji",
+              "description": "Glyphs for `{icon}`."
+            },
+            "location": {
+              "description": "The location to show by name (default: the first).",
+              "type": "string"
+            },
+            "output": {
+              "$ref": "#/$defs/line.LineOutput",
+              "default": "plain",
+              "description": "Plain text or waybar JSON."
+            },
+            "presentation": {
+              "$ref": "#/$defs/PresentationToml"
+            },
+            "tooltip": {
+              "default": "{location}: {summary}",
+              "description": "The tooltip template (waybar).",
+              "type": "string"
+            }
+          },
+          "title": "LineConfig",
+          "type": "object"
+        },
+        "sidecars": {
+          "description": "External plugins (`exec:<name>`, each with a [display.exec.<name>] table) that run alongside the main display.",
+          "items": {
+            "pattern": "^exec:[A-Za-z0-9_-]+$",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "tui": {
+          "additionalProperties": false,
+          "description": "`[display.tui]`.",
+          "properties": {
+            "art": {
+              "default": true,
+              "description": "Large ASCII-art icon in the current panel.",
+              "type": "boolean"
+            },
+            "background": {
+              "$ref": "#/$defs/tui.Background",
+              "default": "dark",
+              "description": "Terminal background."
+            },
+            "color": {
+              "$ref": "#/$defs/tui.ColorMode",
+              "default": "auto",
+              "description": "Color use."
+            },
+            "colors": {
+              "$ref": "#/$defs/tui.TuiColors",
+              "default": {},
+              "description": "Color overrides."
+            },
+            "graph": {
+              "$ref": "#/$defs/tui.GraphStyle",
+              "default": "braille",
+              "description": "Chart marker, or no chart."
+            },
+            "hourly_columns": {
+              "default": [
+                "time",
+                "icon",
+                "temp",
+                "precip_prob",
+                "wind"
+              ],
+              "description": "Hourly table columns.",
+              "items": {
+                "$ref": "#/$defs/tui.HourlyColumn"
+              },
+              "type": "array"
+            },
+            "icons": {
+              "$ref": "#/$defs/tui.IconStyle",
+              "default": "nerd-font",
+              "description": "Icon glyphs."
+            },
+            "layout": {
+              "$ref": "#/$defs/tui.LayoutPreset",
+              "default": "auto",
+              "description": "Arrangement."
+            },
+            "mouse": {
+              "default": false,
+              "description": "Mouse support (click a tab to select it).",
+              "type": "boolean"
+            },
+            "presentation": {
+              "$ref": "#/$defs/PresentationToml"
+            },
+            "redraw": {
+              "default": "30s",
+              "description": "Periodic redraw for relative times.",
+              "pattern": "^(\\d+h)?(\\d+m)?(\\d+s)?$",
+              "type": "string"
+            },
+            "rows": {
+              "default": [],
+              "description": "Custom layout rows (`layout = \"custom\"`).",
+              "items": {
+                "$ref": "#/$defs/tui.RowSpec"
+              },
+              "type": "array"
+            }
+          },
+          "title": "TuiConfig",
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "DistanceUnit": {
+      "description": "Distance display unit (visibility).",
+      "oneOf": [
+        {
+          "const": "km",
+          "description": "Kilometres.",
+          "type": "string"
+        },
+        {
+          "const": "mi",
+          "description": "Miles.",
+          "type": "string"
+        }
+      ]
+    },
+    "General": {
+      "additionalProperties": false,
+      "description": "`[general]`.",
+      "properties": {
+        "coordinate_precision": {
+          "default": 3,
+          "description": "Coordinate decimals sent to APIs (at most 4).",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "date_format": {
+          "$ref": "#/$defs/DateFormat",
+          "default": "mmm d",
+          "description": "How dates are written."
+        },
+        "language": {
+          "default": "en",
+          "description": "Language of geocoding results.",
+          "type": "string"
+        },
+        "refresh": {
+          "default": "15m",
+          "description": "Fetch interval (minimum 5 minutes).",
+          "pattern": "^(\\d+h)?(\\d+m)?(\\d+s)?$",
+          "type": "string"
+        },
+        "time_format": {
+          "$ref": "#/$defs/TimeFormat",
+          "default": "24h",
+          "description": "Clock style."
+        },
+        "units": {
+          "$ref": "#/$defs/UnitSystem",
+          "default": "auto",
+          "description": "Unit system; `auto` follows the locale."
+        }
+      },
+      "type": "object"
+    },
+    "HistoryConfig": {
+      "additionalProperties": false,
+      "description": "`[history]`: where past days, normals and records come from.",
+      "properties": {
+        "acis": {
+          "$ref": "#/$defs/AcisToml",
+          "default": {},
+          "description": "`[history.acis]`: NOAA's Regional Climate Centers (US stations)."
+        },
+        "order": {
+          "default": [
+            "acis",
+            "open-meteo"
+          ],
+          "description": "Sources in fallback order: \"acis\" (US stations) and \"open-meteo\"\n(anywhere; ERA5 normals, no records).",
+          "items": {
+            "$ref": "#/$defs/ProviderId"
+          },
+          "type": "array"
+        },
+        "supplement": {
+          "default": [
+            "open-meteo"
+          ],
+          "description": "Sources that fill what the first lacks (a day not yet reported).",
+          "items": {
+            "$ref": "#/$defs/ProviderId"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "HourlyMetric": {
+      "description": "A series shown in the hourly widget.",
+      "enum": [
+        "temperature",
+        "feels_like",
+        "precip_probability",
+        "precipitation",
+        "wind",
+        "humidity",
+        "uv"
+      ],
+      "type": "string"
+    },
+    "LocationConfig": {
+      "additionalProperties": false,
+      "description": "One `[[location]]`: coordinates, a postal code, or a free-text query.",
+      "properties": {
+        "country": {
+          "description": "ISO 3166-1 alpha-2 country code.",
+          "type": "string"
+        },
+        "elevation": {
+          "description": "Elevation in meters.",
+          "format": "float",
+          "type": "number"
+        },
+        "latitude": {
+          "description": "Latitude in degrees (with `longitude`).",
+          "format": "double",
+          "type": "number"
+        },
+        "longitude": {
+          "description": "Longitude in degrees (with `latitude`).",
+          "format": "double",
+          "type": "number"
+        },
+        "name": {
+          "description": "Display name (required, unique).",
+          "type": "string"
+        },
+        "presentation": {
+          "$ref": "#/$defs/PresentationToml",
+          "description": "`[presentation]` keys that differ here, e.g. alerts only at home.\nThey apply over `[presentation]` and a display's own overrides."
+        },
+        "provider": {
+          "$ref": "#/$defs/ProviderId",
+          "description": "Provider override for this location."
+        },
+        "query": {
+          "description": "Free-text place name resolved by geocoding.",
+          "type": "string"
+        },
+        "timezone": {
+          "description": "IANA zone, for providers that return none.",
+          "type": "string"
+        },
+        "units": {
+          "$ref": "#/$defs/UnitSystem",
+          "description": "The unit system here (`\"metric\"` or `\"imperial\"`), instead of\n`[general] units` and `[units]`."
+        },
+        "utc_offset": {
+          "description": "Fixed offset such as `\"-04:00\"`, for providers that return none.",
+          "type": "string"
+        },
+        "zip": {
+          "description": "Postal code (with `country`).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "MetNorwayToml": {
+      "additionalProperties": false,
+      "description": "`[providers.met-norway]`.",
+      "properties": {
+        "base_url": {
+          "description": "API base URL.",
+          "type": "string"
+        },
+        "contact": {
+          "description": "Contact address sent in the User-Agent (required by MET Norway's terms).",
+          "type": "string"
+        },
+        "product": {
+          "$ref": "#/$defs/MetProduct",
+          "description": "Forecast product."
+        }
+      },
+      "type": "object"
+    },
+    "MetProduct": {
+      "description": "MET Norway's forecast product.",
+      "oneOf": [
+        {
+          "const": "complete",
+          "description": "All variables.",
+          "type": "string"
+        },
+        {
+          "const": "compact",
+          "description": "Fewer variables, smaller responses.",
+          "type": "string"
+        }
+      ]
+    },
+    "ModelList": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "type": "array"
+        }
+      ],
+      "description": "Weather models in priority order: one id, or a list of up to 4."
+    },
+    "NwsCurrent": {
+      "description": "`[providers.nws] current`.",
+      "oneOf": [
+        {
+          "const": "observed",
+          "description": "The nearest station's latest observation, when fresh (else the forecast).",
+          "type": "string"
+        },
+        {
+          "const": "forecast",
+          "description": "The forecast for the current hour.",
+          "type": "string"
+        }
+      ]
+    },
+    "NwsToml": {
+      "additionalProperties": false,
+      "description": "`[providers.nws]`: the US National Weather Service, forecasting in `order`\nand giving alerts as a supplement.",
+      "properties": {
+        "base_url": {
+          "description": "API base URL.",
+          "type": "string"
+        },
+        "current": {
+          "$ref": "#/$defs/NwsCurrent",
+          "description": "Where the current conditions come from when the NWS forecasts."
+        }
+      },
+      "type": "object"
+    },
+    "OpenMeteoToml": {
+      "additionalProperties": false,
+      "description": "`[providers.open-meteo]`.",
+      "properties": {
+        "air_quality_url": {
+          "description": "Air-quality API base URL.",
+          "type": "string"
+        },
+        "api_key": {
+          "$ref": "#/$defs/Secret",
+          "description": "Key for commercial plans."
+        },
+        "base_url": {
+          "description": "Forecast API base URL.",
+          "type": "string"
+        },
+        "geocoding_url": {
+          "description": "Geocoding API base URL.",
+          "type": "string"
+        },
+        "models": {
+          "$ref": "#/$defs/ModelList",
+          "description": "Weather models in priority order: one id or a list."
+        }
+      },
+      "type": "object"
+    },
+    "OpenWeatherToml": {
+      "additionalProperties": false,
+      "description": "`[providers.openweather]`.",
+      "properties": {
+        "api": {
+          "$ref": "#/$defs/OwmApi",
+          "description": "API flavor."
+        },
+        "api_key": {
+          "$ref": "#/$defs/Secret",
+          "description": "API key."
+        },
+        "base_url": {
+          "description": "API base URL.",
+          "type": "string"
+        },
+        "daily_call_limit": {
+          "description": "One Call calls this device may make per UTC day (1–1000).",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "OwmApi": {
+      "description": "Which OpenWeather API a key is used with.",
+      "oneOf": [
+        {
+          "const": "free",
+          "description": "The free 2.5 endpoints.",
+          "type": "string"
+        },
+        {
+          "const": "onecall-3",
+          "description": "One Call 3.0 (closed to new subscriptions; rejected by validation).",
+          "type": "string"
+        },
+        {
+          "const": "onecall-4",
+          "description": "One Call 4.0 (\"One Call by Call\" subscription), metered by `daily_call_limit`.",
+          "type": "string"
+        }
+      ]
+    },
+    "PirateWeatherToml": {
+      "additionalProperties": false,
+      "description": "`[providers.pirate-weather]`. Without the section, listing\n`\"pirate-weather\"` in `order` uses the defaults and the key from\n`PIRATE_WEATHER_API_KEY`.",
+      "properties": {
+        "ai_models": {
+          "description": "Add the AI models (AIGFS, AIGEFS, ECMWF AIFS) to the blend.",
+          "type": "boolean"
+        },
+        "api_key": {
+          "$ref": "#/$defs/Secret",
+          "description": "API key; default `{ env = \"PIRATE_WEATHER_API_KEY\" }`."
+        },
+        "base_url": {
+          "description": "API base URL.",
+          "type": "string"
+        },
+        "exclude_models": {
+          "description": "Models to leave out of the blend (`\"gfs\"`, `\"hrrr\"`, …); the next best\nserves instead.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "monthly_call_limit": {
+          "description": "Calls this device may make per UTC month (default 9000; the free key\nallows 10,000). Calls beyond it are never sent.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "PrecipUnit": {
+      "description": "Precipitation display unit.",
+      "oneOf": [
+        {
+          "const": "mm",
+          "description": "Millimetres.",
+          "type": "string"
+        },
+        {
+          "const": "in",
+          "description": "Inches.",
+          "type": "string"
+        }
+      ]
+    },
+    "PresentationToml": {
+      "additionalProperties": false,
+      "description": "`[presentation]` and `[display.<name>.presentation]`: each key overrides the\nbuilt-in default. Units and the clock style come from `[general]` and `[units]`.",
+      "properties": {
+        "aqi_scale": {
+          "$ref": "#/$defs/AqiScalePref",
+          "description": "Preferred air-quality index."
+        },
+        "daily_days": {
+          "description": "Days in the daily widget (1–16).",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "daily_hours": {
+          "description": "Give each day its own hours, for displays that expand a day.",
+          "type": "boolean"
+        },
+        "daily_icon": {
+          "$ref": "#/$defs/DailyIcon",
+          "description": "What a day's icon describes: `daylight` (sunrise to sunset, from the\nhourly forecast) or `provider` (the provider's daily code)."
+        },
+        "details": {
+          "description": "Detail cards in order.",
+          "items": {
+            "$ref": "#/$defs/DetailKind"
+          },
+          "type": "array"
+        },
+        "history_days": {
+          "description": "Days in the history widget (0–31).",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hourly_hours": {
+          "description": "Hours in the hourly widget (1–48).",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hourly_metrics": {
+          "description": "Series in the hourly widget.",
+          "items": {
+            "$ref": "#/$defs/HourlyMetric"
+          },
+          "type": "array"
+        },
+        "missing": {
+          "description": "Placeholder for unavailable values.",
+          "type": "string"
+        },
+        "nowcast_hours": {
+          "description": "Hours the nowcast covers in 15-minute steps (1–8).",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "precip_hours": {
+          "description": "Hours in the precipitation table (1–48).",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "precip_threshold": {
+          "description": "Probability (%) treated as \"likely\".",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "show_unit_letter": {
+          "description": "Show \"21 °C\" instead of \"21°\".",
+          "type": "boolean"
+        },
+        "temperature_basis": {
+          "$ref": "#/$defs/TemperatureBasis",
+          "description": "Which temperature leads: `actual` or `feels_like` (the highs and lows\ntoo, where the data has them)."
+        },
+        "temperature_decimals": {
+          "description": "Decimals for temperatures.",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "twilight_minutes": {
+          "description": "Minutes around sunrise and sunset that use the twilight theme.",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "widgets": {
+          "description": "Enabled widgets in order.",
+          "items": {
+            "$ref": "#/$defs/WidgetKind"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "PressureUnit": {
+      "description": "Pressure display unit.",
+      "oneOf": [
+        {
+          "const": "hPa",
+          "description": "Hectopascals.",
+          "type": "string"
+        },
+        {
+          "const": "inHg",
+          "description": "Inches of mercury.",
+          "type": "string"
+        },
+        {
+          "const": "mmHg",
+          "description": "Millimetres of mercury.",
+          "type": "string"
+        },
+        {
+          "const": "kPa",
+          "description": "Kilopascals.",
+          "type": "string"
+        }
+      ]
+    },
+    "ProviderId": {
+      "description": "A weather data provider.",
+      "oneOf": [
+        {
+          "const": "openweather",
+          "description": "OpenWeather (openweathermap.org).",
+          "type": "string"
+        },
+        {
+          "const": "open-meteo",
+          "description": "Open-Meteo (open-meteo.com).",
+          "type": "string"
+        },
+        {
+          "const": "met-norway",
+          "description": "MET Norway (api.met.no).",
+          "type": "string"
+        },
+        {
+          "const": "nws",
+          "description": "The US National Weather Service (api.weather.gov): official alerts as a\nsupplement, and the forecast as a primary provider.",
+          "type": "string"
+        },
+        {
+          "const": "acis",
+          "description": "NOAA's Regional Climate Centers (data.rcc-acis.org): station history,\nnormals and records for US places; never a forecast.",
+          "type": "string"
+        },
+        {
+          "const": "pirate-weather",
+          "description": "Pirate Weather (pirateweather.net): a keyed Dark Sky-style forecast from a\nblend of NOAA and other models, billed per month.",
+          "type": "string"
+        }
+      ]
+    },
+    "ProvidersConfig": {
+      "additionalProperties": false,
+      "description": "`[providers]`.",
+      "properties": {
+        "met-norway": {
+          "$ref": "#/$defs/MetNorwayToml",
+          "description": "`[providers.met-norway]`."
+        },
+        "nws": {
+          "$ref": "#/$defs/NwsToml",
+          "default": {},
+          "description": "`[providers.nws]`."
+        },
+        "open-meteo": {
+          "$ref": "#/$defs/OpenMeteoToml",
+          "default": {},
+          "description": "`[providers.open-meteo]`."
+        },
+        "openweather": {
+          "$ref": "#/$defs/OpenWeatherToml",
+          "default": {
+            "api": "free",
+            "api_key": {
+              "env": "OPENWEATHER_API_KEY"
+            },
+            "daily_call_limit": 900
+          },
+          "description": "`[providers.openweather]`."
+        },
+        "order": {
+          "default": [
+            "openweather",
+            "open-meteo"
+          ],
+          "description": "Fallback chain; the first is the primary.",
+          "items": {
+            "$ref": "#/$defs/ProviderId"
+          },
+          "type": "array"
+        },
+        "pirate-weather": {
+          "$ref": "#/$defs/PirateWeatherToml",
+          "description": "`[providers.pirate-weather]`."
+        },
+        "supplement": {
+          "default": [
+            "open-meteo"
+          ],
+          "description": "Providers that fill what the primary lacks.",
+          "items": {
+            "$ref": "#/$defs/ProviderId"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "RadarConfig": {
+      "additionalProperties": false,
+      "description": "`[radar]`: the radar imagery shown by the `radar` widget (Linux).",
+      "properties": {
+        "zoom": {
+          "default": 8,
+          "description": "Map zoom, 6 (several states) to 10 (a county); 8 is about 360 km across.",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "RuntimeConfig": {
+      "additionalProperties": false,
+      "description": "`[runtime]`: Linux-only paths and logging.",
+      "properties": {
+        "cache_dir": {
+          "description": "Cache directory (default `$XDG_CACHE_HOME/whether`).",
+          "type": "string"
+        },
+        "log_file": {
+          "description": "Log file for interactive displays (default `$XDG_STATE_HOME/whether/whether.log`).",
+          "type": "string"
+        },
+        "log_level": {
+          "description": "`error`, `warn`, `info`, `debug` or `trace`.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Secret": {
+      "description": "An API key: a literal string, or where to read it from.",
+      "oneOf": [
+        {
+          "description": "The key itself (prefer { env = \"VAR\" }).",
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "env": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "env"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "file": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "file"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "command": {
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": [
+            "command"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "TemperatureBasis": {
+      "description": "Which temperature displays lead with.",
+      "oneOf": [
+        {
+          "const": "actual",
+          "description": "The air temperature; \"Feels like\" beside it.",
+          "type": "string"
+        },
+        {
+          "const": "feels_like",
+          "description": "The \"feels like\" (apparent) temperature, the highs and lows too, where the\ndata has it; \"Actual\" beside it.",
+          "type": "string"
+        }
+      ]
+    },
+    "TemperatureUnit": {
+      "description": "Temperature display unit.",
+      "oneOf": [
+        {
+          "const": "celsius",
+          "description": "Degrees Celsius.",
+          "type": "string"
+        },
+        {
+          "const": "fahrenheit",
+          "description": "Degrees Fahrenheit.",
+          "type": "string"
+        },
+        {
+          "const": "kelvin",
+          "description": "Kelvin.",
+          "type": "string"
+        }
+      ]
+    },
+    "TimeFormat": {
+      "description": "Clock style for times of day.",
+      "oneOf": [
+        {
+          "const": "24h",
+          "description": "`14:00`.",
+          "type": "string"
+        },
+        {
+          "const": "12h",
+          "description": "`2 PM`.",
+          "type": "string"
+        }
+      ]
+    },
+    "UnitSystem": {
+      "description": "The unit system selected in configuration.",
+      "oneOf": [
+        {
+          "const": "auto",
+          "description": "Chosen from the locale (resolved in `whether-config`).",
+          "type": "string"
+        },
+        {
+          "const": "metric",
+          "description": "°C, km/h, hPa, mm, km.",
+          "type": "string"
+        },
+        {
+          "const": "imperial",
+          "description": "°F, mph, inHg, in, mi.",
+          "type": "string"
+        },
+        {
+          "const": "custom",
+          "description": "Per-quantity units from the `[units]` table.",
+          "type": "string"
+        }
+      ]
+    },
+    "UnitsOverride": {
+      "additionalProperties": false,
+      "description": "`[units]`: overrides applied on top of `general.units`.",
+      "properties": {
+        "distance": {
+          "$ref": "#/$defs/DistanceUnit",
+          "description": "Distance unit."
+        },
+        "precipitation": {
+          "$ref": "#/$defs/PrecipUnit",
+          "description": "Precipitation unit."
+        },
+        "pressure": {
+          "$ref": "#/$defs/PressureUnit",
+          "description": "Pressure unit."
+        },
+        "temperature": {
+          "$ref": "#/$defs/TemperatureUnit",
+          "description": "Temperature unit."
+        },
+        "wind": {
+          "$ref": "#/$defs/WindUnit",
+          "description": "Wind speed unit."
+        }
+      },
+      "type": "object"
+    },
+    "WidgetKind": {
+      "description": "A block of information that displays can show. Displays arrange them; the order\nhere is the user's preferred order.",
+      "enum": [
+        "current",
+        "summary",
+        "hourly",
+        "daily",
+        "details",
+        "air_quality",
+        "sun",
+        "moon",
+        "nowcast",
+        "alerts",
+        "radar",
+        "precipitation",
+        "history"
+      ],
+      "type": "string"
+    },
+    "WindUnit": {
+      "description": "Wind speed display unit.",
+      "oneOf": [
+        {
+          "const": "m/s",
+          "description": "Metres per second.",
+          "type": "string"
+        },
+        {
+          "const": "km/h",
+          "description": "Kilometres per hour.",
+          "type": "string"
+        },
+        {
+          "const": "mph",
+          "description": "Miles per hour.",
+          "type": "string"
+        },
+        {
+          "const": "kn",
+          "description": "Knots.",
+          "type": "string"
+        },
+        {
+          "const": "bft",
+          "description": "Beaufort force number.",
+          "type": "string"
+        }
+      ]
+    },
+    "exec.Restart": {
+      "description": "When to start a plugin again after it exits.",
+      "oneOf": [
+        {
+          "const": "never",
+          "description": "Never.",
+          "type": "string"
+        },
+        {
+          "const": "on-failure",
+          "description": "After a crash or a non-zero exit.",
+          "type": "string"
+        },
+        {
+          "const": "always",
+          "description": "Whenever it exits.",
+          "type": "string"
+        }
+      ]
+    },
+    "gui.FixedTheme": {
+      "description": "The palette when the background does not follow the weather.",
+      "oneOf": [
+        {
+          "const": "auto",
+          "description": "Light by day, dark by night.",
+          "type": "string"
+        },
+        {
+          "const": "light",
+          "description": "The fog palette (light background, dark text).",
+          "type": "string"
+        },
+        {
+          "const": "dark",
+          "description": "The clear-night palette.",
+          "type": "string"
+        }
+      ]
+    },
+    "gui.FontScale": {
+      "oneOf": [
+        {
+          "const": "auto"
+        },
+        {
+          "maximum": 4.0,
+          "minimum": 0.5,
+          "type": "number"
+        }
+      ]
+    },
+    "gui.GuiMode": {
+      "description": "Which window to open.",
+      "oneOf": [
+        {
+          "const": "desktop",
+          "description": "The Mousam-inspired desktop window.",
+          "type": "string"
+        },
+        {
+          "const": "compact",
+          "description": "The small-screen UI (same as the ESP32-S3).",
+          "type": "string"
+        }
+      ]
+    },
+    "gui.LayoutToml": {
+      "additionalProperties": false,
+      "description": "`[display.gui.layout]`: the cards' columns per window width. Each\ntier is a list of columns, each a list of cards from top to bottom; cards that\n`sections` shows but a tier leaves out go at the end of its last column.",
+      "properties": {
+        "standard": {
+          "description": "Windows from 900 to 1600 px wide: up to 2 columns (forecast, details).",
+          "items": {
+            "items": {
+              "$ref": "#/$defs/gui.Section"
+            },
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "wide": {
+          "description": "1600 px and wider: up to 3 columns.",
+          "items": {
+            "items": {
+              "$ref": "#/$defs/gui.Section"
+            },
+            "type": "array"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "gui.Section": {
+      "description": "A card of the desktop window.",
+      "oneOf": [
+        {
+          "enum": [
+            "current",
+            "hourly",
+            "daily",
+            "details",
+            "sun",
+            "air_quality",
+            "radar",
+            "precipitation"
+          ],
+          "type": "string"
+        },
+        {
+          "const": "nowcast",
+          "description": "The next hours' precipitation (the nowcast widget).",
+          "type": "string"
+        },
+        {
+          "const": "history",
+          "description": "Past days, normals and records (the history widget).",
+          "type": "string"
+        }
+      ]
+    },
+    "gui.SkyStyle": {
+      "description": "How strong the sky gradients are; `palette` overrides apply on top.",
+      "oneOf": [
+        {
+          "const": "default",
+          "description": "The palettes as designed.",
+          "type": "string"
+        },
+        {
+          "const": "muted",
+          "description": "Closer to gray: calmer on a wall display.",
+          "type": "string"
+        },
+        {
+          "const": "vivid",
+          "description": "More saturated.",
+          "type": "string"
+        }
+      ]
+    },
+    "gui.SkyToml": {
+      "additionalProperties": false,
+      "description": "One sky palette override: `\"#rrggbb\"` colors.",
+      "properties": {
+        "bottom": {
+          "description": "Gradient bottom.",
+          "type": "string"
+        },
+        "text": {
+          "description": "Text color.",
+          "type": "string"
+        },
+        "top": {
+          "description": "Gradient top.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "line.IconStyle": {
+      "description": "Which glyphs `{icon}` uses.",
+      "oneOf": [
+        {
+          "const": "emoji",
+          "description": "Emoji.",
+          "type": "string"
+        },
+        {
+          "const": "nerd-font",
+          "description": "Nerd Font Weather Icons (needs a patched font).",
+          "type": "string"
+        },
+        {
+          "const": "none",
+          "description": "No icon.",
+          "type": "string"
+        }
+      ]
+    },
+    "line.LineOutput": {
+      "description": "Output format of the line display.",
+      "oneOf": [
+        {
+          "const": "plain",
+          "description": "The formatted text.",
+          "type": "string"
+        },
+        {
+          "const": "waybar",
+          "description": "One waybar JSON object per line (`text`, `tooltip`, `class`, `alt`).",
+          "type": "string"
+        }
+      ]
+    },
+    "tui.Background": {
+      "description": "The terminal's background, for contrast.",
+      "oneOf": [
+        {
+          "const": "dark",
+          "description": "Dark background.",
+          "type": "string"
+        },
+        {
+          "const": "light",
+          "description": "Light background.",
+          "type": "string"
+        }
+      ]
+    },
+    "tui.CellSpec": {
+      "additionalProperties": false,
+      "description": "One widget in a custom row.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/tui.WidgetKind",
+          "description": "The widget."
+        },
+        "width": {
+          "$ref": "#/$defs/tui.Size",
+          "description": "Its width (default: an equal share)."
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "type": "object"
+    },
+    "tui.ColorMode": {
+      "description": "Whether to use color.",
+      "oneOf": [
+        {
+          "const": "auto",
+          "description": "Color unless `NO_COLOR` is set or `TERM=dumb`.",
+          "type": "string"
+        },
+        {
+          "const": "always",
+          "description": "Always.",
+          "type": "string"
+        },
+        {
+          "const": "never",
+          "description": "Never.",
+          "type": "string"
+        }
+      ]
+    },
+    "tui.GraphStyle": {
+      "description": "How the hourly chart draws points.",
+      "oneOf": [
+        {
+          "const": "braille",
+          "description": "Braille dots (2×4 per cell).",
+          "type": "string"
+        },
+        {
+          "const": "block",
+          "description": "Full blocks.",
+          "type": "string"
+        },
+        {
+          "const": "dot",
+          "description": "One dot per cell.",
+          "type": "string"
+        },
+        {
+          "const": "none",
+          "description": "No chart.",
+          "type": "string"
+        }
+      ]
+    },
+    "tui.HourlyColumn": {
+      "description": "Columns of the hourly table.",
+      "enum": [
+        "time",
+        "icon",
+        "temp",
+        "feels",
+        "precip_prob",
+        "precip",
+        "wind",
+        "humidity",
+        "uv"
+      ],
+      "type": "string"
+    },
+    "tui.IconStyle": {
+      "description": "Glyphs for condition icons.",
+      "oneOf": [
+        {
+          "const": "nerd-font",
+          "description": "Nerd Font Weather Icons (needs a patched font).",
+          "type": "string"
+        },
+        {
+          "const": "emoji",
+          "description": "Emoji.",
+          "type": "string"
+        },
+        {
+          "const": "ascii",
+          "description": "Short words.",
+          "type": "string"
+        }
+      ]
+    },
+    "tui.LayoutPreset": {
+      "description": "Which arrangement to draw.",
+      "oneOf": [
+        {
+          "const": "auto",
+          "description": "The largest preset that fits.",
+          "type": "string"
+        },
+        {
+          "const": "wide",
+          "description": "Full-screen terminals on large monitors (≥ 160×45).",
+          "type": "string"
+        },
+        {
+          "const": "dashboard",
+          "description": "≥ 100×30.",
+          "type": "string"
+        },
+        {
+          "const": "compact",
+          "description": "≥ 50×18; also the ESP32 panel layout.",
+          "type": "string"
+        },
+        {
+          "const": "minimal",
+          "description": "Anything smaller.",
+          "type": "string"
+        },
+        {
+          "const": "custom",
+          "description": "`[[display.tui.rows]]`.",
+          "type": "string"
+        }
+      ]
+    },
+    "tui.RowSpec": {
+      "additionalProperties": false,
+      "description": "One row of a custom layout.",
+      "properties": {
+        "height": {
+          "$ref": "#/$defs/tui.Size",
+          "description": "The row's height."
+        },
+        "widgets": {
+          "description": "Widgets from left to right.",
+          "items": {
+            "$ref": "#/$defs/tui.CellSpec"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "height",
+        "widgets"
+      ],
+      "type": "object"
+    },
+    "tui.Size": {
+      "description": "Terminal cells, a percentage such as \"40%\", or \"fill\".",
+      "oneOf": [
+        {
+          "maximum": 65535,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "pattern": "^(100|[1-9]?[0-9])%$",
+          "type": "string"
+        },
+        {
+          "const": "fill"
+        }
+      ]
+    },
+    "tui.TuiColors": {
+      "additionalProperties": false,
+      "description": "`[display.tui.colors]`: color names (`cyan`, `darkgray`) or `#rrggbb`.",
+      "properties": {
+        "accent": {
+          "description": "Borders, titles and highlights.",
+          "type": "string"
+        },
+        "cold": {
+          "description": "Cold temperatures.",
+          "type": "string"
+        },
+        "hot": {
+          "description": "Hot temperatures.",
+          "type": "string"
+        },
+        "muted": {
+          "description": "Secondary text.",
+          "type": "string"
+        },
+        "warm": {
+          "description": "Warm temperatures.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "tui.WidgetKind": {
+      "description": "A block of information that displays can show. Displays arrange them; the order\nhere is the user's preferred order.",
+      "enum": [
+        "current",
+        "summary",
+        "hourly",
+        "daily",
+        "details",
+        "air_quality",
+        "sun",
+        "moon",
+        "nowcast",
+        "alerts",
+        "radar",
+        "precipitation",
+        "history"
+      ],
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A whole configuration file, for the schema only (it mirrors `load::ConfigFile`).",
+  "properties": {
+    "display": {
+      "$ref": "#/$defs/DisplayTables",
+      "default": {}
+    },
+    "general": {
+      "$ref": "#/$defs/General",
+      "default": {
+        "coordinate_precision": 3,
+        "date_format": "mmm d",
+        "language": "en",
+        "refresh": "15m",
+        "time_format": "24h",
+        "units": "auto"
+      }
+    },
+    "history": {
+      "$ref": "#/$defs/HistoryConfig",
+      "default": {
+        "acis": {},
+        "order": [
+          "acis",
+          "open-meteo"
+        ],
+        "supplement": [
+          "open-meteo"
+        ]
+      }
+    },
+    "location": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/LocationConfig"
+      },
+      "type": "array"
+    },
+    "presentation": {
+      "$ref": "#/$defs/PresentationToml",
+      "default": {}
+    },
+    "providers": {
+      "$ref": "#/$defs/ProvidersConfig",
+      "default": {
+        "nws": {},
+        "open-meteo": {},
+        "openweather": {
+          "api": "free",
+          "api_key": {
+            "env": "OPENWEATHER_API_KEY"
+          },
+          "daily_call_limit": 900
+        },
+        "order": [
+          "openweather",
+          "open-meteo"
+        ],
+        "supplement": [
+          "open-meteo"
+        ]
+      }
+    },
+    "radar": {
+      "$ref": "#/$defs/RadarConfig",
+      "default": {
+        "zoom": 8
+      }
+    },
+    "runtime": {
+      "$ref": "#/$defs/RuntimeConfig",
+      "default": {}
+    },
+    "strings": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {},
+      "type": "object"
+    },
+    "units": {
+      "$ref": "#/$defs/UnitsOverride",
+      "default": {}
+    },
+    "version": {
+      "default": 1,
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "title": "whether configuration",
+  "type": "object"
+}

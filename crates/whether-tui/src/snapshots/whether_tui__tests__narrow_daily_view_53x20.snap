@@ -1,0 +1,25 @@
+---
+source: crates/whether-tui/src/tests.rs
+assertion_line: 189
+expression: out
+---
+New York, New York, US  Mon 11:00    Updated just now
+┌ Days ─────────────────────────────────────────────┐
+│Today    CLD  Cloudy       80%   8°     ━━━─ 18°   │
+│Tomorrow PCLD Partly cloud 45%   10°    ━━━─ 16°   │
+│Wed      PCLD Partly cloud 10%   9°     ━━━━ 19°   │
+│Thu      SUN  Clear        0%    8°     ━━━━ 22°   │
+│Fri      CLD  Cloudy       15%   11°    ─━━━ 20°   │
+│Sat      OVC  Overcast     25%   12°    ─━━─ 17°   │
+│Sun      DRZL Light drizzl 55%   11°    ━━━─ 16°   │
+│                                                   │
+│                                                   │
+│                                                   │
+│                                                   │
+│                                                   │
+│                                                   │
+│                                                   │
+│                                                   │
+│                                                   │
+└───────────────────────────────────────────────────┘
+q quit · ←→ location · Weather data by Open-Meteo.com

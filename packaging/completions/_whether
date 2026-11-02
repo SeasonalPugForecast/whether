@@ -1,0 +1,1005 @@
+#compdef whether
+
+autoload -U is-at-least
+
+_whether() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+":: :_whether_commands" \
+"*::: :->whether" \
+&& ret=0
+    case $state in
+    (whether)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:whether-command-$line[1]:"
+        case $line[1] in
+            (run)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(tui)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(gui)
+_arguments "${_arguments_options[@]}" : \
+'--screenshot=[Render one frame headlessly to this PNG and exit]:OUT.png:_files' \
+'--size=[Screenshot size, e.g. 1920x1080]:WxH:_default' \
+'--fixture=[Screenshot this cached snapshot (a cache JSON file) instead of the cache]:CACHE.json:_files' \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--fullscreen[Full screen without decorations (like \`kiosk = true\`)]' \
+'--compact[Screenshot the compact window]' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(line)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(json)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--snapshot[The raw snapshot instead of the view model]' \
+'--compact[One line instead of pretty JSON]' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(config)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+":: :_whether__subcmd__config_commands" \
+"*::: :->config" \
+&& ret=0
+
+    case $state in
+    (config)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:whether-config-command-$line[1]:"
+        case $line[1] in
+            (init)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--force[Overwrite an existing file]' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(check)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(show)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--resolved[Show units and presentation as resolved for the default display]' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(path)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(schema)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(strings)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_whether__subcmd__config__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:whether-config-help-command-$line[1]:"
+        case $line[1] in
+            (init)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(check)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(show)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(path)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(schema)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(strings)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(displays)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(locate)
+_arguments "${_arguments_options[@]}" : \
+'--country=[ISO 3166-1 alpha-2 country code, e.g. US]:CC:_default' \
+'--count=[How many results to show]:COUNT:_default' \
+'--name=[The name to give the added location]:NAME:_default' \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--zip[Search a postal code (needs --country)]' \
+'--add[Append the first result to the configuration file]' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+':query -- A place name, or a postal code with --zip:_default' \
+&& ret=0
+;;
+(providers)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+":: :_whether__subcmd__providers_commands" \
+"*::: :->providers" \
+&& ret=0
+
+    case $state in
+    (providers)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:whether-providers-command-$line[1]:"
+        case $line[1] in
+            (models)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_whether__subcmd__providers__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:whether-providers-help-command-$line[1]:"
+        case $line[1] in
+            (models)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+;;
+(fetch)
+_arguments "${_arguments_options[@]}" : \
+'--provider=[Use only this provider (openweather, open-meteo)]:ID:_default' \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--raw[Print only the snapshot, without the attempts]' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(history)
+_arguments "${_arguments_options[@]}" : \
+'--days=[How many past days (1–31; default\: \`history_days\`)]:N:_default' \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--json[Print JSON\: the history as shown and as received]' \
+'--station[List the ACIS stations near the place instead, to choose one for \`\[history.acis\] station\`]' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(climate)
+_arguments "${_arguments_options[@]}" : \
+'--from=[The first date\: MM-DD (the next one) or YYYY-MM-DD]:DATE:_default' \
+'--to=[The last date (default\: the first; at most 31 days on)]:DATE:_default' \
+'--years=[The years to look back over, e.g. 1995-2024 (default\: the 30 before this one)]:FIRST-LAST:_default' \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--json[Print JSON\: the query, the view and the answer as received]' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(daemon)
+_arguments "${_arguments_options[@]}" : \
+'-c+[Use only this configuration file]:PATH:_files' \
+'--config=[Use only this configuration file]:PATH:_files' \
+'-d+[Display to run (see \`whether displays\`)]:NAME:_default' \
+'--display=[Display to run (see \`whether displays\`)]:NAME:_default' \
+'-l+[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--location=[Location to show first, by name or 1-based index]:NAME|INDEX:_default' \
+'--units=[Override the unit system]:UNITS:((metric\:"°C, km/h, hPa, mm, km"
+imperial\:"°F, mph, inHg, in, mi"))' \
+'--offline[Never use the network; show cached data]' \
+'*-v[More logging (-v info, -vv debug, -vvv trace)]' \
+'*--verbose[More logging (-v info, -vv debug, -vvv trace)]' \
+'--watch[line and json\: print again on every change]' \
+'--attach[Show data from a running \`whether daemon\` instead of fetching]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_whether__subcmd__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:whether-help-command-$line[1]:"
+        case $line[1] in
+            (run)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(tui)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(gui)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(line)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(json)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(config)
+_arguments "${_arguments_options[@]}" : \
+":: :_whether__subcmd__help__subcmd__config_commands" \
+"*::: :->config" \
+&& ret=0
+
+    case $state in
+    (config)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:whether-help-config-command-$line[1]:"
+        case $line[1] in
+            (init)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(check)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(show)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(path)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(schema)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(strings)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(displays)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(locate)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(providers)
+_arguments "${_arguments_options[@]}" : \
+":: :_whether__subcmd__help__subcmd__providers_commands" \
+"*::: :->providers" \
+&& ret=0
+
+    case $state in
+    (providers)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:whether-help-providers-command-$line[1]:"
+        case $line[1] in
+            (models)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+(fetch)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(history)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(climate)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(daemon)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+}
+
+(( $+functions[_whether_commands] )) ||
+_whether_commands() {
+    local commands; commands=(
+'run:Run the selected display (the default)' \
+'tui:Run the terminal display' \
+'gui:Run the desktop display' \
+'line:Print one line for status bars' \
+'json:Print JSON for scripts' \
+'config:Inspect and create the configuration' \
+'displays:List the compiled-in displays' \
+'locate:Search for a place; print a \`\[\[location\]\]\` snippet or add it' \
+'providers:List providers\: authentication, capabilities, limits and attribution' \
+'fetch:Fetch once and print the snapshot as JSON (debugging)' \
+'history:Print a place'\''s history\: normals, records and the last days as observed' \
+'climate:How chosen dates were over chosen years, for planning a trip (--location may be any place'\''s name)' \
+'daemon:Fetch in the background and serve displays on a socket (use them with --attach)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'whether commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__climate_commands] )) ||
+_whether__subcmd__climate_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether climate commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config_commands] )) ||
+_whether__subcmd__config_commands() {
+    local commands; commands=(
+'init:Write the commented example configuration' \
+'check:Validate the configuration (exit 2 on errors)' \
+'show:Print the effective configuration (secrets masked)' \
+'path:Print where configuration files are read from' \
+'schema:Print the JSON Schema for editor completion' \
+'strings:List every text key and its default' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'whether config commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config__subcmd__check_commands] )) ||
+_whether__subcmd__config__subcmd__check_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether config check commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config__subcmd__help_commands] )) ||
+_whether__subcmd__config__subcmd__help_commands() {
+    local commands; commands=(
+'init:Write the commented example configuration' \
+'check:Validate the configuration (exit 2 on errors)' \
+'show:Print the effective configuration (secrets masked)' \
+'path:Print where configuration files are read from' \
+'schema:Print the JSON Schema for editor completion' \
+'strings:List every text key and its default' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'whether config help commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config__subcmd__help__subcmd__check_commands] )) ||
+_whether__subcmd__config__subcmd__help__subcmd__check_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether config help check commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config__subcmd__help__subcmd__help_commands] )) ||
+_whether__subcmd__config__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether config help help commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config__subcmd__help__subcmd__init_commands] )) ||
+_whether__subcmd__config__subcmd__help__subcmd__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether config help init commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config__subcmd__help__subcmd__path_commands] )) ||
+_whether__subcmd__config__subcmd__help__subcmd__path_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether config help path commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config__subcmd__help__subcmd__schema_commands] )) ||
+_whether__subcmd__config__subcmd__help__subcmd__schema_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether config help schema commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config__subcmd__help__subcmd__show_commands] )) ||
+_whether__subcmd__config__subcmd__help__subcmd__show_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether config help show commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config__subcmd__help__subcmd__strings_commands] )) ||
+_whether__subcmd__config__subcmd__help__subcmd__strings_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether config help strings commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config__subcmd__init_commands] )) ||
+_whether__subcmd__config__subcmd__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether config init commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config__subcmd__path_commands] )) ||
+_whether__subcmd__config__subcmd__path_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether config path commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config__subcmd__schema_commands] )) ||
+_whether__subcmd__config__subcmd__schema_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether config schema commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config__subcmd__show_commands] )) ||
+_whether__subcmd__config__subcmd__show_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether config show commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__config__subcmd__strings_commands] )) ||
+_whether__subcmd__config__subcmd__strings_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether config strings commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__daemon_commands] )) ||
+_whether__subcmd__daemon_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether daemon commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__displays_commands] )) ||
+_whether__subcmd__displays_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether displays commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__fetch_commands] )) ||
+_whether__subcmd__fetch_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether fetch commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__gui_commands] )) ||
+_whether__subcmd__gui_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether gui commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help_commands] )) ||
+_whether__subcmd__help_commands() {
+    local commands; commands=(
+'run:Run the selected display (the default)' \
+'tui:Run the terminal display' \
+'gui:Run the desktop display' \
+'line:Print one line for status bars' \
+'json:Print JSON for scripts' \
+'config:Inspect and create the configuration' \
+'displays:List the compiled-in displays' \
+'locate:Search for a place; print a \`\[\[location\]\]\` snippet or add it' \
+'providers:List providers\: authentication, capabilities, limits and attribution' \
+'fetch:Fetch once and print the snapshot as JSON (debugging)' \
+'history:Print a place'\''s history\: normals, records and the last days as observed' \
+'climate:How chosen dates were over chosen years, for planning a trip (--location may be any place'\''s name)' \
+'daemon:Fetch in the background and serve displays on a socket (use them with --attach)' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'whether help commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__climate_commands] )) ||
+_whether__subcmd__help__subcmd__climate_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help climate commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__config_commands] )) ||
+_whether__subcmd__help__subcmd__config_commands() {
+    local commands; commands=(
+'init:Write the commented example configuration' \
+'check:Validate the configuration (exit 2 on errors)' \
+'show:Print the effective configuration (secrets masked)' \
+'path:Print where configuration files are read from' \
+'schema:Print the JSON Schema for editor completion' \
+'strings:List every text key and its default' \
+    )
+    _describe -t commands 'whether help config commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__config__subcmd__check_commands] )) ||
+_whether__subcmd__help__subcmd__config__subcmd__check_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help config check commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__config__subcmd__init_commands] )) ||
+_whether__subcmd__help__subcmd__config__subcmd__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help config init commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__config__subcmd__path_commands] )) ||
+_whether__subcmd__help__subcmd__config__subcmd__path_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help config path commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__config__subcmd__schema_commands] )) ||
+_whether__subcmd__help__subcmd__config__subcmd__schema_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help config schema commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__config__subcmd__show_commands] )) ||
+_whether__subcmd__help__subcmd__config__subcmd__show_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help config show commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__config__subcmd__strings_commands] )) ||
+_whether__subcmd__help__subcmd__config__subcmd__strings_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help config strings commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__daemon_commands] )) ||
+_whether__subcmd__help__subcmd__daemon_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help daemon commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__displays_commands] )) ||
+_whether__subcmd__help__subcmd__displays_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help displays commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__fetch_commands] )) ||
+_whether__subcmd__help__subcmd__fetch_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help fetch commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__gui_commands] )) ||
+_whether__subcmd__help__subcmd__gui_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help gui commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__help_commands] )) ||
+_whether__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help help commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__history_commands] )) ||
+_whether__subcmd__help__subcmd__history_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help history commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__json_commands] )) ||
+_whether__subcmd__help__subcmd__json_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help json commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__line_commands] )) ||
+_whether__subcmd__help__subcmd__line_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help line commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__locate_commands] )) ||
+_whether__subcmd__help__subcmd__locate_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help locate commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__providers_commands] )) ||
+_whether__subcmd__help__subcmd__providers_commands() {
+    local commands; commands=(
+'models:List the weather models \`\[providers.open-meteo\] models\` accepts, marking those with data for the first location' \
+    )
+    _describe -t commands 'whether help providers commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__providers__subcmd__models_commands] )) ||
+_whether__subcmd__help__subcmd__providers__subcmd__models_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help providers models commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__run_commands] )) ||
+_whether__subcmd__help__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help run commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__help__subcmd__tui_commands] )) ||
+_whether__subcmd__help__subcmd__tui_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether help tui commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__history_commands] )) ||
+_whether__subcmd__history_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether history commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__json_commands] )) ||
+_whether__subcmd__json_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether json commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__line_commands] )) ||
+_whether__subcmd__line_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether line commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__locate_commands] )) ||
+_whether__subcmd__locate_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether locate commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__providers_commands] )) ||
+_whether__subcmd__providers_commands() {
+    local commands; commands=(
+'models:List the weather models \`\[providers.open-meteo\] models\` accepts, marking those with data for the first location' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'whether providers commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__providers__subcmd__help_commands] )) ||
+_whether__subcmd__providers__subcmd__help_commands() {
+    local commands; commands=(
+'models:List the weather models \`\[providers.open-meteo\] models\` accepts, marking those with data for the first location' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'whether providers help commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__providers__subcmd__help__subcmd__help_commands] )) ||
+_whether__subcmd__providers__subcmd__help__subcmd__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether providers help help commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__providers__subcmd__help__subcmd__models_commands] )) ||
+_whether__subcmd__providers__subcmd__help__subcmd__models_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether providers help models commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__providers__subcmd__models_commands] )) ||
+_whether__subcmd__providers__subcmd__models_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether providers models commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__run_commands] )) ||
+_whether__subcmd__run_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether run commands' commands "$@"
+}
+(( $+functions[_whether__subcmd__tui_commands] )) ||
+_whether__subcmd__tui_commands() {
+    local commands; commands=()
+    _describe -t commands 'whether tui commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_whether" ]; then
+    _whether "$@"
+else
+    compdef _whether whether
+fi

@@ -1,0 +1,22 @@
+pkgbase = whether
+	pkgdesc = Weather for the terminal, the desktop and status bars
+	pkgver = 0.1.0
+	pkgrel = 1
+	url = https://github.com/SeasonalPugForecast/whether
+	arch = x86_64
+	arch = aarch64
+	license = MIT
+	makedepends = cargo
+	depends = fontconfig
+	depends = gcc-libs
+	depends = glibc
+	depends = libxkbcommon
+	optdepends = wayland: the GUI on Wayland
+	optdepends = libxkbcommon-x11: the GUI on X11
+	optdepends = libxcursor: the GUI on X11
+	optdepends = libglvnd: OpenGL rendering
+	options = !lto
+	source = whether-0.1.0.tar.gz::https://github.com/SeasonalPugForecast/whether/archive/v0.1.0.tar.gz
+	sha256sums = SKIP
+
+pkgname = whether

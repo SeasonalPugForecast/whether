@@ -1,0 +1,1088 @@
+// The desktop window: Mousam-inspired, from narrow windows to 1080p+ full screen.
+
+import { ScrollView, LineEdit, Button, ComboBox } from "std-widgets.slint";
+import { Theme } from "components/theme.slint";
+import { Icons } from "@icons";
+import { StatusUi, CurrentUi, HourUi, DayUi, DetailUi, PollutantUi, AirUi, SunUi, AlertUi, PrecipUi, SpanUi, MarkUi, TickUi, HistoryUi, HistoryDayUi, SettingChoice, SettingList, SettingsPreview } from "components/structs.slint";
+import { Card, ConditionIcon, BigTemp, HourCell, DailyRow, BarGauge, StatusLine, Attribution, AlertItem, RangeBar } from "components/shared.slint";
+import { HourlyChart, ArcGauge, SunArc, Compass, LocationHeader } from "components/desktop-widgets.slint";
+
+component CurrentCard inherits Card {
+    in property <CurrentUi> current;
+    in property <length> icon-size: 128px;
+    HorizontalLayout {
+        spacing: Theme.spacing;
+        ConditionIcon { icon: root.current.icon; size: Theme.font(root.icon-size); }
+        VerticalLayout {
+            alignment: center;
+            BigTemp { text: root.current.temp; size: 96px; }
+            Text { text: root.current.condition; color: Theme.text; font-size: Theme.font(22px); }
+            Text {
+                text: root.current.feels + " · H " + root.current.high + "  L " + root.current.low;
+                color: Theme.text-muted;
+                font-size: Theme.font(14px);
+            }
+        }
+    }
+    if root.current.summary != "": Text {
+        text: root.current.summary;
+        color: Theme.text;
+        font-size: Theme.font(14px);
+        wrap: word-wrap;
+    }
+}
+
+// Active alerts, the card's border in the first (most important) alert's color.
+component AlertsCard inherits Card {
+    in property <[AlertUi]> alerts;
+    title: "ALERTS";
+    border-width: 2px;
+    border-color: root.alerts.length > 0 ? Theme.level-color(root.alerts[0].level) : Theme.card-border;
+    for alert in root.alerts: AlertItem { alert: alert; }
+}
+
+component HourlyCard inherits Card {
+    in property <[HourUi]> hours;
+    in property <[string]> lines;
+    in property <[string]> areas;
+    in property <string> first-label;
+    in property <string> mid-label;
+    in property <string> last-label;
+    in-out property <int> metric;
+    title: "HOURLY";
+    HourlyChart {
+        height: Theme.font(140px);
+        line: root.lines[root.metric];
+        area: root.areas[root.metric];
+        first-label: root.first-label;
+        mid-label: root.mid-label;
+        last-label: root.last-label;
+        metric <=> root.metric;
+    }
+    Flickable {
+        height: Theme.font(96px);
+        content-width: root.hours.length * Theme.font(64px);
+        HorizontalLayout {
+            for hour in root.hours: HourCell { hour: hour; width: Theme.font(64px); }
+        }
+    }
+}
+
+// A checkbox drawn in the dialog's own colors (the style's follows the system theme).
+// A checkbox that reports clicks; its owner sets `checked`, so a reused row in a
+// reordered list never keeps a stale state.
+component Toggle inherits Rectangle {
+    in property <string> text;
+    in property <bool> checked;
+    callback toggled(bool);
+    height: Theme.font(28px);
+    HorizontalLayout {
+        spacing: 8px;
+        alignment: start;
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: Theme.font(18px);
+                height: Theme.font(18px);
+                border-radius: 4px;
+                border-width: 1px;
+                border-color: #C8D0DC;
+                background: root.checked ? Theme.accent : transparent;
+                if root.checked: Text {
+                    text: "✓";
+                    color: #1A1A1A;
+                    font-size: Theme.font(13px);
+                    font-weight: 700;
+                }
+            }
+        }
+        Text { text: root.text; color: #FFFFFF; font-size: Theme.font(14px); vertical-alignment: center; }
+    }
+    TouchArea { clicked => { root.toggled(!root.checked); } }
+}
+
+// The precipitation table: each hour's bar (by intensity), chance and amount.
+component PrecipCard inherits Card {
+    in property <[PrecipUi]> hours;
+    in property <string> total;
+    in property <string> max-chance;
+    // Set when every hour is dry: shown instead of the total.
+    in property <string> dry;
+    title: "PRECIPITATION";
+    for hour in root.hours: HorizontalLayout {
+        spacing: Theme.spacing;
+        height: Theme.font(22px);
+        Text {
+            text: hour.label;
+            width: Theme.font(52px);
+            color: Theme.text-muted;
+            font-size: Theme.font(13px);
+            vertical-alignment: center;
+        }
+        VerticalLayout {
+            horizontal-stretch: 1;
+            alignment: center;
+            track := Rectangle {
+                height: Theme.font(8px);
+                border-radius: self.height / 2;
+                background: Theme.text.with-alpha(0.15);
+                Rectangle {
+                    x: 0;
+                    y: 0;
+                    height: parent.height;
+                    width: hour.intensity > 0 ? max(parent.height, parent.width * hour.intensity) : 0;
+                    border-radius: parent.height / 2;
+                    // Rain in the sky's text color reads on every sky; snow is dimmer.
+                    background: hour.frozen ? Theme.text.with-alpha(0.6) : Theme.text;
+                }
+            }
+        }
+        Text {
+            text: hour.chance;
+            width: Theme.font(40px);
+            color: Theme.rain;
+            font-size: Theme.font(13px);
+            horizontal-alignment: right;
+            vertical-alignment: center;
+        }
+        Text {
+            text: hour.amount;
+            width: Theme.font(64px);
+            color: Theme.text;
+            font-size: Theme.font(13px);
+            horizontal-alignment: right;
+            vertical-alignment: center;
+        }
+    }
+    Text {
+        text: root.dry != "" ? root.dry : "Total " + root.total + (root.max-chance != "" ? " · highest chance " + root.max-chance : "");
+        color: Theme.text-muted;
+        font-size: Theme.font(12px);
+    }
+}
+
+// The radar loop over its base map, square, with the location marked. It steps
+// through the frames, holding the latest a little longer; a tap pauses it.
+component RadarCard inherits Card {
+    in property <image> base;
+    in property <[image]> frames;
+    in property <[string]> labels;
+    in property <string> credit;
+    in property <float> marker-x;
+    in property <float> marker-y;
+    property <int> frame: root.frames.length - 1;
+    property <int> hold;
+    property <bool> playing: true;
+    title: "RADAR";
+    map := Rectangle {
+        height: self.width;
+        clip: true;
+        border-radius: 8px;
+        Image { width: 100%; height: 100%; source: root.base; image-fit: fill; }
+        Image { width: 100%; height: 100%; source: root.frames[root.frame]; image-fit: fill; }
+        Rectangle {
+            x: map.width * root.marker-x - self.width / 2;
+            y: map.height * root.marker-y - self.height / 2;
+            width: 10px;
+            height: 10px;
+            border-radius: 5px;
+            background: #FFFFFF;
+            border-width: 2px;
+            border-color: #1A1A1A;
+        }
+        TouchArea { clicked => { root.playing = !root.playing; } }
+    }
+    Text {
+        text: (root.playing ? "▶ " : "■ ") + (root.labels.length > 0 ? root.labels[root.frame] : "");
+        color: Theme.text;
+        font-size: Theme.font(13px);
+    }
+    // The credit is required, so it wraps rather than being cut short.
+    Text {
+        text: root.credit;
+        color: Theme.text-muted;
+        font-size: Theme.font(11px);
+        wrap: word-wrap;
+    }
+    Timer {
+        interval: 600ms;
+        running: root.playing && root.frames.length > 1;
+        triggered => {
+            if root.frame == root.frames.length - 1 && root.hold < 2 {
+                root.hold += 1;
+            } else {
+                root.hold = 0;
+                root.frame = Math.mod(root.frame + 1, root.frames.length);
+            }
+        }
+    }
+}
+
+// The next days; a click opens a day: when its precipitation falls, its stretches
+// of weather, and every third hour (with `daily_hours`).
+component DailyCard inherits Card {
+    in property <[DayUi]> days;
+    in property <[SpanUi]> spans;
+    in property <[MarkUi]> marks;
+    property <int> open: -1;
+    title: "NEXT DAYS";
+    // Quiet whites for cloud on the sky, the rain color by intensity.
+    pure function span-color(group: int) -> color {
+        group == 0 ? Theme.text.with-alpha(0.12)
+            : group == 1 ? Theme.text.with-alpha(0.24)
+            : group == 2 ? Theme.text.with-alpha(0.38)
+            : group == 3 ? Theme.text.with-alpha(0.30)
+            : group == 4 ? Theme.rain.with-alpha(0.55)
+            : group == 5 ? Theme.rain.with-alpha(0.78)
+            : group == 6 ? Theme.rain
+            : group == 7 ? Theme.text.with-alpha(0.9)
+            : #B39DDB
+    }
+    for day[i] in root.days: VerticalLayout {
+        TouchArea {
+            height: Theme.font(32px);
+            mouse-cursor: pointer;
+            clicked => { root.open = root.open == i ? -1 : i; }
+            DailyRow { day: day; width: parent.width; height: parent.height; }
+        }
+        if root.open == i: VerticalLayout {
+            spacing: Theme.font(6px);
+            padding-bottom: Theme.font(8px);
+            if day.precip-text != "": Text {
+                text: day.precip-text;
+                color: Theme.text;
+                font-size: Theme.font(13px);
+                wrap: word-wrap;
+            }
+            if day.has-hours: Rectangle {
+                height: Theme.font(14px);
+                for span in root.spans: Rectangle {
+                    visible: span.day == i;
+                    x: span.start * parent.width;
+                    width: max(1px, span.len * parent.width - 1px);
+                    background: root.span-color(span.group);
+                    border-radius: 3px;
+                }
+            }
+            if day.has-hours: Rectangle {
+                height: Theme.font(54px);
+                for mark in root.marks: VerticalLayout {
+                    visible: mark.day == i;
+                    x: mark.pos * parent.width;
+                    width: parent.width / 8;
+                    spacing: 2px;
+                    Text { text: mark.label; color: Theme.text-muted; font-size: Theme.font(11px); overflow: elide; }
+                    ConditionIcon { icon: mark.icon; size: Theme.font(18px); }
+                    Text { text: mark.temp; color: Theme.text; font-size: Theme.font(12px); }
+                }
+            }
+        }
+    }
+}
+
+// Dark Sky's next-hour graph over the chosen hours: the sentence, and when rain or
+// snow is coming, its intensity against light, moderate and heavy lines.
+component NowcastCard inherits Card {
+    in property <string> text;
+    in property <bool> wet;
+    in property <[float]> bars;
+    in property <[TickUi]> ticks;
+    in property <[string]> levels;
+    title: "NEXT HOURS";
+    Text {
+        text: root.text;
+        color: root.wet ? Theme.rain : Theme.text;
+        font-size: Theme.font(15px);
+        wrap: word-wrap;
+    }
+    if root.wet: Rectangle {
+        height: Theme.font(96px);
+        for level[i] in root.levels: Rectangle {
+            y: parent.height * (1 - (i + 1) / 3);
+            width: parent.width;
+            height: 1px;
+            background: Theme.text.with-alpha(0.22);
+            Text {
+                x: 0;
+                y: -self.height - 1px;
+                text: level;
+                color: Theme.text-muted;
+                font-size: Theme.font(9px);
+            }
+        }
+        for bar[i] in root.bars: Rectangle {
+            x: i * parent.width / root.bars.length;
+            width: max(1px, parent.width / root.bars.length - 1px);
+            height: parent.height * clamp(bar, 0, 1);
+            y: parent.height - self.height;
+            background: Theme.rain.with-alpha(0.85);
+        }
+    }
+    if root.wet: Rectangle {
+        height: Theme.font(16px);
+        for tick in root.ticks: Text {
+            x: clamp(tick.pos * parent.width - self.width / 2, 0, parent.width - self.width);
+            text: tick.label;
+            color: Theme.text-muted;
+            font-size: Theme.font(11px);
+        }
+    }
+}
+
+component DetailTile inherits Card {
+    in property <DetailUi> detail;
+    title: root.detail.title;
+    HorizontalLayout {
+        spacing: Theme.spacing;
+        VerticalLayout {
+            alignment: start;
+            Text {
+                text: root.detail.value;
+                color: root.detail.level >= 0 ? Theme.level-color(root.detail.level) : Theme.text;
+                font-size: Theme.font(22px);
+                wrap: word-wrap;
+            }
+            if root.detail.caption != "": Text {
+                text: root.detail.caption;
+                color: Theme.text-muted;
+                font-size: Theme.font(12px);
+                wrap: word-wrap;
+            }
+        }
+        // Wind gets a compass, pressure an arc gauge.
+        if root.detail.kind == 0 && root.detail.direction >= 0: Compass { direction: root.detail.direction; height: Theme.font(56px); }
+        if root.detail.kind == 4 && root.detail.gauge >= 0: ArcGauge { value: root.detail.gauge; height: Theme.font(56px); }
+    }
+    if root.detail.kind != 4 && root.detail.gauge >= 0: BarGauge {
+        value: root.detail.gauge;
+        tint: root.detail.level >= 0 ? Theme.level-color(root.detail.level) : Theme.accent;
+    }
+}
+
+// Detail tiles in a grid that adds columns rather than stretching them.
+component DetailsGrid inherits Rectangle {
+    in property <[DetailUi]> details;
+    in property <int> columns: 2;
+    property <length> gap: Theme.spacing;
+    property <length> tile-width: (self.width - (root.columns - 1) * root.gap) / root.columns;
+    property <length> tile-height: Theme.font(118px);
+    height: Math.ceil(root.details.length / root.columns) * (root.tile-height + root.gap) - root.gap;
+    for detail[i] in root.details: DetailTile {
+        detail: detail;
+        x: Math.mod(i, root.columns) * (root.tile-width + root.gap);
+        y: Math.floor(i / root.columns) * (root.tile-height + root.gap);
+        width: root.tile-width;
+        height: root.tile-height;
+    }
+}
+
+component SunCard inherits Card {
+    in property <SunUi> sun;
+    title: "SUN & MOON";
+    SunArc { progress: root.sun.progress; is-day: root.sun.is-day; height: Theme.font(70px); }
+    HorizontalLayout {
+        spacing: Theme.spacing;
+        Image { source: Icons.uii(0); width: Theme.font(28px); height: Theme.font(28px); }
+        Text { text: root.sun.sunrise; color: Theme.text; font-size: Theme.font(16px); vertical-alignment: center; }
+        Rectangle { horizontal-stretch: 1; }
+        Text { text: root.sun.sunset; color: Theme.text; font-size: Theme.font(16px); vertical-alignment: center; }
+        Image { source: Icons.uii(1); width: Theme.font(28px); height: Theme.font(28px); }
+    }
+    Text { text: root.sun.daylight; color: Theme.text-muted; font-size: Theme.font(12px); horizontal-alignment: center; }
+    if root.sun.moon-icon >= 0: HorizontalLayout {
+        spacing: Theme.spacing / 2;
+        Image { source: Icons.uii(root.sun.moon-icon); width: Theme.font(28px); height: Theme.font(28px); }
+        Text { text: root.sun.moon-phase; color: Theme.text; font-size: Theme.font(14px); vertical-alignment: center; }
+    }
+}
+
+component AirCard inherits Card {
+    in property <AirUi> air;
+    in property <[PollutantUi]> pollutants;
+    title: "AIR QUALITY";
+    HorizontalLayout {
+        spacing: Theme.spacing;
+        Text { text: root.air.index; color: Theme.text; font-size: Theme.font(40px); font-weight: 300; }
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                height: pill.preferred-height + 6px;
+                width: pill.preferred-width + 20px;
+                border-radius: self.height / 2;
+                background: Theme.level-color(root.air.level);
+                pill := Text { text: root.air.category; color: #1A1A1A; font-size: Theme.font(13px); font-weight: 600; }
+            }
+        }
+    }
+    BarGauge { value: root.air.gauge; tint: Theme.level-color(root.air.level); }
+    for p[i] in root.pollutants: HorizontalLayout {
+        visible: i < 4;
+        height: i < 4 ? Theme.font(18px) : 0;
+        Text { text: p.name; color: Theme.text-muted; font-size: Theme.font(12px); }
+        Text { text: p.value; color: Theme.text; font-size: Theme.font(12px); horizontal-alignment: right; }
+    }
+}
+
+component NoData inherits Card {
+    in property <StatusUi> status;
+    Text { text: "No weather data yet"; color: Theme.text; font-size: Theme.font(28px); horizontal-alignment: center; }
+    if root.status.error != "": Text {
+        text: "⚠ " + root.status.error;
+        color: Theme.warning;
+        font-size: Theme.font(14px);
+        horizontal-alignment: center;
+        wrap: word-wrap;
+    }
+    if root.status.refreshing: Text {
+        text: "Fetching…";
+        color: Theme.text-muted;
+        font-size: Theme.font(14px);
+        horizontal-alignment: center;
+    }
+}
+
+// One column of cards in the order of `cards`: 0 current, 1 alerts,
+// 2 hourly, 3 daily, 4 details, 5 sun, 6 air quality, 7 radar, 8 precipitation, 9 next hours. Rust leaves out
+// cards without data, so every entry draws exactly one card.
+// History: today's normals and records, the chance of rain or snow,
+// today against yesterday, then the last days as observed, each high and low on
+// a shared scale with the normal as ticks, its difference from normal and its
+// precipitation; the month so far and where it comes from.
+component HistoryCard inherits Card {
+    in property <HistoryUi> history;
+    in property <[HistoryDayUi]> days;
+    title: "HISTORY";
+    Text {
+        text: root.history.normal + (root.history.records != "" ? "  ·  Records " + root.history.records : "");
+        color: Theme.text;
+        font-size: Theme.font(14px);
+        font-weight: 600;
+        wrap: word-wrap;
+    }
+    if root.history.chance != "": Text {
+        text: root.history.chance;
+        color: Theme.rain;
+        font-size: Theme.font(13px);
+    }
+    if root.history.delta != "": Text {
+        text: root.history.delta;
+        color: Theme.text-muted;
+        font-size: Theme.font(13px);
+    }
+    for day in root.days: HorizontalLayout {
+        spacing: Theme.spacing;
+        height: Theme.font(24px);
+        Text { text: day.label; width: Theme.font(84px); color: Theme.text; font-size: Theme.font(13px); vertical-alignment: center; overflow: elide; }
+        Text { text: day.date; width: Theme.font(52px); color: Theme.text-muted; font-size: Theme.font(12px); vertical-alignment: center; }
+        Text { text: day.low; width: Theme.font(36px); color: Theme.text-muted; font-size: Theme.font(13px); horizontal-alignment: right; vertical-alignment: center; }
+        VerticalLayout {
+            alignment: center;
+            horizontal-stretch: 1;
+            RangeBar {
+                visible: day.range-lo >= 0;
+                lo: day.range-lo; hi: day.range-hi; normal-lo: day.normal-lo; normal-hi: day.normal-hi;
+                min-width: 0px;
+            }
+        }
+        Text { text: day.high; width: Theme.font(36px); color: Theme.text; font-size: Theme.font(13px); vertical-alignment: center; }
+        // The difference from normal in a pill tinted warm or cold: colored text
+        // alone fades into the sky.
+        HorizontalLayout {
+            width: Theme.font(44px);
+            alignment: end;
+            padding-top: Theme.font(3px);
+            padding-bottom: Theme.font(3px);
+            Rectangle {
+                visible: day.departure != "";
+                border-radius: self.height / 2;
+                background: day.warmer > 0 ? Theme.hot.with-alpha(0.7) : day.warmer < 0 ? Theme.cold.darker(0.5).with-alpha(0.8) : transparent;
+                HorizontalLayout {
+                    padding-left: Theme.font(6px);
+                    padding-right: Theme.font(6px);
+                    Text {
+                        text: day.departure;
+                        color: Theme.text;
+                        font-size: Theme.font(12px);
+                        font-weight: 600;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+        Text { text: day.precip; width: Theme.font(64px); color: Theme.rain; font-size: Theme.font(12px); horizontal-alignment: right; vertical-alignment: center; }
+    }
+    if root.history.month != "": Text {
+        text: root.history.month;
+        color: Theme.text;
+        font-size: Theme.font(13px);
+    }
+    Text {
+        text: root.history.credit;
+        color: Theme.text-muted;
+        font-size: Theme.font(11px);
+        wrap: word-wrap;
+    }
+}
+
+component CardStack inherits VerticalLayout {
+    in property <[int]> cards;
+    in property <length> icon-size: 128px;
+    in property <int> details-columns: 2;
+    in property <CurrentUi> current;
+    in property <[AlertUi]> alerts;
+    in property <[HourUi]> hours;
+    in property <[string]> chart-lines;
+    in property <[string]> chart-areas;
+    in property <string> chart-first;
+    in property <string> chart-mid;
+    in property <string> chart-last;
+    in-out property <int> chart-metric;
+    in property <[DayUi]> days;
+    in property <[DetailUi]> details;
+    in property <SunUi> sun;
+    in property <AirUi> air;
+    in property <[PollutantUi]> pollutants;
+    in property <image> radar-base;
+    in property <[image]> radar-frames;
+    in property <[string]> radar-labels;
+    in property <string> radar-attribution;
+    in property <float> radar-marker-x;
+    in property <float> radar-marker-y;
+    in property <[PrecipUi]> precip;
+    in property <string> precip-total;
+    in property <string> precip-max-chance;
+    in property <HistoryUi> history;
+    in property <[HistoryDayUi]> history-days;
+    in property <string> precip-dry;
+    in property <[SpanUi]> day-spans;
+    in property <[MarkUi]> day-marks;
+    in property <string> nowcast-text;
+    in property <bool> nowcast-wet;
+    in property <[float]> nowcast-bars;
+    in property <[TickUi]> nowcast-ticks;
+    in property <[string]> nowcast-levels;
+    spacing: Theme.spacing;
+    alignment: start;
+    for id in root.cards: VerticalLayout {
+        if id == 0: CurrentCard { current: root.current; icon-size: root.icon-size; }
+        if id == 1: AlertsCard { alerts: root.alerts; }
+        if id == 2: HourlyCard {
+            hours: root.hours; lines: root.chart-lines; areas: root.chart-areas;
+            first-label: root.chart-first; mid-label: root.chart-mid; last-label: root.chart-last;
+            metric <=> root.chart-metric;
+        }
+        if id == 3: DailyCard { days: root.days; spans: root.day-spans; marks: root.day-marks; }
+        if id == 4: DetailsGrid { details: root.details; columns: root.details-columns; }
+        if id == 5: SunCard { sun: root.sun; }
+        if id == 6: AirCard { air: root.air; pollutants: root.pollutants; }
+        if id == 7: RadarCard {
+            base: root.radar-base; frames: root.radar-frames; labels: root.radar-labels;
+            credit: root.radar-attribution; marker-x: root.radar-marker-x; marker-y: root.radar-marker-y;
+        }
+        if id == 8: PrecipCard { hours: root.precip; total: root.precip-total; max-chance: root.precip-max-chance; dry: root.precip-dry; }
+        if id == 10: HistoryCard { history: root.history; days: root.history-days; }
+        if id == 9: NowcastCard {
+            text: root.nowcast-text; wet: root.nowcast-wet; bars: root.nowcast-bars;
+            ticks: root.nowcast-ticks; levels: root.nowcast-levels;
+        }
+    }
+}
+
+export component DesktopWindow inherits Window {
+    in property <string> window-title: "Whether";
+    in property <[string]> locations;
+    in-out property <int> current-location;
+    in property <string> units-label: "°F";
+    in property <StatusUi> status;
+    in property <bool> has-data;
+    in property <CurrentUi> current;
+    in property <[HourUi]> hours;
+    in property <[DayUi]> days;
+    in property <[DetailUi]> details;
+    in property <AirUi> air;
+    in property <[PollutantUi]> pollutants;
+    in property <SunUi> sun;
+    // Shown whenever present: the view only fills them when the alerts widget is on.
+    in property <[AlertUi]> alerts;
+    in property <string> attribution;
+    in property <[string]> chart-lines: ["", "", ""];
+    in property <[string]> chart-areas: ["", "", ""];
+    in property <string> chart-first;
+    in property <string> chart-mid;
+    in property <string> chart-last;
+    in-out property <int> chart-metric;
+    in property <color> sky-top: #2F80ED;
+    in property <color> sky-bottom: #56CCF2;
+    // Scale fonts with the window height (full screen, kiosk); otherwise `fixed-scale`.
+    in property <bool> auto-scale;
+    in property <float> fixed-scale: 1.0;
+    // The cards of each tier's columns, top to bottom (ids in CardStack).
+    in property <[int]> narrow-cards: [0, 1, 2, 7, 4, 3, 5, 6];
+    in property <[int]> standard-cards-a: [0, 1, 2, 3];
+    in property <[int]> standard-cards-b: [7, 4, 5, 6];
+    in property <[int]> wide-cards-a: [0, 1, 7, 5];
+    in property <[int]> wide-cards-b: [2, 3];
+    in property <[int]> wide-cards-c: [4, 6];
+    // Radar: Rust sets the images; labels come with the model.
+    in property <image> radar-base;
+    in property <[image]> radar-frames;
+    in property <[string]> radar-labels;
+    in property <string> radar-attribution;
+    in property <float> radar-marker-x: 0.5;
+    in property <float> radar-marker-y: 0.5;
+    // The precipitation table: the next hours' rain and snow.
+    in property <[PrecipUi]> precip;
+    in property <string> precip-total;
+    in property <string> precip-max-chance;
+    in property <HistoryUi> history;
+    in property <[HistoryDayUi]> history-days;
+    in property <string> precip-dry;
+    in property <[SpanUi]> day-spans;
+    in property <[MarkUi]> day-marks;
+    in property <string> nowcast-text;
+    in property <bool> nowcast-wet;
+    in property <[float]> nowcast-bars;
+    in property <[TickUi]> nowcast-ticks;
+    in property <[string]> nowcast-levels;
+    callback refresh();
+    callback location-selected(int);
+    callback toggle-units();
+    callback add-location();
+    callback about();
+    // Place search: results arrive from the service as display names.
+    in-out property <bool> search-open;
+    in property <[string]> search-results;
+    in property <string> search-status;
+    in-out property <bool> confirm-remove;
+    callback search(string);
+    callback choose-result(int);
+    callback remove-location();
+    // Settings: Rust fills the form in `open-settings` and keeps
+    // it as the user edits; Save sends the changed keys to the configuration file.
+    in-out property <bool> settings-open;
+    in property <[string]> settings-tabs;
+    in-out property <int> settings-tab;
+    in property <[SettingChoice]> settings-choices;
+    in property <[SettingList]> settings-lists;
+    // How the Display tab's choices would look.
+    in property <SettingsPreview> settings-preview;
+    // Fills the form; `false` when there is no configuration to edit (attached).
+    callback open-settings() -> bool;
+    callback settings-choose(int, int);
+    callback settings-toggle(int, int, bool);
+    // List, entry, up (true) or down.
+    callback settings-move(int, int, bool);
+    callback save-settings();
+
+    title: root.window-title;
+    preferred-width: 1000px;
+    preferred-height: 720px;
+    min-width: 720px;
+    min-height: 560px;
+    default-font-family: "Inter";
+
+    property <float> scale: root.auto-scale ? clamp(root.height / 720px, 1.0, 3.0) : root.fixed-scale;
+    // 0 narrow (< 900 px), 1 standard, 2 wide (≥ 1600 px).
+    property <int> tier: root.width < 900px ? 0 : root.width < 1600px ? 1 : 2;
+    property <color> top-shown: root.sky-top;
+    property <color> bottom-shown: root.sky-bottom;
+    animate top-shown, bottom-shown { duration: 600ms; easing: ease-in-out; }
+
+    init => {
+        Theme.font-scale = root.scale;
+    }
+    changed scale => {
+        Theme.font-scale = root.scale;
+    }
+
+    Rectangle {
+        background: @linear-gradient(180deg, root.top-shown 0%, root.bottom-shown 100%);
+    }
+
+    // Explicit geometry keeps the tiered content from feeding back into the window's
+    // size constraints (the tier depends on the width).
+    content := Rectangle {
+        x: 0;
+        y: 0;
+        width: root.width;
+        height: root.height;
+    VerticalLayout {
+        padding: Theme.font(16px);
+        spacing: Theme.spacing;
+
+        LocationHeader {
+            vertical-stretch: 0;
+            locations: root.locations;
+            current <=> root.current-location;
+            status: root.status;
+            units-label: root.units-label;
+            location-selected(i) => { root.location-selected(i); }
+            refresh => { root.refresh(); }
+            toggle-units => { root.toggle-units(); }
+            add-location => {
+                root.search-open = true;
+                root.add-location();
+            }
+            remove-location => { root.confirm-remove = true; }
+            settings => { root.settings-open = root.open-settings(); }
+            about => { root.about(); }
+        }
+
+        if root.has-data && (root.status.stale || root.status.error != ""): Rectangle {
+            vertical-stretch: 0;
+            height: banner.preferred-height + 10px;
+            border-radius: 8px;
+            background: #00000033;
+            banner := Text {
+                text: root.status.error != "" ? "⚠ " + root.status.error + " — showing the last data" : "⚠ This data is out of date";
+                color: Theme.warning;
+                font-size: Theme.font(13px);
+            }
+        }
+
+        if !root.has-data: VerticalLayout {
+            vertical-stretch: 1;
+            alignment: center;
+            HorizontalLayout {
+                alignment: center;
+                NoData { status: root.status; width: 520px; }
+            }
+        }
+
+        // Narrow: one scrolling column.
+        if root.has-data && root.tier == 0: ScrollView {
+            vertical-stretch: 1;
+            CardStack {
+                    cards: root.narrow-cards; icon-size: 96px;
+                    current: root.current; alerts: root.alerts; hours: root.hours;
+                    chart-lines: root.chart-lines; chart-areas: root.chart-areas;
+                    chart-first: root.chart-first; chart-mid: root.chart-mid; chart-last: root.chart-last;
+                    chart-metric <=> root.chart-metric;
+                    days: root.days; details: root.details; sun: root.sun; air: root.air; pollutants: root.pollutants;
+                    radar-base: root.radar-base; radar-frames: root.radar-frames; radar-labels: root.radar-labels;
+                    radar-attribution: root.radar-attribution; radar-marker-x: root.radar-marker-x; radar-marker-y: root.radar-marker-y;
+                    precip: root.precip; precip-total: root.precip-total; precip-max-chance: root.precip-max-chance; precip-dry: root.precip-dry;
+                    day-spans: root.day-spans; day-marks: root.day-marks;
+                    nowcast-text: root.nowcast-text; nowcast-wet: root.nowcast-wet; nowcast-bars: root.nowcast-bars;
+                    nowcast-ticks: root.nowcast-ticks; nowcast-levels: root.nowcast-levels;
+                    history: root.history; history-days: root.history-days;
+                }
+        }
+
+        // Standard: forecast left (60 %), details right (40 %).
+        if root.has-data && root.tier == 1: HorizontalLayout {
+            vertical-stretch: 1;
+            spacing: Theme.spacing;
+            ScrollView {
+                horizontal-stretch: 3;
+                CardStack {
+                    cards: root.standard-cards-a;
+                    current: root.current; alerts: root.alerts; hours: root.hours;
+                    chart-lines: root.chart-lines; chart-areas: root.chart-areas;
+                    chart-first: root.chart-first; chart-mid: root.chart-mid; chart-last: root.chart-last;
+                    chart-metric <=> root.chart-metric;
+                    days: root.days; details: root.details; sun: root.sun; air: root.air; pollutants: root.pollutants;
+                    radar-base: root.radar-base; radar-frames: root.radar-frames; radar-labels: root.radar-labels;
+                    radar-attribution: root.radar-attribution; radar-marker-x: root.radar-marker-x; radar-marker-y: root.radar-marker-y;
+                    precip: root.precip; precip-total: root.precip-total; precip-max-chance: root.precip-max-chance; precip-dry: root.precip-dry;
+                    day-spans: root.day-spans; day-marks: root.day-marks;
+                    nowcast-text: root.nowcast-text; nowcast-wet: root.nowcast-wet; nowcast-bars: root.nowcast-bars;
+                    nowcast-ticks: root.nowcast-ticks; nowcast-levels: root.nowcast-levels;
+                    history: root.history; history-days: root.history-days;
+                }
+            }
+            ScrollView {
+                horizontal-stretch: 2;
+                CardStack {
+                    cards: root.standard-cards-b;
+                    current: root.current; alerts: root.alerts; hours: root.hours;
+                    chart-lines: root.chart-lines; chart-areas: root.chart-areas;
+                    chart-first: root.chart-first; chart-mid: root.chart-mid; chart-last: root.chart-last;
+                    chart-metric <=> root.chart-metric;
+                    days: root.days; details: root.details; sun: root.sun; air: root.air; pollutants: root.pollutants;
+                    radar-base: root.radar-base; radar-frames: root.radar-frames; radar-labels: root.radar-labels;
+                    radar-attribution: root.radar-attribution; radar-marker-x: root.radar-marker-x; radar-marker-y: root.radar-marker-y;
+                    precip: root.precip; precip-total: root.precip-total; precip-max-chance: root.precip-max-chance; precip-dry: root.precip-dry;
+                    day-spans: root.day-spans; day-marks: root.day-marks;
+                    nowcast-text: root.nowcast-text; nowcast-wet: root.nowcast-wet; nowcast-bars: root.nowcast-bars;
+                    nowcast-ticks: root.nowcast-ticks; nowcast-levels: root.nowcast-levels;
+                    history: root.history; history-days: root.history-days;
+                }
+            }
+        }
+
+        // Wide (1080p and larger): three columns.
+        if root.has-data && root.tier == 2: HorizontalLayout {
+            vertical-stretch: 1;
+            spacing: Theme.spacing;
+            ScrollView {
+                horizontal-stretch: 3;
+                CardStack {
+                    cards: root.wide-cards-a;
+                    current: root.current; alerts: root.alerts; hours: root.hours;
+                    chart-lines: root.chart-lines; chart-areas: root.chart-areas;
+                    chart-first: root.chart-first; chart-mid: root.chart-mid; chart-last: root.chart-last;
+                    chart-metric <=> root.chart-metric;
+                    days: root.days; details: root.details; sun: root.sun; air: root.air; pollutants: root.pollutants;
+                    radar-base: root.radar-base; radar-frames: root.radar-frames; radar-labels: root.radar-labels;
+                    radar-attribution: root.radar-attribution; radar-marker-x: root.radar-marker-x; radar-marker-y: root.radar-marker-y;
+                    precip: root.precip; precip-total: root.precip-total; precip-max-chance: root.precip-max-chance; precip-dry: root.precip-dry;
+                    day-spans: root.day-spans; day-marks: root.day-marks;
+                    nowcast-text: root.nowcast-text; nowcast-wet: root.nowcast-wet; nowcast-bars: root.nowcast-bars;
+                    nowcast-ticks: root.nowcast-ticks; nowcast-levels: root.nowcast-levels;
+                    history: root.history; history-days: root.history-days;
+                }
+            }
+            ScrollView {
+                horizontal-stretch: 4;
+                CardStack {
+                    cards: root.wide-cards-b;
+                    current: root.current; alerts: root.alerts; hours: root.hours;
+                    chart-lines: root.chart-lines; chart-areas: root.chart-areas;
+                    chart-first: root.chart-first; chart-mid: root.chart-mid; chart-last: root.chart-last;
+                    chart-metric <=> root.chart-metric;
+                    days: root.days; details: root.details; sun: root.sun; air: root.air; pollutants: root.pollutants;
+                    radar-base: root.radar-base; radar-frames: root.radar-frames; radar-labels: root.radar-labels;
+                    radar-attribution: root.radar-attribution; radar-marker-x: root.radar-marker-x; radar-marker-y: root.radar-marker-y;
+                    precip: root.precip; precip-total: root.precip-total; precip-max-chance: root.precip-max-chance; precip-dry: root.precip-dry;
+                    day-spans: root.day-spans; day-marks: root.day-marks;
+                    nowcast-text: root.nowcast-text; nowcast-wet: root.nowcast-wet; nowcast-bars: root.nowcast-bars;
+                    nowcast-ticks: root.nowcast-ticks; nowcast-levels: root.nowcast-levels;
+                    history: root.history; history-days: root.history-days;
+                }
+            }
+            ScrollView {
+                horizontal-stretch: 3;
+                CardStack {
+                    cards: root.wide-cards-c; details-columns: root.width > 2400px ? 3 : 2;
+                    current: root.current; alerts: root.alerts; hours: root.hours;
+                    chart-lines: root.chart-lines; chart-areas: root.chart-areas;
+                    chart-first: root.chart-first; chart-mid: root.chart-mid; chart-last: root.chart-last;
+                    chart-metric <=> root.chart-metric;
+                    days: root.days; details: root.details; sun: root.sun; air: root.air; pollutants: root.pollutants;
+                    radar-base: root.radar-base; radar-frames: root.radar-frames; radar-labels: root.radar-labels;
+                    radar-attribution: root.radar-attribution; radar-marker-x: root.radar-marker-x; radar-marker-y: root.radar-marker-y;
+                    precip: root.precip; precip-total: root.precip-total; precip-max-chance: root.precip-max-chance; precip-dry: root.precip-dry;
+                    day-spans: root.day-spans; day-marks: root.day-marks;
+                    nowcast-text: root.nowcast-text; nowcast-wet: root.nowcast-wet; nowcast-bars: root.nowcast-bars;
+                    nowcast-ticks: root.nowcast-ticks; nowcast-levels: root.nowcast-levels;
+                    history: root.history; history-days: root.history-days;
+                }
+            }
+        }
+
+        HorizontalLayout {
+            vertical-stretch: 0;
+            spacing: Theme.spacing;
+            StatusLine { status: root.status; }
+            Attribution { text: root.attribution; horizontal-alignment: right; }
+        }
+    }
+    }
+
+    // Search overlay.
+    if root.search-open: Rectangle {
+        background: #00000080;
+        TouchArea { clicked => { root.search-open = false; } }
+        // Clicks on the card stay in the dialog; only the backdrop closes it.
+        Rectangle {
+            width: min(520px, root.width - 48px);
+            height: min(440px, root.height - 48px);
+            TouchArea { }
+            Card {
+                title: "ADD A LOCATION";
+                // Dialogs are opaque so the forecast behind them does not show through.
+                background: #1E2430F5;
+                title-color: #C8D0DC;
+                width: 100%;
+                height: 100%;
+                query := LineEdit {
+                    placeholder-text: "Place name or postal code";
+                    accepted(text) => { root.search(text); }
+                }
+                if root.search-status != "": Text { text: root.search-status; color: #C8D0DC; font-size: Theme.font(13px); wrap: word-wrap; }
+                for name[i] in root.search-results: Rectangle {
+                    height: Theme.font(30px);
+                    border-radius: 6px;
+                    background: area.has-hover ? #FFFFFF33 : transparent;
+                    Text { x: 8px; text: name; color: #FFFFFF; font-size: Theme.font(14px); overflow: elide; }
+                    area := TouchArea {
+                        clicked => {
+                            root.choose-result(i);
+                            root.search-open = false;
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    alignment: end;
+                    spacing: Theme.spacing;
+                    Button { text: "Search"; clicked => { root.search(query.text); } }
+                    Button { text: "Close"; clicked => { root.search-open = false; } }
+                }
+            }
+        }
+    }
+
+    // Settings.
+    if root.settings-open: Rectangle {
+        background: #00000080;
+        TouchArea { clicked => { root.settings-open = false; } }
+        // Clicks on the dialog stay in it; only the backdrop closes it.
+        Rectangle {
+            width: min(520px, root.width - 48px);
+            height: min(600px, root.height - 48px);
+            background: #1E2430F5;
+            border-radius: Theme.radius;
+            border-width: 1px;
+            border-color: Theme.card-border;
+            TouchArea { }
+            VerticalLayout {
+                padding: Theme.spacing;
+                spacing: Theme.spacing;
+                Text { text: "SETTINGS"; color: #C8D0DC; font-size: Theme.font(12px); font-weight: 600; }
+                HorizontalLayout {
+                    spacing: 4px;
+                    alignment: start;
+                    for name[t] in root.settings-tabs: Button {
+                        text: name;
+                        primary: root.settings-tab == t;
+                        clicked => { root.settings-tab = t; }
+                    }
+                }
+                ScrollView {
+                    vertical-stretch: 1;
+                    VerticalLayout {
+                        alignment: start;
+                        padding-right: Theme.spacing;
+                        if root.settings-tab == 3: Rectangle {
+                            height: 96px * max(1.0, root.settings-preview.scale);
+                            border-radius: Theme.radius / 2;
+                            background: @linear-gradient(180deg, root.settings-preview.top 0%, root.settings-preview.bottom 100%);
+                            HorizontalLayout {
+                                padding: Theme.spacing;
+                                spacing: Theme.spacing;
+                                Text {
+                                    text: "15°";
+                                    color: root.settings-preview.text;
+                                    font-size: 40px * root.settings-preview.scale;
+                                    font-weight: 300;
+                                    vertical-alignment: center;
+                                }
+                                VerticalLayout {
+                                    alignment: center;
+                                    spacing: 6px;
+                                    Text {
+                                        text: "Partly cloudy · Preview";
+                                        color: root.settings-preview.text;
+                                        font-size: 14px * root.settings-preview.scale;
+                                    }
+                                    Rectangle {
+                                        height: 6px;
+                                        border-radius: 3px;
+                                        background: root.settings-preview.text.with-alpha(0.25);
+                                        Rectangle {
+                                            x: 0;
+                                            width: parent.width * 0.6;
+                                            border-radius: 3px;
+                                            background: root.settings-preview.accent;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if root.settings-tab == 3: Rectangle { height: Theme.spacing; }
+                        for c[i] in root.settings-choices: VerticalLayout {
+                            if c.tab == root.settings-tab: HorizontalLayout {
+                                padding-bottom: Theme.spacing / 2;
+                                spacing: Theme.spacing;
+                                Text {
+                                    text: c.label;
+                                    width: 42%;
+                                    color: #C8D0DC;
+                                    font-size: Theme.font(14px);
+                                    vertical-alignment: center;
+                                }
+                                ComboBox {
+                                    model: c.options;
+                                    current-index: c.index;
+                                    selected => { root.settings-choose(i, self.current-index); }
+                                }
+                            }
+                        }
+                        for list[l] in root.settings-lists: VerticalLayout {
+                            if list.tab == root.settings-tab: VerticalLayout {
+                                padding-top: Theme.spacing / 2;
+                                padding-bottom: Theme.spacing / 2;
+                                spacing: 2px;
+                                Text { text: list.label; color: #C8D0DC; font-size: Theme.font(14px); font-weight: 600; }
+                                for item[e] in list.items: HorizontalLayout {
+                                    spacing: 4px;
+                                    Toggle {
+                                        text: item.label;
+                                        checked: item.on;
+                                        horizontal-stretch: 1;
+                                        toggled(on) => { root.settings-toggle(l, e, on); }
+                                    }
+                                    if list.ordered: Button {
+                                        text: "↑";
+                                        width: 40px;
+                                        enabled: e > 0;
+                                        clicked => { root.settings-move(l, e, true); }
+                                    }
+                                    if list.ordered: Button {
+                                        text: "↓";
+                                        width: 40px;
+                                        enabled: e < list.items.length - 1;
+                                        clicked => { root.settings-move(l, e, false); }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Text {
+                    text: "Saved to your configuration file, with its comments; changes apply right away.";
+                    color: #C8D0DC;
+                    font-size: Theme.font(12px);
+                    wrap: word-wrap;
+                }
+                HorizontalLayout {
+                    alignment: end;
+                    spacing: Theme.spacing;
+                    Button { text: "Save"; clicked => { root.save-settings(); root.settings-open = false; } }
+                    Button { text: "Cancel"; clicked => { root.settings-open = false; } }
+                }
+            }
+        }
+    }
+
+    // Remove confirmation.
+    if root.confirm-remove: Rectangle {
+        background: #00000080;
+        Card {
+            title: "REMOVE LOCATION";
+            background: #1E2430F5;
+            title-color: #C8D0DC;
+            width: min(420px, root.width - 48px);
+            height: 150px;
+            Text {
+                text: "Remove " + (root.locations.length > 0 ? root.locations[root.current-location] : "") + " from the configuration?";
+                color: #FFFFFF;
+                font-size: Theme.font(14px);
+                wrap: word-wrap;
+            }
+            HorizontalLayout {
+                alignment: end;
+                spacing: Theme.spacing;
+                Button {
+                    text: "Remove";
+                    clicked => {
+                        root.confirm-remove = false;
+                        root.remove-location();
+                    }
+                }
+                Button { text: "Cancel"; clicked => { root.confirm-remove = false; } }
+            }
+        }
+    }
+}

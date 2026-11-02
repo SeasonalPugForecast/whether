@@ -1,0 +1,67 @@
+---
+source: crates/whether-tui/src/tests.rs
+assertion_line: 410
+expression: "styles(&variant(&light, ColorDepth::TrueColor))"
+---
+0: 0..8 Blue Reset BOLD
+0: 8..33 Gray Reset NONE
+0: 51..80 Gray Reset NONE
+1: 0..1 Gray Reset NONE
+1: 1..6 Blue Reset BOLD
+1: 6..80 Gray Reset NONE
+2: 0..1 Gray Reset NONE
+2: 1..4 Reset Reset BOLD
+2: 79..80 Gray Reset NONE
+3: 0..15 Gray Reset NONE
+3: 79..80 Gray Reset NONE
+4: 0..3 Gray Reset NONE
+4: 6..10 Gray Reset NONE
+4: 79..80 Gray Reset NONE
+5: 0..1 Gray Reset NONE
+5: 79..80 Gray Reset NONE
+6: 0..80 Gray Reset NONE
+7: 5..8 Gray Reset NONE
+7: 18..23 Gray Reset NONE
+7: 31..36 Gray Reset NONE
+7: 44..49 Gray Reset NONE
+7: 58..63 Gray Reset NONE
+7: 71..76 Gray Reset NONE
+9: 5..8 Reset Reset BOLD
+9: 19..22 Rgb(0, 135, 0) Reset BOLD
+9: 32..35 Rgb(0, 135, 0) Reset BOLD
+9: 45..48 Rgb(0, 135, 0) Reset BOLD
+9: 59..62 Rgb(0, 135, 0) Reset BOLD
+9: 72..75 Rgb(0, 135, 0) Reset BOLD
+10: 0..1 Gray Reset NONE
+10: 1..7 Blue Reset BOLD
+10: 7..80 Gray Reset NONE
+11: 0..1 Gray Reset NONE
+11: 30..35 Rgb(0, 95, 175) Reset NONE
+11: 36..42 Gray Reset NONE
+11: 43..53 Rgb(0, 95, 175) Reset NONE
+11: 53..63 Rgb(0, 135, 0) Reset NONE
+11: 63..65 Rgb(175, 0, 0) Reset NONE
+11: 65..72 Gray Reset NONE
+11: 73..79 Rgb(0, 135, 0) Reset BOLD
+11: 79..80 Gray Reset NONE
+12: 0..1 Gray Reset NONE
+12: 30..35 Rgb(0, 95, 175) Reset NONE
+12: 36..42 Gray Reset NONE
+12: 43..47 Gray Reset NONE
+12: 47..53 Rgb(0, 95, 175) Reset NONE
+12: 53..62 Rgb(0, 135, 0) Reset NONE
+12: 62..72 Gray Reset NONE
+12: 73..79 Rgb(0, 135, 0) Reset BOLD
+12: 79..80 Gray Reset NONE
+13: 0..1 Gray Reset NONE
+13: 30..35 Rgb(0, 95, 175) Reset NONE
+13: 36..42 Gray Reset NONE
+13: 43..45 Gray Reset NONE
+13: 45..53 Rgb(0, 95, 175) Reset NONE
+13: 53..63 Rgb(0, 135, 0) Reset NONE
+13: 63..68 Rgb(175, 0, 0) Reset NONE
+13: 68..72 Gray Reset NONE
+13: 73..79 Rgb(0, 135, 0) Reset BOLD
+13: 79..80 Gray Reset NONE
+14: 0..80 Gray Reset NONE
+23: 0..80 Gray Reset NONE

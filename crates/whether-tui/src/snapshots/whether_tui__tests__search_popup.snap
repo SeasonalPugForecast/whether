@@ -1,0 +1,29 @@
+---
+source: crates/whether-tui/src/tests.rs
+assertion_line: 481
+expression: out
+---
+New York, New York, US  Mon 11:00                  Updated just now · Open-Meteo
+┌ Now ─────────────────────────────────────────────────────────────────────────┐
+│15°  PCLD Partly cloudy                                                       │
+│Feels like 14°                                                                │
+│H 18°  L 8°                                                                   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+     Now          12:00        13:00        14:00         15:00        16:00
+     CLD  ┌ Add a location ──────────────────────────────────────────┐ SHWR
+     15°  │> Springfield_                                            │  18°
+┌ Days ───│                                                          │─────────┐
+│Today    │ Springfield, Illinois, US                                │── 18°   │
+│Tomorrow │ Springfield, Missouri, US                                │── 16°   │
+│Wed      │                                                          │── 19°   │
+└─────────│Enter search / add · ↑↓ choose · Esc close                │─────────┘
+Partly clo└──────────────────────────────────────────────────────────┘
+
+
+
+
+
+
+
+q quit · ←→ location · 1-6 views · r refresh · ?  Weather data by Open-Meteo.com

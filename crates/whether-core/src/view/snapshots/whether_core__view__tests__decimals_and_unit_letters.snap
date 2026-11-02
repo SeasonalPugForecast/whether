@@ -1,0 +1,21 @@
+---
+source: crates/whether-core/src/view/tests.rs
+assertion_line: 179
+expression: "brief(&view(Some(&snap), &p, &ok_status()))"
+---
+status: Updated 5 min ago | Open-Meteo | stale=false error=None
+theme: ClearDay day=true widgets: [Current, Summary, Hourly, Precipitation, Daily, Details, Sun, AirQuality]
+current: 15.3 °C Partly cloudy | Feels like 14.1 °C | H 18.0 °C L 8.4 °C
+summary: Partly cloudy. High 18.0 °C, low 8.4 °C. Rain starting in ~45 min.
+hourly: Now 15.3 °C Some(10)%, 12:00 16.5 °C Some(10)%, 13:00 17.4 °C Some(15)%, 14:00 17.9 °C Some(20)% | range 9.4..18.0
+daily: Today Oct 5 18.0 °C/8.4 °C, Tomorrow Oct 6 16.4 °C/10.2 °C, Wed Oct 7 19.2 °C/9.1 °C, Thu Oct 8 21.5 °C/8.0 °C, Fri Oct 9 20.1 °C/11.4 °C, Sat Oct 10 17.3 °C/12.0 °C, Sun Oct 11 15.8 °C/10.5 °C
+detail: Wind = 13 km/h SW (Some("Gusts 26 km/h"))
+detail: Humidity = 62% (Some("Dew point 8.1 °C"))
+detail: Pressure = 1020 hPa (Some("Steady"))
+detail: UV index = 3 (Some("Moderate"))
+detail: Visibility = 24 km (None)
+detail: Dew point = 8.1 °C (None)
+detail: Cloud cover = 45% (None)
+detail: Precipitation = 0.0 mm (Some("Today 8.0 mm"))
+sun: 07:03 - 18:38 (11h 35m) progress=Some(34)
+attribution: Weather data by Open-Meteo.com

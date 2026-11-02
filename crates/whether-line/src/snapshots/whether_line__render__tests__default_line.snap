@@ -1,0 +1,5 @@
+---
+source: crates/whether-line/src/render.rs
+expression: "line(LineConfig::default(), false)"
+---
+⛅ 15° Partly cloudy

@@ -1,0 +1,9 @@
+// MCU UI entry point (ESP32-S3): the compact window only, with embedded glyphs.
+// No `Path` elements: they do not compile without std in Slint 1.18.
+import "../assets/fonts/Inter-Regular.ttf";
+
+import { Theme } from "components/theme.slint";
+import { TabUi, StatusUi, CurrentUi, HourUi, DayUi, DetailUi, PollutantUi, AirUi, SunUi, AlertUi, PrecipUi, SpanUi, MarkUi, TickUi, HistoryUi, HistoryDayUi } from "components/structs.slint";
+import { CompactWindow } from "compact.slint";
+
+export { Theme, CompactWindow, TabUi, StatusUi, CurrentUi, HourUi, DayUi, DetailUi, PollutantUi, AirUi, SunUi, AlertUi, PrecipUi, SpanUi, MarkUi, TickUi, HistoryUi, HistoryDayUi }

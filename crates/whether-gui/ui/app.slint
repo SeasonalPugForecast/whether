@@ -1,0 +1,110 @@
+// Desktop UI entry point: exports the windows the desktop plugin creates.
+import "../assets/fonts/Inter-Regular.ttf";
+import "../assets/fonts/Inter-Medium.ttf";
+import "../assets/fonts/Inter-SemiBold.ttf";
+import "../assets/fonts/Inter-Light.ttf";
+
+import { Theme } from "components/theme.slint";
+import { TabUi, StatusUi, CurrentUi, HourUi, DayUi, DetailUi, PollutantUi, AirUi, SunUi, AlertUi, PrecipUi, HistoryUi, HistoryDayUi, SettingChoice, SettingToggle, SettingList, SettingsPreview } from "components/structs.slint";
+import { Card, ConditionIcon, BigTemp, HourCell, HourlyBars, DailyRow, BarGauge, MetricTile, PageDots, StatusLine, Attribution } from "components/shared.slint";
+import { HourlyChart, ArcGauge, SunArc, Compass, LocationHeader } from "components/desktop-widgets.slint";
+import { DesktopWindow } from "desktop.slint";
+import { CompactWindow } from "compact.slint";
+import { AboutWindow } from "about.slint";
+
+export { Theme, DesktopWindow, CompactWindow, AboutWindow, TabUi, StatusUi, CurrentUi, HourUi, DayUi, DetailUi, PollutantUi, AirUi, SunUi, AlertUi, PrecipUi, HistoryUi, HistoryDayUi, SettingChoice, SettingToggle, SettingList, SettingsPreview }
+
+// Every component with sample data (visual check; removed once the windows exist).
+export component Gallery inherits Window {
+    in property <CurrentUi> current;
+    in property <[HourUi]> hours;
+    in property <[DayUi]> days;
+    in property <[DetailUi]> details;
+    in property <AirUi> air;
+    in property <SunUi> sun;
+    in property <StatusUi> status;
+    in property <[string]> locations;
+    in property <string> attribution;
+    in property <string> chart-line;
+    in property <string> chart-area;
+    default-font-family: "Inter";
+
+    Rectangle {
+        background: @linear-gradient(180deg, Theme.sky-top 0%, Theme.sky-bottom 100%);
+    }
+
+    VerticalLayout {
+        padding: 16px;
+        spacing: 12px;
+        LocationHeader {
+            locations: root.locations;
+            status: root.status;
+            units-label: "°F";
+        }
+        HorizontalLayout {
+            spacing: 12px;
+            Card {
+                title: "NOW";
+                HorizontalLayout {
+                    spacing: 12px;
+                    ConditionIcon { icon: root.current.icon; size: 96px; }
+                    VerticalLayout {
+                        BigTemp { text: root.current.temp; size: 64px; }
+                        Text { text: root.current.condition; color: Theme.text; font-size: 22px; }
+                        Text { text: root.current.feels + " · H " + root.current.high + " L " + root.current.low; color: Theme.text-muted; font-size: 14px; }
+                    }
+                }
+            }
+            Card {
+                title: "HOURLY";
+                HourlyChart { line: root.chart-line; area: root.chart-area; first-label: "Now"; mid-label: "+12 h"; last-label: "+23 h"; }
+                HourlyBars { hours: root.hours; height: 24px; }
+            }
+        }
+        HorizontalLayout {
+            spacing: 8px;
+            for hour[i] in root.hours: HourCell { hour: hour; visible: i < 8; width: i < 8 ? 64px : 0; }
+        }
+        HorizontalLayout {
+            spacing: 12px;
+            Card {
+                title: "DAYS";
+                for day in root.days: DailyRow { day: day; }
+            }
+            VerticalLayout {
+                spacing: 12px;
+                HorizontalLayout {
+                    spacing: 12px;
+                    for detail[i] in root.details: MetricTile {
+                        visible: i < 3;
+                        title: detail.title;
+                        value: detail.value;
+                        caption: detail.caption;
+                        gauge: detail.gauge;
+                        level: detail.level;
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 12px;
+                    Card { title: "PRESSURE"; ArcGauge { value: 0.6; label: "1020"; height: 80px; } }
+                    Card { title: "WIND"; Compass { direction: 225; height: 64px; } }
+                    Card {
+                        title: "SUN";
+                        SunArc { progress: root.sun.progress; is-day: root.sun.is-day; height: 50px; }
+                        Text { text: root.sun.sunrise + " – " + root.sun.sunset; color: Theme.text; }
+                    }
+                    Card {
+                        title: "AIR";
+                        Text { text: root.air.index + " " + root.air.category; color: Theme.level-color(root.air.level); font-size: 22px; }
+                        BarGauge { value: root.air.gauge; tint: Theme.level-color(root.air.level); }
+                    }
+                }
+            }
+        }
+        HorizontalLayout {
+            StatusLine { status: root.status; }
+            PageDots { count: 3; current: 1; }
+            Attribution { text: root.attribution; horizontal-alignment: right; }
+        }
+    }
+}

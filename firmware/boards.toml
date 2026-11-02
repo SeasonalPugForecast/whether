@@ -1,0 +1,67 @@
+# Board profiles, shared by the firmware build and `whether-sim`.
+# Geometry is landscape (width ≥ height) as the firmware rotates the panel.
+# `pins` tables come with the reference wiring for esp32-wroom-spi and cited
+# values for the known boards. Never invent pin numbers. On the ESP32-WROOM-32,
+# esp-generate marks GPIO16 and GPIO20 as used by the module: do not wire DC to 16.
+# `features` are extra whether-fw Cargo features; `board-<name>` is always enabled.
+# `tui_font` is a mousefood (embedded-graphics-unicodefonts) font name.
+
+[esp32-wroom-spi]
+chip = "esp32"
+target = "xtensa-esp32-none-elf"
+toolchain = "esp"
+features = []
+width = 480
+height = 320
+color = "rgb565"
+controller = "st7796"   # 3.5–4.0" IPS ST7796S; a 240×320 ST7789 also fits
+psram = false
+touch = "none"           # optional FT6336U/GT911 once wired
+default_display = "panel"
+tui_font = "6x12"        # 80×26 cells
+panel_size_class = "large"
+
+[cyd]
+chip = "esp32"
+target = "xtensa-esp32-none-elf"
+toolchain = "esp"
+features = []
+width = 320
+height = 240
+color = "rgb565"
+controller = "ili9341"   # some revisions ship an ST7789
+psram = false
+touch = "xpt2046"
+default_display = "panel"
+tui_font = "6x12"        # 53×20 cells
+panel_size_class = "small"
+
+[esp32s3-box3]
+chip = "esp32s3"
+target = "xtensa-esp32s3-none-elf"
+toolchain = "esp"
+features = []
+width = 320
+height = 240
+color = "rgb565"
+controller = "ili9342c"
+psram = true
+touch = "capacitive"
+default_display = "gui"
+tui_font = "6x12"
+panel_size_class = "small"
+
+[c6-st7789]
+chip = "esp32c6"
+target = "riscv32imac-unknown-none-elf"
+toolchain = "stable"
+features = []
+width = 320
+height = 240
+color = "rgb565"
+controller = "st7789"
+psram = false
+touch = "none"
+default_display = "tui"
+tui_font = "6x12"
+panel_size_class = "small"

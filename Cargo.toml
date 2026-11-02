@@ -1,0 +1,84 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "apps/*", "xtask"]
+exclude = ["firmware"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "MIT"
+# The project URL is also the API contact in the User-Agent. A `.invalid` placeholder here
+# would keep MET Norway off (`api_contact()` in whether-ffi).
+repository = "https://github.com/SeasonalPugForecast/whether"
+publish = false
+
+[workspace.dependencies]
+# Internal crates: default-features = false so every consumer opts in explicitly.
+whether-core = { path = "crates/whether-core", default-features = false }
+whether-providers = { path = "crates/whether-providers", default-features = false }
+whether-config = { path = "crates/whether-config", default-features = false }
+whether-display = { path = "crates/whether-display" }
+whether-runtime = { path = "crates/whether-runtime" }
+whether-tui = { path = "crates/whether-tui", default-features = false }
+whether-gui = { path = "crates/whether-gui", default-features = false }
+whether-line = { path = "crates/whether-line" }
+whether-panel = { path = "crates/whether-panel" }
+whether-plugin-proto = { path = "crates/whether-plugin-proto" }
+whether-ffi = { path = "crates/whether-ffi" }
+
+# External crates: versions pinned.
+serde = { version = "1.0.229", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = "1.0.151", default-features = false, features = ["alloc"] }
+toml = { version = "1.1.6", default-features = false, features = ["serde", "parse"] }
+libm = "0.2.16"
+percent-encoding = { version = "2.3.2", default-features = false, features = ["alloc"] }
+bitflags = "2.13.2"
+thiserror = { version = "2.0.21", default-features = false }
+anyhow = "1.0.104"
+clap = { version = "4.6.7", features = ["derive"] }
+clap_complete = "4.6.11"
+clap_mangen = "0.3.3"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt"] }
+toml_edit = "0.25.15"
+ureq = "3.4.2"
+ratatui = { version = "0.30.2", default-features = false }
+jiff = "0.2.37"
+resvg = "0.48.1"
+png = "0.18.1"
+slint = { version = "1.18.1", default-features = false }
+slint-build = "1.18.1"
+schemars = { version = "1.2.2", default-features = false, features = ["derive", "std"] }
+mousefood = { version = "0.5.2", default-features = false, features = ["fonts"] }
+embedded-graphics = "0.8.2"
+embedded-graphics-simulator = { version = "0.8.0", default-features = false }
+u8g2-fonts = "0.8.0"
+uniffi = "0.32.2"
+async-trait = "0.1.92"
+
+# Dev-only.
+insta = { version = "1.49.0", features = ["yaml"] }
+proptest = "1.11.0"
+tempfile = "3.27.0"
+pollster = "1.0.1"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+cast_precision_loss = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"

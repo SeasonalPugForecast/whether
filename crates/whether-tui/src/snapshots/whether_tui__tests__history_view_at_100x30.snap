@@ -1,0 +1,35 @@
+---
+source: crates/whether-tui/src/tests.rs
+assertion_line: 730
+expression: out
+---
+New York, New York, US  Mon 11:00                                      Updated just now · Open-Meteo
+┌ History ─────────────────────────────────────────────────────────────────────────────────────────┐
+│Normal 69° / 55°  ·  Records 94° in 1941 · 35° in 1881                                            │
+│Rain or snow on this date in 23% of years                                                         │
+│2° warmer than yesterday                                                                          │
+│                   High   Low Normal  Precip                                                      │
+│Mon       Sep 28    62°   57°    -7°  0.45 in                                                     │
+│Tue       Sep 29    70°   59°    +1°  0.00 in                                                     │
+│Wed       Sep 30      —     —      —  —                                                           │
+│Thu       Oct 1     76°   65°    +7°  0.00 in                                                     │
+│Fri       Oct 2     83°   68°   +14°  Trace                                                       │
+│Sat       Oct 3     70°   59°    +1°  Trace                                                       │
+│Yesterday Oct 4     62°   56°    -7°  0.15 in                                                     │
+│0.15 in this month, normal 0.60 in                                                                │
+│NY City Central Park, 4.8 mi · records: New York-Central Park Area · Normals 1991–2020            │
+│                                                                                                  │
+│                                                                                                  │
+│                                                                                                  │
+│                                                                                                  │
+│                                                                                                  │
+│                                                                                                  │
+│                                                                                                  │
+│                                                                                                  │
+│                                                                                                  │
+│                                                                                                  │
+│                                                                                                  │
+│                                                                                                  │
+│                                                                                                  │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
+q quit · ←→ location · 1-6 views · r refresh · ? he Weather data by Open-Meteo.com · NOAA RCC (ACIS)

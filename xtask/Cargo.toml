@@ -1,0 +1,30 @@
+[package]
+name = "xtask"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+whether-core.workspace = true
+whether-providers = { workspace = true, features = ["serde"] }
+whether-config = { workspace = true, features = ["schema"] }
+whether-line.workspace = true
+resvg.workspace = true
+whether = { path = "../apps/whether", default-features = false }
+clap_complete.workspace = true
+clap_mangen.workspace = true
+whether-tui = { workspace = true, features = ["schema"] }
+whether-gui = { workspace = true, features = ["desktop"] }
+schemars.workspace = true
+whether-plugin-proto = { workspace = true, features = ["examples"] }
+serde_json = { workspace = true, features = ["std"] }
+toml = { workspace = true, features = ["std"] }
+
+[dev-dependencies]
+png.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,5 @@
+---
+source: crates/whether-line/src/render.rs
+expression: "line(LineConfig { format, icons: IconStyle::NerdFont, ..Default::default() },\nfalse)"
+---
+location=New York | temp=15° | feels=14° | hi=18° | lo=8° | condition=Partly cloudy | icon= | summary=Partly cloudy. High 18°, low 8°. Rain starting in ~45 min. | wind=13 km/h SW | wind_dir=SW | humidity=62% | pressure=1020 hPa | uv=3 | aqi=42 | aqi_label=Good | precip_prob=10% | sunrise=07:03 | sunset=18:38 | updated=Updated just now | normal_high=— | normal_low=— | record_high=— | yesterday_delta=— | provider=Open-Meteo | alert=

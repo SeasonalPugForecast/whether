@@ -1,0 +1,30 @@
+[package]
+name = "whether-config"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+default = ["std"]
+std = ["toml/std", "toml/display", "dep:tracing", "dep:toml_edit"]
+schema = ["std", "dep:schemars", "dep:serde_json", "whether-core/schema"]
+
+[dependencies]
+whether-core = { workspace = true, features = ["serde"] }
+serde.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+tracing = { workspace = true, optional = true }
+toml_edit = { workspace = true, optional = true }
+schemars = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true, features = ["std"] }
+
+[dev-dependencies]
+toml = { workspace = true, features = ["display"] }
+tempfile.workspace = true
+insta.workspace = true
+
+[lints]
+workspace = true

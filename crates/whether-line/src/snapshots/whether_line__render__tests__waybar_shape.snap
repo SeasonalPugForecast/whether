@@ -1,0 +1,5 @@
+---
+source: crates/whether-line/src/render.rs
+expression: text
+---
+{"alt":"partly_cloudy_day","class":["whether","clear_day","stale"],"text":"⛅ 15° Partly cloudy","tooltip":"New York: Partly cloudy. High 18°, low 8°. Rain starting in ~45 min."}

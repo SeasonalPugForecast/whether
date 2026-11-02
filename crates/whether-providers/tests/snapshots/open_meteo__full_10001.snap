@@ -1,0 +1,273 @@
+---
+source: crates/whether-providers/tests/open_meteo.rs
+expression: "(&s.location, current, &s.hourly[0], &s.daily[0], &s.minutely_15[0], aq)"
+---
+(
+    ResolvedLocation {
+        name: "",
+        region: None,
+        latitude: 40.710335,
+        longitude: -73.99308,
+        elevation_m: Some(
+            51.0,
+        ),
+        utc_offset: UtcOffset(
+            -18000,
+        ),
+        tz_name: Some(
+            "America/New_York",
+        ),
+        tz_abbrev: Some(
+            "GMT-5",
+        ),
+        station: None,
+    },
+    Current {
+        time: UnixTime(
+            1793637000,
+        ),
+        is_day: true,
+        condition: PartlyCloudy,
+        temperature: Some(
+            Celsius(
+                16.6,
+            ),
+        ),
+        apparent: Some(
+            Celsius(
+                13.3,
+            ),
+        ),
+        dew_point: Some(
+            Celsius(
+                4.6,
+            ),
+        ),
+        humidity: Some(
+            Percent(
+                45.0,
+            ),
+        ),
+        pressure_msl: Some(
+            Hpa(
+                1028.4,
+            ),
+        ),
+        cloud_cover: Some(
+            Percent(
+                50.0,
+            ),
+        ),
+        wind_speed: Some(
+            Mps(
+                3.8,
+            ),
+        ),
+        wind_gust: Some(
+            Mps(
+                7.9,
+            ),
+        ),
+        wind_dir: Some(
+            Degrees(
+                221.0,
+            ),
+        ),
+        visibility: Some(
+            Meters(
+                46500.0,
+            ),
+        ),
+        uv_index: Some(
+            3.15,
+        ),
+        precipitation: Some(
+            Mm(
+                0.0,
+            ),
+        ),
+    },
+    Hourly {
+        time: UnixTime(
+            1793548800,
+        ),
+        is_day: true,
+        condition: MainlyClear,
+        temperature: Some(
+            Celsius(
+                13.1,
+            ),
+        ),
+        apparent: Some(
+            Celsius(
+                10.7,
+            ),
+        ),
+        precip_probability: Some(
+            Percent(
+                0.0,
+            ),
+        ),
+        precipitation: Some(
+            Mm(
+                0.0,
+            ),
+        ),
+        wind_speed: Some(
+            Mps(
+                1.3,
+            ),
+        ),
+        wind_gust: Some(
+            Mps(
+                2.4,
+            ),
+        ),
+        wind_dir: Some(
+            Degrees(
+                227.0,
+            ),
+        ),
+        humidity: Some(
+            Percent(
+                50.0,
+            ),
+        ),
+        pressure_msl: Some(
+            Hpa(
+                1034.5,
+            ),
+        ),
+        uv_index: Some(
+            3.4,
+        ),
+        visibility: Some(
+            Meters(
+                40000.0,
+            ),
+        ),
+        cloud_cover: Some(
+            Percent(
+                46.0,
+            ),
+        ),
+    },
+    Daily {
+        date: LocalDate {
+            year: 2026,
+            month: 11,
+            day: 2,
+        },
+        condition: Overcast,
+        temp_max: Some(
+            Celsius(
+                18.7,
+            ),
+        ),
+        temp_min: Some(
+            Celsius(
+                6.6,
+            ),
+        ),
+        apparent_max: Some(
+            Celsius(
+                15.1,
+            ),
+        ),
+        apparent_min: Some(
+            Celsius(
+                4.7,
+            ),
+        ),
+        precip_sum: Some(
+            Mm(
+                0.0,
+            ),
+        ),
+        precip_probability_max: Some(
+            Percent(
+                1.0,
+            ),
+        ),
+        sunrise: Some(
+            UnixTime(
+                1793618852,
+            ),
+        ),
+        sunset: Some(
+            UnixTime(
+                1793656265,
+            ),
+        ),
+        daylight_s: Some(
+            37412,
+        ),
+        uv_index_max: Some(
+            3.2,
+        ),
+        wind_speed_max: Some(
+            Mps(
+                4.41,
+            ),
+        ),
+        wind_gust_max: Some(
+            Mps(
+                7.4,
+            ),
+        ),
+        wind_dir_dominant: Some(
+            Degrees(
+                220.0,
+            ),
+        ),
+        moon_phase: Some(
+            0.78,
+        ),
+        moonrise: None,
+        moonset: Some(
+            UnixTime(
+                1793644649,
+            ),
+        ),
+    },
+    Minutely {
+        time: UnixTime(
+            1793637000,
+        ),
+        precipitation: Some(
+            Mm(
+                0.0,
+            ),
+        ),
+    },
+    AirQuality {
+        time: UnixTime(
+            1793635200,
+        ),
+        us_aqi: Some(
+            56,
+        ),
+        european_aqi: Some(
+            45,
+        ),
+        owm_index: None,
+        pm2_5: Some(
+            13.6,
+        ),
+        pm10: Some(
+            14.1,
+        ),
+        o3: Some(
+            47.0,
+        ),
+        no2: Some(
+            34.6,
+        ),
+        so2: Some(
+            3.9,
+        ),
+        co: Some(
+            256.0,
+        ),
+    },
+)

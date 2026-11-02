@@ -1,0 +1,139 @@
+// The view model as Slint structs (filled from Rust; see src/model.rs).
+
+export struct TabUi { name: string, temp: string, icon: int }
+
+export struct StatusUi { updated: string, provider: string, stale: bool, refreshing: bool, error: string, observed: string }
+
+export struct CurrentUi {
+    temp: string,
+    temp-level: int,
+    condition: string,
+    icon: int,
+    feels: string,
+    high: string,
+    low: string,
+    summary: string,
+}
+
+export struct HourUi {
+    label: string,
+    icon: int,
+    temp: string,
+    temp-frac: float,
+    pop: string,
+    pop-frac: float,
+    wind: string,
+    wind-deg: float,
+    is-day: bool,
+}
+
+// A stretch of one kind of weather within day `day` (an index into the days), as
+// fractions of its hours; `group` is the TimelineGroup index (0 clear … 8 storm).
+export struct SpanUi {
+    day: int,
+    start: float,
+    len: float,
+    group: int,
+    label: string,
+}
+
+// Every third hour of day `day`, at `pos` (0..1) along it, for expanding it.
+export struct MarkUi {
+    day: int,
+    pos: float,
+    label: string,
+    icon: int,
+    temp: string,
+}
+
+// A label on the nowcast's time axis, at `pos` (0..1) along it.
+export struct TickUi {
+    pos: float,
+    label: string,
+}
+
+export struct DayUi {
+    label: string,
+    icon: int,
+    condition: string,
+    pop: string,
+    low: string,
+    high: string,
+    high-level: int,
+    range-lo: float,
+    range-hi: float,
+    // "Light drizzle in the early afternoon.", or empty.
+    precip-text: string,
+    // Whether its hours are known (`daily_hours`), for its timeline.
+    has-hours: bool,
+    // The normal low and high on the range bar (0..1), or -1 without history.
+    normal-lo: float,
+    normal-hi: float,
+}
+
+// One observed day of the history card. `warmer` is 1 above normal,
+// -1 below, 0 even or unknown; the range fields place it on the card's scale.
+export struct HistoryDayUi {
+    label: string,
+    date: string,
+    high: string,
+    low: string,
+    departure: string,
+    warmer: int,
+    precip: string,
+    range-lo: float,
+    range-hi: float,
+    normal-lo: float,
+    normal-hi: float,
+}
+
+// The history card's lines; `present` when there is history to show.
+export struct HistoryUi {
+    present: bool,
+    normal: string,
+    records: string,
+    chance: string,
+    delta: string,
+    month: string,
+    credit: string,
+}
+
+// `level` and `gauge` are -1 and `direction` is -1 when not applicable. `kind` is the
+// `DetailKind` index (0 wind, 1 gusts, 2 humidity, 3 dew point, 4 pressure, 5 UV, …).
+export struct DetailUi {
+    kind: int,
+    title: string,
+    value: string,
+    caption: string,
+    level: int,
+    gauge: float,
+    direction: float,
+    icon: int,
+}
+
+export struct PollutantUi { name: string, value: string }
+
+// An official alert. `level` is the `Level` index (0 good … 5 extreme).
+export struct AlertUi { title: string, body: string, period: string, level: int }
+
+// One hour of the precipitation table (intensity 0–1).
+export struct PrecipUi { label: string, chance: string, amount: string, intensity: float, frozen: bool }
+
+export struct AirUi { present: bool, index: string, category: string, level: int, gauge: float }
+
+export struct SunUi {
+    present: bool,
+    sunrise: string,
+    sunset: string,
+    daylight: string,
+    progress: float,
+    is-day: bool,
+    moon-phase: string,
+    moon-icon: int,
+}
+
+// The settings dialog: a choice, and a toggle list with its entries.
+export struct SettingChoice { tab: int, label: string, options: [string], index: int }
+export struct SettingToggle { label: string, on: bool }
+export struct SettingList { tab: int, label: string, ordered: bool, items: [SettingToggle] }
+export struct SettingsPreview { top: color, bottom: color, text: color, accent: color, scale: float }

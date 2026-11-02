@@ -1,0 +1,5 @@
+---
+source: apps/whether/tests/cli.rs
+expression: text(&out.stdout)
+---
+⛅ 15° Partly cloudy

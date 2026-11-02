@@ -1,0 +1,9 @@
+---
+source: crates/whether-providers/tests/geocode.rs
+expression: names
+---
+[
+    "Springfield, Missouri, US",
+    "Springfield, Illinois, US",
+    "Springfield, Massachusetts, US",
+]

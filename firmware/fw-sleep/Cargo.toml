@@ -1,0 +1,17 @@
+[package]
+name = "fw-sleep"
+description = "What the firmware keeps across deep sleep, and the decisions around it (host-tested)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+whether-core.workspace = true
+whether-providers.workspace = true
+serde.workspace = true
+postcard.workspace = true
+
+[lints]
+workspace = true

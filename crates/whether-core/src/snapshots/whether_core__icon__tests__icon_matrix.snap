@@ -1,0 +1,32 @@
+---
+source: crates/whether-core/src/icon.rs
+expression: out
+---
+Clear                        day=ClearDay             night=ClearNight
+MainlyClear                  day=PartlyCloudyDay      night=PartlyCloudyNight
+PartlyCloudy                 day=PartlyCloudyDay      night=PartlyCloudyNight
+Cloudy                       day=Cloudy               night=Cloudy
+Overcast                     day=OvercastDay          night=OvercastNight
+Fog                          day=FogDay               night=FogNight
+Haze                         day=Haze                 night=Haze
+Smoke                        day=Smoke                night=Smoke
+Dust                         day=Dust                 night=Dust
+Drizzle(Light)               day=Drizzle              night=Drizzle
+FreezingDrizzle(Light)       day=Sleet                night=Sleet
+Rain(Light)                  day=Rain                 night=Rain
+Rain(Moderate)               day=Rain                 night=Rain
+Rain(Heavy)                  day=ExtremeRain          night=ExtremeRain
+FreezingRain(Heavy)          day=Sleet                night=Sleet
+RainShowers(Moderate)        day=ShowersDay           night=ShowersNight
+Sleet(Moderate)              day=Sleet                night=Sleet
+SleetShowers(Light)          day=Sleet                night=Sleet
+Snow(Moderate)               day=Snow                 night=Snow
+Snow(Heavy)                  day=ExtremeSnow          night=ExtremeSnow
+SnowShowers(Light)           day=SnowShowersDay       night=SnowShowersNight
+SnowGrains                   day=Snow                 night=Snow
+Thunderstorm(Moderate)       day=ThunderstormsDay     night=ThunderstormsNight
+Thunderstorm(Heavy)          day=ThunderstormsRain    night=ThunderstormsRain
+ThunderstormHail(Light)      day=Hail                 night=Hail
+Squall                       day=Wind                 night=Wind
+Tornado                      day=Tornado              night=Tornado
+Unknown                      day=NotAvailable         night=NotAvailable

@@ -1,0 +1,5 @@
+---
+source: crates/whether-plugin-proto/src/tests.rs
+expression: "encode(&HostMessage::Hello\n{\n    protocol: PROTOCOL_VERSION, app_version: \"0.1.0\".into(), plugin_name:\n    \"notify\".into(), config: serde_json::json!({ \"lead_minutes\": 60 }),\n})"
+---
+{"type":"hello","protocol":1,"app_version":"0.1.0","plugin_name":"notify","config":{"lead_minutes":60}}

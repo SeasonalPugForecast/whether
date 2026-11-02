@@ -1,0 +1,44 @@
+name: Pages
+
+# Publishes site/ and PRIVACY.md (as /privacy/) with GitHub Pages.
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', 'PRIVACY.md', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - name: Assemble the site
+        run: |
+          mkdir -p build
+          cp -r site build/src
+          {
+            printf -- '---\nlayout: default\ntitle: Privacy\npermalink: /privacy/\n---\n\n'
+            cat PRIVACY.md
+          } > build/src/privacy.md
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./build/src
+          destination: ./build/out
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./build/out
+      - id: deployment
+        uses: actions/deploy-pages@v4

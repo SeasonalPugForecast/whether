@@ -1,0 +1,20 @@
+/target/
+/firmware/target/
+/firmware/whether-fw.toml
+*.local.toml
+.env
+/dist/
+
+# iOS build output (cargo xtask ios build)
+/ios/WhetherKit/WhetherFFI.xcframework/
+/ios/WhetherKit/Sources/WhetherKit/whether_ffi.swift
+/ios/WhetherKit/.build/
+*.local.xcconfig
+# Written by Xcode when the project is opened (per user; not part of the source)
+xcuserdata/
+/ios/Whether/Whether.xcodeproj/project.xcworkspace/
+/ios/WhetherKit/.swiftpm/
+
+# Local logs and editor state
+/esp32.log
+/.idea/

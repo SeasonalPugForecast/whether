@@ -1,0 +1,7466 @@
+{
+  "active": 0,
+  "air_quality": {
+    "category_label": "Good",
+    "gauge": 0.14,
+    "index": 42,
+    "level": "good",
+    "pollutants": [
+      [
+        "PM2.5",
+        "8.4 µg/m³"
+      ],
+      [
+        "PM10",
+        "14.2 µg/m³"
+      ],
+      [
+        "O₃",
+        "61.0 µg/m³"
+      ],
+      [
+        "NO₂",
+        "12.5 µg/m³"
+      ],
+      [
+        "SO₂",
+        "2.1 µg/m³"
+      ],
+      [
+        "CO",
+        "210 µg/m³"
+      ]
+    ],
+    "scale": "us"
+  },
+  "alerts": [
+    {
+      "body": "The East Branch Bronx River near New York is above flood stage and is expected to crest this evening. Roads along the creek are flooded; do not drive through flooded roadways.",
+      "end": 1791280800,
+      "id": "sample-flood-warning",
+      "level": "very_poor",
+      "period": "Mon 9:00 AM – Tue 6:00 AM",
+      "source": "NWS Upton NY",
+      "title": "Flood Warning",
+      "url": "https://api.weather.gov/alerts/sample-flood-warning"
+    },
+    {
+      "body": "West winds 20 to 30 mph with gusts up to 50 mph. Gusty winds will blow around unsecured objects and may bring down tree limbs.",
+      "end": 1791259200,
+      "id": "sample-wind-advisory",
+      "level": "moderate",
+      "period": "Mon 2:00 PM – Tue 12:00 AM",
+      "source": "NWS Upton NY",
+      "title": "Wind Advisory",
+      "url": "https://api.weather.gov/alerts/sample-wind-advisory"
+    }
+  ],
+  "attribution": "Weather data by Open-Meteo.com · NOAA RCC (ACIS)",
+  "current": {
+    "condition": "partly_cloudy",
+    "condition_label": "Partly cloudy",
+    "feels_like": {
+      "text": "57°",
+      "unit": "°F",
+      "value": 57.38
+    },
+    "feels_like_label": "Feels like 57°",
+    "high": {
+      "text": "64°",
+      "unit": "°F",
+      "value": 64.4
+    },
+    "icon": "partly_cloudy_day",
+    "low": {
+      "text": "47°",
+      "unit": "°F",
+      "value": 47.12
+    },
+    "temp_level": "cool",
+    "temperature": {
+      "text": "60°",
+      "unit": "°F",
+      "value": 59.54
+    }
+  },
+  "daily": {
+    "days": [
+      {
+        "actual_high": {
+          "text": "64°",
+          "unit": "°F",
+          "value": 64.4
+        },
+        "actual_low": {
+          "text": "47°",
+          "unit": "°F",
+          "value": 47.12
+        },
+        "condition_label": "Cloudy",
+        "date_short": "Oct 5",
+        "gust_max": {
+          "text": "25 mph",
+          "unit": "mph",
+          "value": 24.606297
+        },
+        "high": {
+          "text": "64°",
+          "unit": "°F",
+          "value": 64.4
+        },
+        "hours": [
+          {
+            "actual": {
+              "text": "50°",
+              "unit": "°F",
+              "value": 49.64
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "34°",
+              "unit": "°F",
+              "value": 34.118633
+            },
+            "feels_like": {
+              "text": "47°",
+              "unit": "°F",
+              "value": 47.48
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "12 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.15 inHg",
+              "unit": "inHg",
+              "value": 30.150112
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "50°",
+              "unit": "°F",
+              "value": 49.64
+            },
+            "time": 1791172800,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↑",
+              "compass": "SSW",
+              "direction_deg": 200.0,
+              "gust": {
+                "text": "11 mph",
+                "unit": "mph",
+                "value": 11.184681
+              },
+              "speed": {
+                "text": "6 mph",
+                "unit": "mph",
+                "value": 5.5923405
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 48.92
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "33°",
+              "unit": "°F",
+              "value": 33.446854
+            },
+            "feels_like": {
+              "text": "47°",
+              "unit": "°F",
+              "value": 46.76
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "1 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.14 inHg",
+              "unit": "inHg",
+              "value": 30.144798
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 48.92
+            },
+            "time": 1791176400,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↑",
+              "compass": "SSW",
+              "direction_deg": 202.0,
+              "gust": {
+                "text": "12 mph",
+                "unit": "mph",
+                "value": 11.855762
+              },
+              "speed": {
+                "text": "6 mph",
+                "unit": "mph",
+                "value": 5.927881
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "48°",
+              "unit": "°F",
+              "value": 48.2
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "33°",
+              "unit": "°F",
+              "value": 32.775
+            },
+            "feels_like": {
+              "text": "46°",
+              "unit": "°F",
+              "value": 46.04
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "2 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.14 inHg",
+              "unit": "inHg",
+              "value": 30.139482
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "48°",
+              "unit": "°F",
+              "value": 48.2
+            },
+            "time": 1791180000,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SSW",
+              "direction_deg": 204.0,
+              "gust": {
+                "text": "13 mph",
+                "unit": "mph",
+                "value": 12.526842
+              },
+              "speed": {
+                "text": "6 mph",
+                "unit": "mph",
+                "value": 6.263421
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "48°",
+              "unit": "°F",
+              "value": 47.66
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "32°",
+              "unit": "°F",
+              "value": 32.27107
+            },
+            "feels_like": {
+              "text": "46°",
+              "unit": "°F",
+              "value": 45.5
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "3 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.13 inHg",
+              "unit": "inHg",
+              "value": 30.134167
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "48°",
+              "unit": "°F",
+              "value": 47.66
+            },
+            "time": 1791183600,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SSW",
+              "direction_deg": 206.0,
+              "gust": {
+                "text": "13 mph",
+                "unit": "mph",
+                "value": 13.197923
+              },
+              "speed": {
+                "text": "7 mph",
+                "unit": "mph",
+                "value": 6.5989614
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "47°",
+              "unit": "°F",
+              "value": 47.3
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "32°",
+              "unit": "°F",
+              "value": 31.93509
+            },
+            "feels_like": {
+              "text": "45°",
+              "unit": "°F",
+              "value": 45.14
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "4 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.13 inHg",
+              "unit": "inHg",
+              "value": 30.128853
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "47°",
+              "unit": "°F",
+              "value": 47.3
+            },
+            "time": 1791187200,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SSW",
+              "direction_deg": 208.0,
+              "gust": {
+                "text": "14 mph",
+                "unit": "mph",
+                "value": 13.869003
+              },
+              "speed": {
+                "text": "7 mph",
+                "unit": "mph",
+                "value": 6.9345016
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "47°",
+              "unit": "°F",
+              "value": 47.12
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "32°",
+              "unit": "°F",
+              "value": 31.76709
+            },
+            "feels_like": {
+              "text": "45°",
+              "unit": "°F",
+              "value": 44.96
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "5 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.12 inHg",
+              "unit": "inHg",
+              "value": 30.123535
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "47°",
+              "unit": "°F",
+              "value": 47.12
+            },
+            "time": 1791190800,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SSW",
+              "direction_deg": 210.0,
+              "gust": {
+                "text": "15 mph",
+                "unit": "mph",
+                "value": 14.540085
+              },
+              "speed": {
+                "text": "7 mph",
+                "unit": "mph",
+                "value": 7.2700424
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "47°",
+              "unit": "°F",
+              "value": 47.48
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "32°",
+              "unit": "°F",
+              "value": 32.10308
+            },
+            "feels_like": {
+              "text": "45°",
+              "unit": "°F",
+              "value": 45.32
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "6 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.12 inHg",
+              "unit": "inHg",
+              "value": 30.11822
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "47°",
+              "unit": "°F",
+              "value": 47.48
+            },
+            "time": 1791194400,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SSW",
+              "direction_deg": 212.0,
+              "gust": {
+                "text": "15 mph",
+                "unit": "mph",
+                "value": 15.211165
+              },
+              "speed": {
+                "text": "8 mph",
+                "unit": "mph",
+                "value": 7.6055827
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 48.74
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "33°",
+              "unit": "°F",
+              "value": 33.2789
+            },
+            "feels_like": {
+              "text": "47°",
+              "unit": "°F",
+              "value": 46.58
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "7 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.11 inHg",
+              "unit": "inHg",
+              "value": 30.112906
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 48.74
+            },
+            "time": 1791198000,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 214.0,
+              "gust": {
+                "text": "16 mph",
+                "unit": "mph",
+                "value": 15.882247
+              },
+              "speed": {
+                "text": "8 mph",
+                "unit": "mph",
+                "value": 7.9411235
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 51.08
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "35°",
+              "unit": "°F",
+              "value": 35.46197
+            },
+            "feels_like": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 48.920002
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_day",
+            "is_day": true,
+            "label": "8 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.11 inHg",
+              "unit": "inHg",
+              "value": 30.10759
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 51.08
+            },
+            "time": 1791201600,
+            "uv": 0.26114142,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 216.0,
+              "gust": {
+                "text": "17 mph",
+                "unit": "mph",
+                "value": 16.553328
+              },
+              "speed": {
+                "text": "8 mph",
+                "unit": "mph",
+                "value": 8.276664
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "54°",
+              "unit": "°F",
+              "value": 53.96
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Partly cloudy",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "39°",
+              "unit": "°F",
+              "value": 38.911507
+            },
+            "feels_like": {
+              "text": "52°",
+              "unit": "°F",
+              "value": 51.8
+            },
+            "humidity": 57,
+            "humidity_text": "57%",
+            "icon": "partly_cloudy_day",
+            "is_day": true,
+            "label": "9 AM",
+            "precip_probability": 5,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.10 inHg",
+              "unit": "inHg",
+              "value": 30.102274
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "54°",
+              "unit": "°F",
+              "value": 53.96
+            },
+            "time": 1791205200,
+            "uv": 0.7098558,
+            "uv_text": "1",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 218.0,
+              "gust": {
+                "text": "17 mph",
+                "unit": "mph",
+                "value": 17.224407
+              },
+              "speed": {
+                "text": "9 mph",
+                "unit": "mph",
+                "value": 8.612204
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "57°",
+              "unit": "°F",
+              "value": 56.84
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Partly cloudy",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "42°",
+              "unit": "°F",
+              "value": 41.60544
+            },
+            "feels_like": {
+              "text": "55°",
+              "unit": "°F",
+              "value": 54.68
+            },
+            "humidity": 57,
+            "humidity_text": "57%",
+            "icon": "partly_cloudy_day",
+            "is_day": true,
+            "label": "10 AM",
+            "precip_probability": 5,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.10 inHg",
+              "unit": "inHg",
+              "value": 30.09696
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "57°",
+              "unit": "°F",
+              "value": 56.84
+            },
+            "time": 1791208800,
+            "uv": 1.5450937,
+            "uv_text": "2",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 220.0,
+              "gust": {
+                "text": "18 mph",
+                "unit": "mph",
+                "value": 17.895489
+              },
+              "speed": {
+                "text": "9 mph",
+                "unit": "mph",
+                "value": 8.947744
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "60°",
+              "unit": "°F",
+              "value": 59.54
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Cloudy",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "45°",
+              "unit": "°F",
+              "value": 44.89169
+            },
+            "feels_like": {
+              "text": "57°",
+              "unit": "°F",
+              "value": 57.38
+            },
+            "humidity": 58,
+            "humidity_text": "58%",
+            "icon": "cloudy",
+            "is_day": true,
+            "label": "Now",
+            "precip_probability": 10,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.09 inHg",
+              "unit": "inHg",
+              "value": 30.091644
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "60°",
+              "unit": "°F",
+              "value": 59.54
+            },
+            "time": 1791212400,
+            "uv": 2.6929576,
+            "uv_text": "3",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 222.0,
+              "gust": {
+                "text": "19 mph",
+                "unit": "mph",
+                "value": 18.56657
+              },
+              "speed": {
+                "text": "9 mph",
+                "unit": "mph",
+                "value": 9.283285
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "62°",
+              "unit": "°F",
+              "value": 61.7
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Cloudy",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "47°",
+              "unit": "°F",
+              "value": 46.91749
+            },
+            "feels_like": {
+              "text": "60°",
+              "unit": "°F",
+              "value": 59.54
+            },
+            "humidity": 58,
+            "humidity_text": "58%",
+            "icon": "cloudy",
+            "is_day": true,
+            "label": "12 PM",
+            "precip_probability": 10,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.09 inHg",
+              "unit": "inHg",
+              "value": 30.086329
+            },
+            "temp_level": "mild",
+            "temperature": {
+              "text": "62°",
+              "unit": "°F",
+              "value": 61.7
+            },
+            "time": 1791216000,
+            "uv": 3.7583249,
+            "uv_text": "4",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 224.0,
+              "gust": {
+                "text": "19 mph",
+                "unit": "mph",
+                "value": 19.237652
+              },
+              "speed": {
+                "text": "10 mph",
+                "unit": "mph",
+                "value": 9.618826
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "63°",
+              "unit": "°F",
+              "value": 63.32
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Cloudy",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 49.19091
+            },
+            "feels_like": {
+              "text": "61°",
+              "unit": "°F",
+              "value": 61.159996
+            },
+            "humidity": 60,
+            "humidity_text": "60%",
+            "icon": "cloudy",
+            "is_day": true,
+            "label": "1 PM",
+            "precip_probability": 15,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.08 inHg",
+              "unit": "inHg",
+              "value": 30.081013
+            },
+            "temp_level": "mild",
+            "temperature": {
+              "text": "63°",
+              "unit": "°F",
+              "value": 63.32
+            },
+            "time": 1791219600,
+            "uv": 4.2,
+            "uv_text": "4",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 226.0,
+              "gust": {
+                "text": "20 mph",
+                "unit": "mph",
+                "value": 19.90873
+              },
+              "speed": {
+                "text": "10 mph",
+                "unit": "mph",
+                "value": 9.954365
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "64°",
+              "unit": "°F",
+              "value": 64.22
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Cloudy",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 50.776386
+            },
+            "feels_like": {
+              "text": "62°",
+              "unit": "°F",
+              "value": 62.059998
+            },
+            "humidity": 62,
+            "humidity_text": "62%",
+            "icon": "cloudy",
+            "is_day": true,
+            "label": "2 PM",
+            "precip_probability": 20,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.08 inHg",
+              "unit": "inHg",
+              "value": 30.075697
+            },
+            "temp_level": "mild",
+            "temperature": {
+              "text": "64°",
+              "unit": "°F",
+              "value": 64.22
+            },
+            "time": 1791223200,
+            "uv": 3.7583249,
+            "uv_text": "4",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 228.0,
+              "gust": {
+                "text": "21 mph",
+                "unit": "mph",
+                "value": 20.579813
+              },
+              "speed": {
+                "text": "10 mph",
+                "unit": "mph",
+                "value": 10.2899065
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "64°",
+              "unit": "°F",
+              "value": 64.4
+            },
+            "cloud_cover": {
+              "text": "35%",
+              "unit": "%",
+              "value": 35.0
+            },
+            "condition_label": "Overcast",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "53°",
+              "unit": "°F",
+              "value": 53.06357
+            },
+            "feels_like": {
+              "text": "62°",
+              "unit": "°F",
+              "value": 62.239998
+            },
+            "humidity": 67,
+            "humidity_text": "67%",
+            "icon": "overcast_day",
+            "is_day": true,
+            "label": "3 PM",
+            "precip_probability": 35,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.07 inHg",
+              "unit": "inHg",
+              "value": 30.070381
+            },
+            "temp_level": "mild",
+            "temperature": {
+              "text": "64°",
+              "unit": "°F",
+              "value": 64.4
+            },
+            "time": 1791226800,
+            "uv": 2.6929576,
+            "uv_text": "3",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 230.0,
+              "gust": {
+                "text": "21 mph",
+                "unit": "mph",
+                "value": 21.250893
+              },
+              "speed": {
+                "text": "11 mph",
+                "unit": "mph",
+                "value": 10.625446
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "64°",
+              "unit": "°F",
+              "value": 63.68
+            },
+            "cloud_cover": {
+              "text": "55%",
+              "unit": "%",
+              "value": 55.0
+            },
+            "condition_label": "Light showers",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "55°",
+              "unit": "°F",
+              "value": 54.985363
+            },
+            "feels_like": {
+              "text": "62°",
+              "unit": "°F",
+              "value": 61.519997
+            },
+            "humidity": 73,
+            "humidity_text": "73%",
+            "icon": "showers_day",
+            "is_day": true,
+            "label": "4 PM",
+            "precip_probability": 55,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.07 inHg",
+              "unit": "inHg",
+              "value": 30.065065
+            },
+            "temp_level": "mild",
+            "temperature": {
+              "text": "64°",
+              "unit": "°F",
+              "value": 63.68
+            },
+            "time": 1791230400,
+            "uv": 1.5450937,
+            "uv_text": "2",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 232.0,
+              "gust": {
+                "text": "22 mph",
+                "unit": "mph",
+                "value": 21.921974
+              },
+              "speed": {
+                "text": "11 mph",
+                "unit": "mph",
+                "value": 10.960987
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "62°",
+              "unit": "°F",
+              "value": 62.239998
+            },
+            "cloud_cover": {
+              "text": "70%",
+              "unit": "%",
+              "value": 70.0
+            },
+            "condition_label": "Rain",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "55°",
+              "unit": "°F",
+              "value": 55.409103
+            },
+            "feels_like": {
+              "text": "60°",
+              "unit": "°F",
+              "value": 60.079998
+            },
+            "humidity": 78,
+            "humidity_text": "78%",
+            "icon": "rain",
+            "is_day": true,
+            "label": "5 PM",
+            "precip_probability": 70,
+            "precipitation": {
+              "text": "0.07 in",
+              "unit": "in",
+              "value": 0.06889764
+            },
+            "pressure": {
+              "text": "30.06 inHg",
+              "unit": "inHg",
+              "value": 30.059752
+            },
+            "temp_level": "mild",
+            "temperature": {
+              "text": "62°",
+              "unit": "°F",
+              "value": 62.239998
+            },
+            "time": 1791234000,
+            "uv": 0.7098558,
+            "uv_text": "1",
+            "visibility": {
+              "text": "5.0 mi",
+              "unit": "mi",
+              "value": 4.9709697
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 234.0,
+              "gust": {
+                "text": "23 mph",
+                "unit": "mph",
+                "value": 22.593056
+              },
+              "speed": {
+                "text": "11 mph",
+                "unit": "mph",
+                "value": 11.296528
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "60°",
+              "unit": "°F",
+              "value": 60.08
+            },
+            "cloud_cover": {
+              "text": "80%",
+              "unit": "%",
+              "value": 80.0
+            },
+            "condition_label": "Heavy rain",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "54°",
+              "unit": "°F",
+              "value": 54.45266
+            },
+            "feels_like": {
+              "text": "58°",
+              "unit": "°F",
+              "value": 57.920002
+            },
+            "humidity": 82,
+            "humidity_text": "82%",
+            "icon": "extreme_rain",
+            "is_day": true,
+            "label": "6 PM",
+            "precip_probability": 80,
+            "precipitation": {
+              "text": "0.08 in",
+              "unit": "in",
+              "value": 0.07874016
+            },
+            "pressure": {
+              "text": "30.05 inHg",
+              "unit": "inHg",
+              "value": 30.054436
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "60°",
+              "unit": "°F",
+              "value": 60.08
+            },
+            "time": 1791237600,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "5.0 mi",
+              "unit": "mi",
+              "value": 4.9709697
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 236.0,
+              "gust": {
+                "text": "23 mph",
+                "unit": "mph",
+                "value": 23.264135
+              },
+              "speed": {
+                "text": "12 mph",
+                "unit": "mph",
+                "value": 11.632068
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "58°",
+              "unit": "°F",
+              "value": 57.739998
+            },
+            "cloud_cover": {
+              "text": "65%",
+              "unit": "%",
+              "value": 65.0
+            },
+            "condition_label": "Rain",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "50°",
+              "unit": "°F",
+              "value": 50.45805
+            },
+            "feels_like": {
+              "text": "56°",
+              "unit": "°F",
+              "value": 55.58
+            },
+            "humidity": 77,
+            "humidity_text": "77%",
+            "icon": "rain",
+            "is_day": false,
+            "label": "7 PM",
+            "precip_probability": 65,
+            "precipitation": {
+              "text": "0.06 in",
+              "unit": "in",
+              "value": 0.06397638
+            },
+            "pressure": {
+              "text": "30.05 inHg",
+              "unit": "inHg",
+              "value": 30.04912
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "58°",
+              "unit": "°F",
+              "value": 57.739998
+            },
+            "time": 1791241200,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "5.0 mi",
+              "unit": "mi",
+              "value": 4.9709697
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "WSW",
+              "direction_deg": 238.0,
+              "gust": {
+                "text": "24 mph",
+                "unit": "mph",
+                "value": 23.935219
+              },
+              "speed": {
+                "text": "12 mph",
+                "unit": "mph",
+                "value": 11.967609
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "56°",
+              "unit": "°F",
+              "value": 55.58
+            },
+            "cloud_cover": {
+              "text": "45%",
+              "unit": "%",
+              "value": 45.0
+            },
+            "condition_label": "Light showers",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "46°",
+              "unit": "°F",
+              "value": 45.946655
+            },
+            "feels_like": {
+              "text": "53°",
+              "unit": "°F",
+              "value": 53.420002
+            },
+            "humidity": 70,
+            "humidity_text": "70%",
+            "icon": "showers_night",
+            "is_day": false,
+            "label": "8 PM",
+            "precip_probability": 45,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.04 inHg",
+              "unit": "inHg",
+              "value": 30.043806
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "56°",
+              "unit": "°F",
+              "value": 55.58
+            },
+            "time": 1791244800,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "WSW",
+              "direction_deg": 240.0,
+              "gust": {
+                "text": "25 mph",
+                "unit": "mph",
+                "value": 24.606297
+              },
+              "speed": {
+                "text": "12 mph",
+                "unit": "mph",
+                "value": 12.303148
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "54°",
+              "unit": "°F",
+              "value": 53.78
+            },
+            "cloud_cover": {
+              "text": "30%",
+              "unit": "%",
+              "value": 30.0
+            },
+            "condition_label": "Overcast",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "42°",
+              "unit": "°F",
+              "value": 42.284492
+            },
+            "feels_like": {
+              "text": "52°",
+              "unit": "°F",
+              "value": 51.620003
+            },
+            "humidity": 65,
+            "humidity_text": "65%",
+            "icon": "overcast_night",
+            "is_day": false,
+            "label": "9 PM",
+            "precip_probability": 30,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.04 inHg",
+              "unit": "inHg",
+              "value": 30.038488
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "54°",
+              "unit": "°F",
+              "value": 53.78
+            },
+            "time": 1791248400,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "WSW",
+              "direction_deg": 242.0,
+              "gust": {
+                "text": "25 mph",
+                "unit": "mph",
+                "value": 25.277378
+              },
+              "speed": {
+                "text": "13 mph",
+                "unit": "mph",
+                "value": 12.638689
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "52°",
+              "unit": "°F",
+              "value": 52.34
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Cloudy",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "39°",
+              "unit": "°F",
+              "value": 38.855312
+            },
+            "feels_like": {
+              "text": "50°",
+              "unit": "°F",
+              "value": 50.18
+            },
+            "humidity": 60,
+            "humidity_text": "60%",
+            "icon": "cloudy",
+            "is_day": false,
+            "label": "10 PM",
+            "precip_probability": 15,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.03 inHg",
+              "unit": "inHg",
+              "value": 30.033173
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "52°",
+              "unit": "°F",
+              "value": 52.34
+            },
+            "time": 1791252000,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "WSW",
+              "direction_deg": 244.0,
+              "gust": {
+                "text": "26 mph",
+                "unit": "mph",
+                "value": 25.94846
+              },
+              "speed": {
+                "text": "13 mph",
+                "unit": "mph",
+                "value": 12.97423
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 51.08
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 5",
+            "day": "Today",
+            "dew_point": {
+              "text": "36°",
+              "unit": "°F",
+              "value": 36.216476
+            },
+            "feels_like": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 48.920002
+            },
+            "humidity": 57,
+            "humidity_text": "57%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "11 PM",
+            "precip_probability": 5,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.03 inHg",
+              "unit": "inHg",
+              "value": 30.027859
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 51.08
+            },
+            "time": 1791255600,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "WSW",
+              "direction_deg": 246.0,
+              "gust": {
+                "text": "27 mph",
+                "unit": "mph",
+                "value": 26.61954
+              },
+              "speed": {
+                "text": "13 mph",
+                "unit": "mph",
+                "value": 13.30977
+              }
+            }
+          }
+        ],
+        "icon": "cloudy",
+        "label": "Today",
+        "low": {
+          "text": "47°",
+          "unit": "°F",
+          "value": 47.12
+        },
+        "normal_high": {
+          "text": "69°",
+          "unit": "°F",
+          "value": 69.0
+        },
+        "normal_low": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.0
+        },
+        "outlook": "Mostly sunny in the morning, then cloudy and mild in the afternoon. Heavy rain from 4 PM to 9 PM. Breezy.",
+        "precip_probability": 80,
+        "precip_sum": {
+          "text": "0.31 in",
+          "unit": "in",
+          "value": 0.31496063
+        },
+        "precip_text": "Heavy rain from 4 PM to 9 PM.",
+        "range": [
+          0.029629601,
+          0.7407407
+        ],
+        "sunrise": "7:03 AM",
+        "sunset": "6:38 PM",
+        "temp_level_high": "mild",
+        "timeline": [
+          {
+            "group": "clear",
+            "label": "Clear",
+            "len": 9,
+            "start": 0
+          },
+          {
+            "group": "partly_cloudy",
+            "label": "Partly cloudy",
+            "len": 2,
+            "start": 9
+          },
+          {
+            "group": "cloudy",
+            "label": "Overcast",
+            "len": 5,
+            "start": 11
+          },
+          {
+            "group": "rain",
+            "label": "Rain",
+            "len": 2,
+            "start": 16
+          },
+          {
+            "group": "heavy_rain",
+            "label": "Heavy rain",
+            "len": 1,
+            "start": 18
+          },
+          {
+            "group": "rain",
+            "label": "Rain",
+            "len": 2,
+            "start": 19
+          },
+          {
+            "group": "cloudy",
+            "label": "Overcast",
+            "len": 2,
+            "start": 21
+          },
+          {
+            "group": "clear",
+            "label": "Clear",
+            "len": 1,
+            "start": 23
+          }
+        ],
+        "uv_max": 4.2,
+        "wind_max": {
+          "text": "14 mph",
+          "unit": "mph",
+          "value": 13.64531
+        }
+      },
+      {
+        "actual_high": {
+          "text": "62°",
+          "unit": "°F",
+          "value": 61.519997
+        },
+        "actual_low": {
+          "text": "50°",
+          "unit": "°F",
+          "value": 50.36
+        },
+        "condition_label": "Partly cloudy",
+        "date_short": "Oct 6",
+        "gust_max": {
+          "text": "26 mph",
+          "unit": "mph",
+          "value": 25.94846
+        },
+        "high": {
+          "text": "62°",
+          "unit": "°F",
+          "value": 61.519997
+        },
+        "hours": [
+          {
+            "actual": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 51.440002
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "36°",
+              "unit": "°F",
+              "value": 35.79776
+            },
+            "feels_like": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 49.28
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "12 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.02 inHg",
+              "unit": "inHg",
+              "value": 30.022543
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 51.440002
+            },
+            "time": 1791259200,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↑",
+              "compass": "SSW",
+              "direction_deg": 200.0,
+              "gust": {
+                "text": "11 mph",
+                "unit": "mph",
+                "value": 11.184681
+              },
+              "speed": {
+                "text": "6 mph",
+                "unit": "mph",
+                "value": 5.5923405
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 50.72
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "35°",
+              "unit": "°F",
+              "value": 35.126163
+            },
+            "feels_like": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 48.559998
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "1 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.02 inHg",
+              "unit": "inHg",
+              "value": 30.017227
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 50.72
+            },
+            "time": 1791262800,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↑",
+              "compass": "SSW",
+              "direction_deg": 202.0,
+              "gust": {
+                "text": "12 mph",
+                "unit": "mph",
+                "value": 11.855762
+              },
+              "speed": {
+                "text": "6 mph",
+                "unit": "mph",
+                "value": 5.927881
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "50°",
+              "unit": "°F",
+              "value": 50.0
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "34°",
+              "unit": "°F",
+              "value": 34.454494
+            },
+            "feels_like": {
+              "text": "48°",
+              "unit": "°F",
+              "value": 47.84
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "2 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.01 inHg",
+              "unit": "inHg",
+              "value": 30.011913
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "50°",
+              "unit": "°F",
+              "value": 50.0
+            },
+            "time": 1791266400,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SSW",
+              "direction_deg": 204.0,
+              "gust": {
+                "text": "13 mph",
+                "unit": "mph",
+                "value": 12.526842
+              },
+              "speed": {
+                "text": "6 mph",
+                "unit": "mph",
+                "value": 6.263421
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 49.46
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "34°",
+              "unit": "°F",
+              "value": 33.950695
+            },
+            "feels_like": {
+              "text": "47°",
+              "unit": "°F",
+              "value": 47.3
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "3 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.01 inHg",
+              "unit": "inHg",
+              "value": 30.006598
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 49.46
+            },
+            "time": 1791270000,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SSW",
+              "direction_deg": 206.0,
+              "gust": {
+                "text": "13 mph",
+                "unit": "mph",
+                "value": 13.197923
+              },
+              "speed": {
+                "text": "7 mph",
+                "unit": "mph",
+                "value": 6.5989614
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 49.1
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "34°",
+              "unit": "°F",
+              "value": 33.614807
+            },
+            "feels_like": {
+              "text": "47°",
+              "unit": "°F",
+              "value": 46.940002
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "4 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.00 inHg",
+              "unit": "inHg",
+              "value": 30.001282
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 49.1
+            },
+            "time": 1791273600,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SSW",
+              "direction_deg": 208.0,
+              "gust": {
+                "text": "14 mph",
+                "unit": "mph",
+                "value": 13.869003
+              },
+              "speed": {
+                "text": "7 mph",
+                "unit": "mph",
+                "value": 6.9345016
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 48.92
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "33°",
+              "unit": "°F",
+              "value": 33.446854
+            },
+            "feels_like": {
+              "text": "47°",
+              "unit": "°F",
+              "value": 46.76
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "5 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "30.00 inHg",
+              "unit": "inHg",
+              "value": 29.995968
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 48.92
+            },
+            "time": 1791277200,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SSW",
+              "direction_deg": 210.0,
+              "gust": {
+                "text": "15 mph",
+                "unit": "mph",
+                "value": 14.540085
+              },
+              "speed": {
+                "text": "7 mph",
+                "unit": "mph",
+                "value": 7.2700424
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 49.28
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "34°",
+              "unit": "°F",
+              "value": 33.782753
+            },
+            "feels_like": {
+              "text": "47°",
+              "unit": "°F",
+              "value": 47.120003
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "6 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.99 inHg",
+              "unit": "inHg",
+              "value": 29.99065
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "49°",
+              "unit": "°F",
+              "value": 49.28
+            },
+            "time": 1791280800,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SSW",
+              "direction_deg": 212.0,
+              "gust": {
+                "text": "15 mph",
+                "unit": "mph",
+                "value": 15.211165
+              },
+              "speed": {
+                "text": "8 mph",
+                "unit": "mph",
+                "value": 7.6055827
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 50.54
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "35°",
+              "unit": "°F",
+              "value": 34.958252
+            },
+            "feels_like": {
+              "text": "48°",
+              "unit": "°F",
+              "value": 48.38
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "7 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.99 inHg",
+              "unit": "inHg",
+              "value": 29.985334
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 50.54
+            },
+            "time": 1791284400,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 214.0,
+              "gust": {
+                "text": "16 mph",
+                "unit": "mph",
+                "value": 15.882247
+              },
+              "speed": {
+                "text": "8 mph",
+                "unit": "mph",
+                "value": 7.9411235
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "53°",
+              "unit": "°F",
+              "value": 52.88
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "37°",
+              "unit": "°F",
+              "value": 37.14074
+            },
+            "feels_like": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 50.72
+            },
+            "humidity": 55,
+            "humidity_text": "55%",
+            "icon": "clear_day",
+            "is_day": true,
+            "label": "8 AM",
+            "precip_probability": 0,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.98 inHg",
+              "unit": "inHg",
+              "value": 29.98002
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "53°",
+              "unit": "°F",
+              "value": 52.88
+            },
+            "time": 1791288000,
+            "uv": 0.26114142,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 216.0,
+              "gust": {
+                "text": "17 mph",
+                "unit": "mph",
+                "value": 16.553328
+              },
+              "speed": {
+                "text": "8 mph",
+                "unit": "mph",
+                "value": 8.276664
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "56°",
+              "unit": "°F",
+              "value": 55.76
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Partly cloudy",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "40°",
+              "unit": "°F",
+              "value": 40.21312
+            },
+            "feels_like": {
+              "text": "54°",
+              "unit": "°F",
+              "value": 53.6
+            },
+            "humidity": 56,
+            "humidity_text": "56%",
+            "icon": "partly_cloudy_day",
+            "is_day": true,
+            "label": "9 AM",
+            "precip_probability": 3,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.97 inHg",
+              "unit": "inHg",
+              "value": 29.974705
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "56°",
+              "unit": "°F",
+              "value": 55.76
+            },
+            "time": 1791291600,
+            "uv": 0.7098558,
+            "uv_text": "1",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 218.0,
+              "gust": {
+                "text": "17 mph",
+                "unit": "mph",
+                "value": 17.224407
+              },
+              "speed": {
+                "text": "9 mph",
+                "unit": "mph",
+                "value": 8.612204
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "59°",
+              "unit": "°F",
+              "value": 58.64
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Partly cloudy",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "43°",
+              "unit": "°F",
+              "value": 42.901733
+            },
+            "feels_like": {
+              "text": "56°",
+              "unit": "°F",
+              "value": 56.48
+            },
+            "humidity": 56,
+            "humidity_text": "56%",
+            "icon": "partly_cloudy_day",
+            "is_day": true,
+            "label": "10 AM",
+            "precip_probability": 3,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.97 inHg",
+              "unit": "inHg",
+              "value": 29.969389
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "59°",
+              "unit": "°F",
+              "value": 58.64
+            },
+            "time": 1791295200,
+            "uv": 1.5450937,
+            "uv_text": "2",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 220.0,
+              "gust": {
+                "text": "18 mph",
+                "unit": "mph",
+                "value": 17.895489
+              },
+              "speed": {
+                "text": "9 mph",
+                "unit": "mph",
+                "value": 8.947744
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "61°",
+              "unit": "°F",
+              "value": 61.34
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Partly cloudy",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "46°",
+              "unit": "°F",
+              "value": 45.812485
+            },
+            "feels_like": {
+              "text": "59°",
+              "unit": "°F",
+              "value": 59.18
+            },
+            "humidity": 57,
+            "humidity_text": "57%",
+            "icon": "partly_cloudy_day",
+            "is_day": true,
+            "label": "11 AM",
+            "precip_probability": 5,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.96 inHg",
+              "unit": "inHg",
+              "value": 29.964075
+            },
+            "temp_level": "mild",
+            "temperature": {
+              "text": "61°",
+              "unit": "°F",
+              "value": 61.34
+            },
+            "time": 1791298800,
+            "uv": 2.6929576,
+            "uv_text": "3",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 222.0,
+              "gust": {
+                "text": "19 mph",
+                "unit": "mph",
+                "value": 18.56657
+              },
+              "speed": {
+                "text": "9 mph",
+                "unit": "mph",
+                "value": 9.283285
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "64°",
+              "unit": "°F",
+              "value": 63.5
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Partly cloudy",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "48°",
+              "unit": "°F",
+              "value": 47.830914
+            },
+            "feels_like": {
+              "text": "61°",
+              "unit": "°F",
+              "value": 61.34
+            },
+            "humidity": 57,
+            "humidity_text": "57%",
+            "icon": "partly_cloudy_day",
+            "is_day": true,
+            "label": "12 PM",
+            "precip_probability": 5,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.96 inHg",
+              "unit": "inHg",
+              "value": 29.95876
+            },
+            "temp_level": "mild",
+            "temperature": {
+              "text": "64°",
+              "unit": "°F",
+              "value": 63.5
+            },
+            "time": 1791302400,
+            "uv": 3.7583249,
+            "uv_text": "4",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 224.0,
+              "gust": {
+                "text": "19 mph",
+                "unit": "mph",
+                "value": 19.237652
+              },
+              "speed": {
+                "text": "10 mph",
+                "unit": "mph",
+                "value": 9.618826
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "65°",
+              "unit": "°F",
+              "value": 65.119995
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Partly cloudy",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "50°",
+              "unit": "°F",
+              "value": 49.736553
+            },
+            "feels_like": {
+              "text": "63°",
+              "unit": "°F",
+              "value": 62.96
+            },
+            "humidity": 58,
+            "humidity_text": "58%",
+            "icon": "partly_cloudy_day",
+            "is_day": true,
+            "label": "1 PM",
+            "precip_probability": 8,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.95 inHg",
+              "unit": "inHg",
+              "value": 29.953444
+            },
+            "temp_level": "mild",
+            "temperature": {
+              "text": "65°",
+              "unit": "°F",
+              "value": 65.119995
+            },
+            "time": 1791306000,
+            "uv": 4.2,
+            "uv_text": "4",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 226.0,
+              "gust": {
+                "text": "20 mph",
+                "unit": "mph",
+                "value": 19.90873
+              },
+              "speed": {
+                "text": "10 mph",
+                "unit": "mph",
+                "value": 9.954365
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "66°",
+              "unit": "°F",
+              "value": 66.02
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Cloudy",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 50.96732
+            },
+            "feels_like": {
+              "text": "64°",
+              "unit": "°F",
+              "value": 63.859997
+            },
+            "humidity": 58,
+            "humidity_text": "58%",
+            "icon": "cloudy",
+            "is_day": true,
+            "label": "2 PM",
+            "precip_probability": 10,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.95 inHg",
+              "unit": "inHg",
+              "value": 29.948128
+            },
+            "temp_level": "mild",
+            "temperature": {
+              "text": "66°",
+              "unit": "°F",
+              "value": 66.02
+            },
+            "time": 1791309600,
+            "uv": 3.7583249,
+            "uv_text": "4",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 228.0,
+              "gust": {
+                "text": "21 mph",
+                "unit": "mph",
+                "value": 20.579813
+              },
+              "speed": {
+                "text": "10 mph",
+                "unit": "mph",
+                "value": 10.2899065
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "66°",
+              "unit": "°F",
+              "value": 66.2
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Cloudy",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "52°",
+              "unit": "°F",
+              "value": 52.274223
+            },
+            "feels_like": {
+              "text": "64°",
+              "unit": "°F",
+              "value": 64.04
+            },
+            "humidity": 61,
+            "humidity_text": "61%",
+            "icon": "cloudy",
+            "is_day": true,
+            "label": "3 PM",
+            "precip_probability": 18,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.94 inHg",
+              "unit": "inHg",
+              "value": 29.942812
+            },
+            "temp_level": "mild",
+            "temperature": {
+              "text": "66°",
+              "unit": "°F",
+              "value": 66.2
+            },
+            "time": 1791313200,
+            "uv": 2.6929576,
+            "uv_text": "3",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 230.0,
+              "gust": {
+                "text": "21 mph",
+                "unit": "mph",
+                "value": 21.250893
+              },
+              "speed": {
+                "text": "11 mph",
+                "unit": "mph",
+                "value": 10.625446
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "65°",
+              "unit": "°F",
+              "value": 65.48
+            },
+            "cloud_cover": {
+              "text": "28%",
+              "unit": "%",
+              "value": 27.5
+            },
+            "condition_label": "Overcast",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "53°",
+              "unit": "°F",
+              "value": 53.046883
+            },
+            "feels_like": {
+              "text": "63°",
+              "unit": "°F",
+              "value": 63.32
+            },
+            "humidity": 64,
+            "humidity_text": "64%",
+            "icon": "overcast_day",
+            "is_day": true,
+            "label": "4 PM",
+            "precip_probability": 28,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.94 inHg",
+              "unit": "inHg",
+              "value": 29.937496
+            },
+            "temp_level": "mild",
+            "temperature": {
+              "text": "65°",
+              "unit": "°F",
+              "value": 65.48
+            },
+            "time": 1791316800,
+            "uv": 1.5450937,
+            "uv_text": "2",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 232.0,
+              "gust": {
+                "text": "22 mph",
+                "unit": "mph",
+                "value": 21.921974
+              },
+              "speed": {
+                "text": "11 mph",
+                "unit": "mph",
+                "value": 10.960987
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "64°",
+              "unit": "°F",
+              "value": 64.04
+            },
+            "cloud_cover": {
+              "text": "35%",
+              "unit": "%",
+              "value": 35.0
+            },
+            "condition_label": "Overcast",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "53°",
+              "unit": "°F",
+              "value": 52.720715
+            },
+            "feels_like": {
+              "text": "62°",
+              "unit": "°F",
+              "value": 61.879997
+            },
+            "humidity": 67,
+            "humidity_text": "67%",
+            "icon": "overcast_day",
+            "is_day": true,
+            "label": "5 PM",
+            "precip_probability": 35,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.93 inHg",
+              "unit": "inHg",
+              "value": 29.932182
+            },
+            "temp_level": "mild",
+            "temperature": {
+              "text": "64°",
+              "unit": "°F",
+              "value": 64.04
+            },
+            "time": 1791320400,
+            "uv": 0.7098558,
+            "uv_text": "1",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 234.0,
+              "gust": {
+                "text": "23 mph",
+                "unit": "mph",
+                "value": 22.593056
+              },
+              "speed": {
+                "text": "11 mph",
+                "unit": "mph",
+                "value": 11.296528
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "62°",
+              "unit": "°F",
+              "value": 61.88
+            },
+            "cloud_cover": {
+              "text": "40%",
+              "unit": "%",
+              "value": 40.0
+            },
+            "condition_label": "Overcast",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 51.33103
+            },
+            "feels_like": {
+              "text": "60°",
+              "unit": "°F",
+              "value": 59.72
+            },
+            "humidity": 68,
+            "humidity_text": "68%",
+            "icon": "overcast_day",
+            "is_day": true,
+            "label": "6 PM",
+            "precip_probability": 40,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.93 inHg",
+              "unit": "inHg",
+              "value": 29.926867
+            },
+            "temp_level": "mild",
+            "temperature": {
+              "text": "62°",
+              "unit": "°F",
+              "value": 61.88
+            },
+            "time": 1791324000,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "SW",
+              "direction_deg": 236.0,
+              "gust": {
+                "text": "23 mph",
+                "unit": "mph",
+                "value": 23.264135
+              },
+              "speed": {
+                "text": "12 mph",
+                "unit": "mph",
+                "value": 11.632068
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "60°",
+              "unit": "°F",
+              "value": 59.54
+            },
+            "cloud_cover": {
+              "text": "33%",
+              "unit": "%",
+              "value": 32.5
+            },
+            "condition_label": "Overcast",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "48°",
+              "unit": "°F",
+              "value": 48.097965
+            },
+            "feels_like": {
+              "text": "57°",
+              "unit": "°F",
+              "value": 57.38
+            },
+            "humidity": 66,
+            "humidity_text": "66%",
+            "icon": "overcast_night",
+            "is_day": false,
+            "label": "7 PM",
+            "precip_probability": 33,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.92 inHg",
+              "unit": "inHg",
+              "value": 29.92155
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "60°",
+              "unit": "°F",
+              "value": 59.54
+            },
+            "time": 1791327600,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "WSW",
+              "direction_deg": 238.0,
+              "gust": {
+                "text": "24 mph",
+                "unit": "mph",
+                "value": 23.935219
+              },
+              "speed": {
+                "text": "12 mph",
+                "unit": "mph",
+                "value": 11.967609
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "57°",
+              "unit": "°F",
+              "value": 57.38
+            },
+            "cloud_cover": {
+              "text": "23%",
+              "unit": "%",
+              "value": 22.5
+            },
+            "condition_label": "Cloudy",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "45°",
+              "unit": "°F",
+              "value": 44.672215
+            },
+            "feels_like": {
+              "text": "55°",
+              "unit": "°F",
+              "value": 55.22
+            },
+            "humidity": 63,
+            "humidity_text": "63%",
+            "icon": "cloudy",
+            "is_day": false,
+            "label": "8 PM",
+            "precip_probability": 23,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.92 inHg",
+              "unit": "inHg",
+              "value": 29.916235
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "57°",
+              "unit": "°F",
+              "value": 57.38
+            },
+            "time": 1791331200,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "WSW",
+              "direction_deg": 240.0,
+              "gust": {
+                "text": "25 mph",
+                "unit": "mph",
+                "value": 24.606297
+              },
+              "speed": {
+                "text": "12 mph",
+                "unit": "mph",
+                "value": 12.303148
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "56°",
+              "unit": "°F",
+              "value": 55.58
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Cloudy",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "42°",
+              "unit": "°F",
+              "value": 41.906677
+            },
+            "feels_like": {
+              "text": "53°",
+              "unit": "°F",
+              "value": 53.420002
+            },
+            "humidity": 60,
+            "humidity_text": "60%",
+            "icon": "cloudy",
+            "is_day": false,
+            "label": "9 PM",
+            "precip_probability": 15,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.91 inHg",
+              "unit": "inHg",
+              "value": 29.910921
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "56°",
+              "unit": "°F",
+              "value": 55.58
+            },
+            "time": 1791334800,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "WSW",
+              "direction_deg": 242.0,
+              "gust": {
+                "text": "25 mph",
+                "unit": "mph",
+                "value": 25.277378
+              },
+              "speed": {
+                "text": "13 mph",
+                "unit": "mph",
+                "value": 12.638689
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "54°",
+              "unit": "°F",
+              "value": 54.14
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "39°",
+              "unit": "°F",
+              "value": 39.454636
+            },
+            "feels_like": {
+              "text": "52°",
+              "unit": "°F",
+              "value": 51.98
+            },
+            "humidity": 58,
+            "humidity_text": "58%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "10 PM",
+            "precip_probability": 8,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.91 inHg",
+              "unit": "inHg",
+              "value": 29.905603
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "54°",
+              "unit": "°F",
+              "value": 54.14
+            },
+            "time": 1791338400,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "WSW",
+              "direction_deg": 244.0,
+              "gust": {
+                "text": "26 mph",
+                "unit": "mph",
+                "value": 25.94846
+              },
+              "speed": {
+                "text": "13 mph",
+                "unit": "mph",
+                "value": 12.97423
+              }
+            }
+          },
+          {
+            "actual": {
+              "text": "53°",
+              "unit": "°F",
+              "value": 52.88
+            },
+            "cloud_cover": {
+              "text": "20%",
+              "unit": "%",
+              "value": 20.0
+            },
+            "condition_label": "Clear",
+            "date_short": "Oct 6",
+            "day": "Tomorrow",
+            "dew_point": {
+              "text": "38°",
+              "unit": "°F",
+              "value": 37.52338
+            },
+            "feels_like": {
+              "text": "51°",
+              "unit": "°F",
+              "value": 50.72
+            },
+            "humidity": 56,
+            "humidity_text": "56%",
+            "icon": "clear_night",
+            "is_day": false,
+            "label": "11 PM",
+            "precip_probability": 3,
+            "precipitation": {
+              "text": "0.00 in",
+              "unit": "in",
+              "value": 0.0
+            },
+            "pressure": {
+              "text": "29.90 inHg",
+              "unit": "inHg",
+              "value": 29.900288
+            },
+            "temp_level": "cool",
+            "temperature": {
+              "text": "53°",
+              "unit": "°F",
+              "value": 52.88
+            },
+            "time": 1791342000,
+            "uv": 0.0,
+            "uv_text": "0",
+            "visibility": {
+              "text": "15 mi",
+              "unit": "mi",
+              "value": 14.999901
+            },
+            "wind": {
+              "arrow": "↗",
+              "compass": "WSW",
+              "direction_deg": 246.0,
+              "gust": {
+                "text": "27 mph",
+                "unit": "mph",
+                "value": 26.61954
+              },
+              "speed": {
+                "text": "13 mph",
+                "unit": "mph",
+                "value": 13.30977
+              }
+            }
+          }
+        ],
+        "icon": "partly_cloudy_day",
+        "label": "Tomorrow",
+        "low": {
+          "text": "50°",
+          "unit": "°F",
+          "value": 50.36
+        },
+        "normal_high": {
+          "text": "69°",
+          "unit": "°F",
+          "value": 69.0
+        },
+        "normal_low": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.0
+        },
+        "outlook": "Mostly sunny in the morning, then mostly cloudy and mild in the afternoon. Breezy.",
+        "precip_probability": 45,
+        "precip_sum": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "precip_text": null,
+        "range": [
+          0.16296294,
+          0.6222222
+        ],
+        "sunrise": "7:04 AM",
+        "sunset": "6:36 PM",
+        "temp_level_high": "mild",
+        "timeline": [
+          {
+            "group": "clear",
+            "label": "Clear",
+            "len": 9,
+            "start": 0
+          },
+          {
+            "group": "partly_cloudy",
+            "label": "Partly cloudy",
+            "len": 5,
+            "start": 9
+          },
+          {
+            "group": "cloudy",
+            "label": "Overcast",
+            "len": 8,
+            "start": 14
+          },
+          {
+            "group": "clear",
+            "label": "Clear",
+            "len": 2,
+            "start": 22
+          }
+        ],
+        "uv_max": 3.9999998,
+        "wind_max": {
+          "text": "15 mph",
+          "unit": "mph",
+          "value": 14.540085
+        }
+      },
+      {
+        "actual_high": {
+          "text": "67°",
+          "unit": "°F",
+          "value": 66.56
+        },
+        "actual_low": {
+          "text": "48°",
+          "unit": "°F",
+          "value": 48.38
+        },
+        "condition_label": "Partly cloudy",
+        "date_short": "Oct 7",
+        "gust_max": {
+          "text": "27 mph",
+          "unit": "mph",
+          "value": 27.29062
+        },
+        "high": {
+          "text": "67°",
+          "unit": "°F",
+          "value": 66.56
+        },
+        "hours": [],
+        "icon": "partly_cloudy_day",
+        "label": "Wed",
+        "low": {
+          "text": "48°",
+          "unit": "°F",
+          "value": 48.38
+        },
+        "normal_high": {
+          "text": "69°",
+          "unit": "°F",
+          "value": 69.0
+        },
+        "normal_low": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.0
+        },
+        "outlook": "Partly cloudy and mild. Breezy.",
+        "precip_probability": 10,
+        "precip_sum": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "precip_text": null,
+        "range": [
+          0.08148151,
+          0.82962966
+        ],
+        "sunrise": "7:05 AM",
+        "sunset": "6:35 PM",
+        "temp_level_high": "mild",
+        "timeline": [],
+        "uv_max": 3.7999997,
+        "wind_max": {
+          "text": "15 mph",
+          "unit": "mph",
+          "value": 15.434859
+        }
+      },
+      {
+        "actual_high": {
+          "text": "71°",
+          "unit": "°F",
+          "value": 70.7
+        },
+        "actual_low": {
+          "text": "46°",
+          "unit": "°F",
+          "value": 46.4
+        },
+        "condition_label": "Clear",
+        "date_short": "Oct 8",
+        "gust_max": {
+          "text": "29 mph",
+          "unit": "mph",
+          "value": 28.632782
+        },
+        "high": {
+          "text": "71°",
+          "unit": "°F",
+          "value": 70.7
+        },
+        "hours": [],
+        "icon": "clear_day",
+        "label": "Thu",
+        "low": {
+          "text": "46°",
+          "unit": "°F",
+          "value": 46.4
+        },
+        "normal_high": {
+          "text": "69°",
+          "unit": "°F",
+          "value": 69.0
+        },
+        "normal_low": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.0
+        },
+        "outlook": "Sunny and mild. Breezy.",
+        "precip_probability": 0,
+        "precip_sum": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "precip_text": null,
+        "range": [
+          0.0,
+          1.0
+        ],
+        "sunrise": "7:06 AM",
+        "sunset": "6:33 PM",
+        "temp_level_high": "mild",
+        "timeline": [],
+        "uv_max": 3.6,
+        "wind_max": {
+          "text": "16 mph",
+          "unit": "mph",
+          "value": 16.329634
+        }
+      },
+      {
+        "actual_high": {
+          "text": "68°",
+          "unit": "°F",
+          "value": 68.18
+        },
+        "actual_low": {
+          "text": "53°",
+          "unit": "°F",
+          "value": 52.52
+        },
+        "condition_label": "Cloudy",
+        "date_short": "Oct 9",
+        "gust_max": {
+          "text": "30 mph",
+          "unit": "mph",
+          "value": 29.974943
+        },
+        "high": {
+          "text": "68°",
+          "unit": "°F",
+          "value": 68.18
+        },
+        "hours": [],
+        "icon": "cloudy",
+        "label": "Fri",
+        "low": {
+          "text": "53°",
+          "unit": "°F",
+          "value": 52.52
+        },
+        "normal_high": {
+          "text": "69°",
+          "unit": "°F",
+          "value": 69.0
+        },
+        "normal_low": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.0
+        },
+        "outlook": "Mostly cloudy and mild. Breezy.",
+        "precip_probability": 15,
+        "precip_sum": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "precip_text": null,
+        "range": [
+          0.25185183,
+          0.8962963
+        ],
+        "sunrise": "7:07 AM",
+        "sunset": "6:32 PM",
+        "temp_level_high": "mild",
+        "timeline": [],
+        "uv_max": 3.3999999,
+        "wind_max": {
+          "text": "17 mph",
+          "unit": "mph",
+          "value": 17.224407
+        }
+      },
+      {
+        "actual_high": {
+          "text": "63°",
+          "unit": "°F",
+          "value": 63.14
+        },
+        "actual_low": {
+          "text": "54°",
+          "unit": "°F",
+          "value": 53.6
+        },
+        "condition_label": "Overcast",
+        "date_short": "Oct 10",
+        "gust_max": {
+          "text": "31 mph",
+          "unit": "mph",
+          "value": 31.317104
+        },
+        "high": {
+          "text": "63°",
+          "unit": "°F",
+          "value": 63.14
+        },
+        "hours": [],
+        "icon": "overcast_day",
+        "label": "Sat",
+        "low": {
+          "text": "54°",
+          "unit": "°F",
+          "value": 53.6
+        },
+        "normal_high": {
+          "text": "69°",
+          "unit": "°F",
+          "value": 69.0
+        },
+        "normal_low": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.0
+        },
+        "outlook": "Cloudy and mild. Breezy.",
+        "precip_probability": 25,
+        "precip_sum": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "precip_text": null,
+        "range": [
+          0.2962963,
+          0.68888885
+        ],
+        "sunrise": "7:08 AM",
+        "sunset": "6:30 PM",
+        "temp_level_high": "mild",
+        "timeline": [],
+        "uv_max": 3.1999998,
+        "wind_max": {
+          "text": "18 mph",
+          "unit": "mph",
+          "value": 18.119183
+        }
+      },
+      {
+        "actual_high": {
+          "text": "60°",
+          "unit": "°F",
+          "value": 60.44
+        },
+        "actual_low": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 50.9
+        },
+        "condition_label": "Light drizzle",
+        "date_short": "Oct 11",
+        "gust_max": {
+          "text": "33 mph",
+          "unit": "mph",
+          "value": 32.659267
+        },
+        "high": {
+          "text": "60°",
+          "unit": "°F",
+          "value": 60.44
+        },
+        "hours": [],
+        "icon": "drizzle",
+        "label": "Sun",
+        "low": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 50.9
+        },
+        "normal_high": {
+          "text": "69°",
+          "unit": "°F",
+          "value": 69.0
+        },
+        "normal_low": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.0
+        },
+        "outlook": "Cloudy and mild. Light drizzle possible. Breezy.",
+        "precip_probability": 55,
+        "precip_sum": {
+          "text": "0.22 in",
+          "unit": "in",
+          "value": 0.21653543
+        },
+        "precip_text": null,
+        "range": [
+          0.18518518,
+          0.5777778
+        ],
+        "sunrise": "7:09 AM",
+        "sunset": "6:28 PM",
+        "temp_level_high": "cool",
+        "timeline": [],
+        "uv_max": 2.9999998,
+        "wind_max": {
+          "text": "19 mph",
+          "unit": "mph",
+          "value": 19.013956
+        }
+      }
+    ],
+    "period_max": 70.7,
+    "period_min": 46.4
+  },
+  "details": [
+    {
+      "caption": "Gusts 16 mph",
+      "direction_deg": 225.0,
+      "gauge": null,
+      "kind": "wind",
+      "level": null,
+      "title": "Wind",
+      "trend": null,
+      "value": "8 mph SW"
+    },
+    {
+      "caption": null,
+      "direction_deg": null,
+      "gauge": null,
+      "kind": "gusts",
+      "level": null,
+      "title": "Gusts",
+      "trend": null,
+      "value": "16 mph"
+    },
+    {
+      "caption": "Dew point 47°",
+      "direction_deg": null,
+      "gauge": 0.62,
+      "kind": "humidity",
+      "level": null,
+      "title": "Humidity",
+      "trend": null,
+      "value": "62%"
+    },
+    {
+      "caption": "Steady",
+      "direction_deg": null,
+      "gauge": 0.6224998,
+      "kind": "pressure",
+      "level": null,
+      "title": "Pressure",
+      "trend": "steady",
+      "value": "30.11 inHg"
+    },
+    {
+      "caption": "Moderate",
+      "direction_deg": null,
+      "gauge": 0.3090909,
+      "kind": "uv",
+      "level": "moderate",
+      "title": "UV index",
+      "trend": null,
+      "value": "3"
+    },
+    {
+      "caption": null,
+      "direction_deg": null,
+      "gauge": null,
+      "kind": "visibility",
+      "level": null,
+      "title": "Visibility",
+      "trend": null,
+      "value": "15 mi"
+    },
+    {
+      "caption": null,
+      "direction_deg": null,
+      "gauge": null,
+      "kind": "dew_point",
+      "level": null,
+      "title": "Dew point",
+      "trend": null,
+      "value": "47°"
+    },
+    {
+      "caption": null,
+      "direction_deg": null,
+      "gauge": 0.45,
+      "kind": "cloud_cover",
+      "level": null,
+      "title": "Cloud cover",
+      "trend": null,
+      "value": "45%"
+    },
+    {
+      "caption": "Today 0.31 in",
+      "direction_deg": null,
+      "gauge": null,
+      "kind": "precipitation",
+      "level": null,
+      "title": "Precipitation",
+      "trend": null,
+      "value": "0.00 in"
+    },
+    {
+      "caption": null,
+      "direction_deg": null,
+      "gauge": null,
+      "kind": "feels_like",
+      "level": null,
+      "title": "Feels like",
+      "trend": null,
+      "value": "57°"
+    },
+    {
+      "caption": null,
+      "direction_deg": null,
+      "gauge": null,
+      "kind": "normals",
+      "level": null,
+      "title": "Normal",
+      "trend": null,
+      "value": "69° / 55°"
+    },
+    {
+      "caption": "1941 · 1881",
+      "direction_deg": null,
+      "gauge": null,
+      "kind": "records",
+      "level": null,
+      "title": "Records",
+      "trend": null,
+      "value": "94° · 35°"
+    }
+  ],
+  "feels_like_leads": false,
+  "history": {
+    "credit": "NY City Central Park, 4.8 mi · records: New York-Central Park Area · Normals 1991–2020",
+    "days": [
+      {
+        "date_short": "Sep 28",
+        "departure": {
+          "text": "-7°",
+          "unit": "°F",
+          "value": -7.0
+        },
+        "high": {
+          "text": "62°",
+          "unit": "°F",
+          "value": 62.0
+        },
+        "label": "Mon",
+        "low": {
+          "text": "57°",
+          "unit": "°F",
+          "value": 57.0
+        },
+        "low_departure": {
+          "text": "+2°",
+          "unit": "°F",
+          "value": 2.0
+        },
+        "normal_high": {
+          "text": "69°",
+          "unit": "°F",
+          "value": 69.0
+        },
+        "normal_low": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.0
+        },
+        "normal_precip": {
+          "text": "0.15 in",
+          "unit": "in",
+          "value": 0.15
+        },
+        "precipitation": {
+          "text": "0.45 in",
+          "unit": "in",
+          "value": 0.45
+        },
+        "record_high": null,
+        "record_low": null,
+        "snow": null,
+        "summary": "7° cooler than normal. 0.45 in of rain."
+      },
+      {
+        "date_short": "Sep 29",
+        "departure": {
+          "text": "+1°",
+          "unit": "°F",
+          "value": 1.0
+        },
+        "high": {
+          "text": "70°",
+          "unit": "°F",
+          "value": 70.0
+        },
+        "label": "Tue",
+        "low": {
+          "text": "59°",
+          "unit": "°F",
+          "value": 59.0
+        },
+        "low_departure": {
+          "text": "+4°",
+          "unit": "°F",
+          "value": 4.0
+        },
+        "normal_high": {
+          "text": "69°",
+          "unit": "°F",
+          "value": 69.0
+        },
+        "normal_low": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.0
+        },
+        "normal_precip": {
+          "text": "0.15 in",
+          "unit": "in",
+          "value": 0.15
+        },
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "record_high": null,
+        "record_low": null,
+        "snow": null,
+        "summary": "Near normal. Dry."
+      },
+      {
+        "date_short": "Sep 30",
+        "departure": {
+          "text": "—",
+          "unit": "°F",
+          "value": null
+        },
+        "high": {
+          "text": "—",
+          "unit": "°F",
+          "value": null
+        },
+        "label": "Wed",
+        "low": {
+          "text": "—",
+          "unit": "°F",
+          "value": null
+        },
+        "low_departure": {
+          "text": "—",
+          "unit": "°F",
+          "value": null
+        },
+        "normal_high": {
+          "text": "69°",
+          "unit": "°F",
+          "value": 69.0
+        },
+        "normal_low": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.0
+        },
+        "normal_precip": {
+          "text": "0.15 in",
+          "unit": "in",
+          "value": 0.15
+        },
+        "precipitation": {
+          "text": "—",
+          "unit": "in",
+          "value": null
+        },
+        "record_high": null,
+        "record_low": null,
+        "snow": null,
+        "summary": null
+      },
+      {
+        "date_short": "Oct 1",
+        "departure": {
+          "text": "+7°",
+          "unit": "°F",
+          "value": 7.0
+        },
+        "high": {
+          "text": "76°",
+          "unit": "°F",
+          "value": 76.0
+        },
+        "label": "Thu",
+        "low": {
+          "text": "65°",
+          "unit": "°F",
+          "value": 65.0
+        },
+        "low_departure": {
+          "text": "+10°",
+          "unit": "°F",
+          "value": 10.0
+        },
+        "normal_high": {
+          "text": "69°",
+          "unit": "°F",
+          "value": 69.0
+        },
+        "normal_low": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.0
+        },
+        "normal_precip": {
+          "text": "0.15 in",
+          "unit": "in",
+          "value": 0.15
+        },
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "record_high": null,
+        "record_low": null,
+        "snow": null,
+        "summary": "7° warmer than normal. Dry."
+      },
+      {
+        "date_short": "Oct 2",
+        "departure": {
+          "text": "+14°",
+          "unit": "°F",
+          "value": 14.0
+        },
+        "high": {
+          "text": "83°",
+          "unit": "°F",
+          "value": 83.0
+        },
+        "label": "Fri",
+        "low": {
+          "text": "68°",
+          "unit": "°F",
+          "value": 68.0
+        },
+        "low_departure": {
+          "text": "+13°",
+          "unit": "°F",
+          "value": 13.0
+        },
+        "normal_high": {
+          "text": "69°",
+          "unit": "°F",
+          "value": 69.0
+        },
+        "normal_low": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.0
+        },
+        "normal_precip": {
+          "text": "0.15 in",
+          "unit": "in",
+          "value": 0.15
+        },
+        "precipitation": {
+          "text": "Trace",
+          "unit": "in",
+          "value": 0.0
+        },
+        "record_high": null,
+        "record_low": null,
+        "snow": null,
+        "summary": "14° warmer than normal. A trace of rain."
+      },
+      {
+        "date_short": "Oct 3",
+        "departure": {
+          "text": "+1°",
+          "unit": "°F",
+          "value": 1.0
+        },
+        "high": {
+          "text": "70°",
+          "unit": "°F",
+          "value": 70.0
+        },
+        "label": "Sat",
+        "low": {
+          "text": "59°",
+          "unit": "°F",
+          "value": 59.0
+        },
+        "low_departure": {
+          "text": "+4°",
+          "unit": "°F",
+          "value": 4.0
+        },
+        "normal_high": {
+          "text": "69°",
+          "unit": "°F",
+          "value": 69.0
+        },
+        "normal_low": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.0
+        },
+        "normal_precip": {
+          "text": "0.15 in",
+          "unit": "in",
+          "value": 0.15
+        },
+        "precipitation": {
+          "text": "Trace",
+          "unit": "in",
+          "value": 0.0
+        },
+        "record_high": null,
+        "record_low": null,
+        "snow": null,
+        "summary": "Near normal. A trace of rain."
+      },
+      {
+        "date_short": "Oct 4",
+        "departure": {
+          "text": "-7°",
+          "unit": "°F",
+          "value": -7.0
+        },
+        "high": {
+          "text": "62°",
+          "unit": "°F",
+          "value": 62.0
+        },
+        "label": "Yesterday",
+        "low": {
+          "text": "56°",
+          "unit": "°F",
+          "value": 56.0
+        },
+        "low_departure": {
+          "text": "+1°",
+          "unit": "°F",
+          "value": 1.0
+        },
+        "normal_high": {
+          "text": "69°",
+          "unit": "°F",
+          "value": 69.0
+        },
+        "normal_low": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.0
+        },
+        "normal_precip": {
+          "text": "0.15 in",
+          "unit": "in",
+          "value": 0.15
+        },
+        "precipitation": {
+          "text": "0.15 in",
+          "unit": "in",
+          "value": 0.15
+        },
+        "record_high": null,
+        "record_low": null,
+        "snow": null,
+        "summary": "7° cooler than normal. 0.15 in of rain."
+      }
+    ],
+    "month_to_date": {
+      "normal": {
+        "text": "0.60 in",
+        "unit": "in",
+        "value": 0.6
+      },
+      "precipitation": {
+        "text": "0.15 in",
+        "unit": "in",
+        "value": 0.15
+      },
+      "text": "0.15 in this month, normal 0.60 in"
+    },
+    "today": {
+      "normal_high": {
+        "text": "69°",
+        "unit": "°F",
+        "value": 69.0
+      },
+      "normal_low": {
+        "text": "55°",
+        "unit": "°F",
+        "value": 55.0
+      },
+      "normal_text": "Normal 69° / 55°",
+      "precip_chance": "Rain or snow on this date in 23% of years",
+      "record_high": "94° in 1941",
+      "record_low": "35° in 1881"
+    },
+    "yesterday_delta": "2° warmer than yesterday"
+  },
+  "hourly": {
+    "hours": [
+      {
+        "actual": {
+          "text": "60°",
+          "unit": "°F",
+          "value": 59.54
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Cloudy",
+        "date_short": "Oct 5",
+        "day": "Today",
+        "dew_point": {
+          "text": "45°",
+          "unit": "°F",
+          "value": 44.89169
+        },
+        "feels_like": {
+          "text": "57°",
+          "unit": "°F",
+          "value": 57.38
+        },
+        "humidity": 58,
+        "humidity_text": "58%",
+        "icon": "cloudy",
+        "is_day": true,
+        "label": "Now",
+        "precip_probability": 10,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.09 inHg",
+          "unit": "inHg",
+          "value": 30.091644
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "60°",
+          "unit": "°F",
+          "value": 59.54
+        },
+        "time": 1791212400,
+        "uv": 2.6929576,
+        "uv_text": "3",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 222.0,
+          "gust": {
+            "text": "19 mph",
+            "unit": "mph",
+            "value": 18.56657
+          },
+          "speed": {
+            "text": "9 mph",
+            "unit": "mph",
+            "value": 9.283285
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "62°",
+          "unit": "°F",
+          "value": 61.7
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Cloudy",
+        "date_short": "Oct 5",
+        "day": "Today",
+        "dew_point": {
+          "text": "47°",
+          "unit": "°F",
+          "value": 46.91749
+        },
+        "feels_like": {
+          "text": "60°",
+          "unit": "°F",
+          "value": 59.54
+        },
+        "humidity": 58,
+        "humidity_text": "58%",
+        "icon": "cloudy",
+        "is_day": true,
+        "label": "12 PM",
+        "precip_probability": 10,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.09 inHg",
+          "unit": "inHg",
+          "value": 30.086329
+        },
+        "temp_level": "mild",
+        "temperature": {
+          "text": "62°",
+          "unit": "°F",
+          "value": 61.7
+        },
+        "time": 1791216000,
+        "uv": 3.7583249,
+        "uv_text": "4",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 224.0,
+          "gust": {
+            "text": "19 mph",
+            "unit": "mph",
+            "value": 19.237652
+          },
+          "speed": {
+            "text": "10 mph",
+            "unit": "mph",
+            "value": 9.618826
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "63°",
+          "unit": "°F",
+          "value": 63.32
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Cloudy",
+        "date_short": "Oct 5",
+        "day": "Today",
+        "dew_point": {
+          "text": "49°",
+          "unit": "°F",
+          "value": 49.19091
+        },
+        "feels_like": {
+          "text": "61°",
+          "unit": "°F",
+          "value": 61.159996
+        },
+        "humidity": 60,
+        "humidity_text": "60%",
+        "icon": "cloudy",
+        "is_day": true,
+        "label": "1 PM",
+        "precip_probability": 15,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.08 inHg",
+          "unit": "inHg",
+          "value": 30.081013
+        },
+        "temp_level": "mild",
+        "temperature": {
+          "text": "63°",
+          "unit": "°F",
+          "value": 63.32
+        },
+        "time": 1791219600,
+        "uv": 4.2,
+        "uv_text": "4",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 226.0,
+          "gust": {
+            "text": "20 mph",
+            "unit": "mph",
+            "value": 19.90873
+          },
+          "speed": {
+            "text": "10 mph",
+            "unit": "mph",
+            "value": 9.954365
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "64°",
+          "unit": "°F",
+          "value": 64.22
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Cloudy",
+        "date_short": "Oct 5",
+        "day": "Today",
+        "dew_point": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 50.776386
+        },
+        "feels_like": {
+          "text": "62°",
+          "unit": "°F",
+          "value": 62.059998
+        },
+        "humidity": 62,
+        "humidity_text": "62%",
+        "icon": "cloudy",
+        "is_day": true,
+        "label": "2 PM",
+        "precip_probability": 20,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.08 inHg",
+          "unit": "inHg",
+          "value": 30.075697
+        },
+        "temp_level": "mild",
+        "temperature": {
+          "text": "64°",
+          "unit": "°F",
+          "value": 64.22
+        },
+        "time": 1791223200,
+        "uv": 3.7583249,
+        "uv_text": "4",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 228.0,
+          "gust": {
+            "text": "21 mph",
+            "unit": "mph",
+            "value": 20.579813
+          },
+          "speed": {
+            "text": "10 mph",
+            "unit": "mph",
+            "value": 10.2899065
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "64°",
+          "unit": "°F",
+          "value": 64.4
+        },
+        "cloud_cover": {
+          "text": "35%",
+          "unit": "%",
+          "value": 35.0
+        },
+        "condition_label": "Overcast",
+        "date_short": "Oct 5",
+        "day": "Today",
+        "dew_point": {
+          "text": "53°",
+          "unit": "°F",
+          "value": 53.06357
+        },
+        "feels_like": {
+          "text": "62°",
+          "unit": "°F",
+          "value": 62.239998
+        },
+        "humidity": 67,
+        "humidity_text": "67%",
+        "icon": "overcast_day",
+        "is_day": true,
+        "label": "3 PM",
+        "precip_probability": 35,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.07 inHg",
+          "unit": "inHg",
+          "value": 30.070381
+        },
+        "temp_level": "mild",
+        "temperature": {
+          "text": "64°",
+          "unit": "°F",
+          "value": 64.4
+        },
+        "time": 1791226800,
+        "uv": 2.6929576,
+        "uv_text": "3",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 230.0,
+          "gust": {
+            "text": "21 mph",
+            "unit": "mph",
+            "value": 21.250893
+          },
+          "speed": {
+            "text": "11 mph",
+            "unit": "mph",
+            "value": 10.625446
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "64°",
+          "unit": "°F",
+          "value": 63.68
+        },
+        "cloud_cover": {
+          "text": "55%",
+          "unit": "%",
+          "value": 55.0
+        },
+        "condition_label": "Light showers",
+        "date_short": "Oct 5",
+        "day": "Today",
+        "dew_point": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 54.985363
+        },
+        "feels_like": {
+          "text": "62°",
+          "unit": "°F",
+          "value": 61.519997
+        },
+        "humidity": 73,
+        "humidity_text": "73%",
+        "icon": "showers_day",
+        "is_day": true,
+        "label": "4 PM",
+        "precip_probability": 55,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.07 inHg",
+          "unit": "inHg",
+          "value": 30.065065
+        },
+        "temp_level": "mild",
+        "temperature": {
+          "text": "64°",
+          "unit": "°F",
+          "value": 63.68
+        },
+        "time": 1791230400,
+        "uv": 1.5450937,
+        "uv_text": "2",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 232.0,
+          "gust": {
+            "text": "22 mph",
+            "unit": "mph",
+            "value": 21.921974
+          },
+          "speed": {
+            "text": "11 mph",
+            "unit": "mph",
+            "value": 10.960987
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "62°",
+          "unit": "°F",
+          "value": 62.239998
+        },
+        "cloud_cover": {
+          "text": "70%",
+          "unit": "%",
+          "value": 70.0
+        },
+        "condition_label": "Rain",
+        "date_short": "Oct 5",
+        "day": "Today",
+        "dew_point": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.409103
+        },
+        "feels_like": {
+          "text": "60°",
+          "unit": "°F",
+          "value": 60.079998
+        },
+        "humidity": 78,
+        "humidity_text": "78%",
+        "icon": "rain",
+        "is_day": true,
+        "label": "5 PM",
+        "precip_probability": 70,
+        "precipitation": {
+          "text": "0.07 in",
+          "unit": "in",
+          "value": 0.06889764
+        },
+        "pressure": {
+          "text": "30.06 inHg",
+          "unit": "inHg",
+          "value": 30.059752
+        },
+        "temp_level": "mild",
+        "temperature": {
+          "text": "62°",
+          "unit": "°F",
+          "value": 62.239998
+        },
+        "time": 1791234000,
+        "uv": 0.7098558,
+        "uv_text": "1",
+        "visibility": {
+          "text": "5.0 mi",
+          "unit": "mi",
+          "value": 4.9709697
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 234.0,
+          "gust": {
+            "text": "23 mph",
+            "unit": "mph",
+            "value": 22.593056
+          },
+          "speed": {
+            "text": "11 mph",
+            "unit": "mph",
+            "value": 11.296528
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "60°",
+          "unit": "°F",
+          "value": 60.08
+        },
+        "cloud_cover": {
+          "text": "80%",
+          "unit": "%",
+          "value": 80.0
+        },
+        "condition_label": "Heavy rain",
+        "date_short": "Oct 5",
+        "day": "Today",
+        "dew_point": {
+          "text": "54°",
+          "unit": "°F",
+          "value": 54.45266
+        },
+        "feels_like": {
+          "text": "58°",
+          "unit": "°F",
+          "value": 57.920002
+        },
+        "humidity": 82,
+        "humidity_text": "82%",
+        "icon": "extreme_rain",
+        "is_day": true,
+        "label": "6 PM",
+        "precip_probability": 80,
+        "precipitation": {
+          "text": "0.08 in",
+          "unit": "in",
+          "value": 0.07874016
+        },
+        "pressure": {
+          "text": "30.05 inHg",
+          "unit": "inHg",
+          "value": 30.054436
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "60°",
+          "unit": "°F",
+          "value": 60.08
+        },
+        "time": 1791237600,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "5.0 mi",
+          "unit": "mi",
+          "value": 4.9709697
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 236.0,
+          "gust": {
+            "text": "23 mph",
+            "unit": "mph",
+            "value": 23.264135
+          },
+          "speed": {
+            "text": "12 mph",
+            "unit": "mph",
+            "value": 11.632068
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "58°",
+          "unit": "°F",
+          "value": 57.739998
+        },
+        "cloud_cover": {
+          "text": "65%",
+          "unit": "%",
+          "value": 65.0
+        },
+        "condition_label": "Rain",
+        "date_short": "Oct 5",
+        "day": "Today",
+        "dew_point": {
+          "text": "50°",
+          "unit": "°F",
+          "value": 50.45805
+        },
+        "feels_like": {
+          "text": "56°",
+          "unit": "°F",
+          "value": 55.58
+        },
+        "humidity": 77,
+        "humidity_text": "77%",
+        "icon": "rain",
+        "is_day": false,
+        "label": "7 PM",
+        "precip_probability": 65,
+        "precipitation": {
+          "text": "0.06 in",
+          "unit": "in",
+          "value": 0.06397638
+        },
+        "pressure": {
+          "text": "30.05 inHg",
+          "unit": "inHg",
+          "value": 30.04912
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "58°",
+          "unit": "°F",
+          "value": 57.739998
+        },
+        "time": 1791241200,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "5.0 mi",
+          "unit": "mi",
+          "value": 4.9709697
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "WSW",
+          "direction_deg": 238.0,
+          "gust": {
+            "text": "24 mph",
+            "unit": "mph",
+            "value": 23.935219
+          },
+          "speed": {
+            "text": "12 mph",
+            "unit": "mph",
+            "value": 11.967609
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "56°",
+          "unit": "°F",
+          "value": 55.58
+        },
+        "cloud_cover": {
+          "text": "45%",
+          "unit": "%",
+          "value": 45.0
+        },
+        "condition_label": "Light showers",
+        "date_short": "Oct 5",
+        "day": "Today",
+        "dew_point": {
+          "text": "46°",
+          "unit": "°F",
+          "value": 45.946655
+        },
+        "feels_like": {
+          "text": "53°",
+          "unit": "°F",
+          "value": 53.420002
+        },
+        "humidity": 70,
+        "humidity_text": "70%",
+        "icon": "showers_night",
+        "is_day": false,
+        "label": "8 PM",
+        "precip_probability": 45,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.04 inHg",
+          "unit": "inHg",
+          "value": 30.043806
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "56°",
+          "unit": "°F",
+          "value": 55.58
+        },
+        "time": 1791244800,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "WSW",
+          "direction_deg": 240.0,
+          "gust": {
+            "text": "25 mph",
+            "unit": "mph",
+            "value": 24.606297
+          },
+          "speed": {
+            "text": "12 mph",
+            "unit": "mph",
+            "value": 12.303148
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "54°",
+          "unit": "°F",
+          "value": 53.78
+        },
+        "cloud_cover": {
+          "text": "30%",
+          "unit": "%",
+          "value": 30.0
+        },
+        "condition_label": "Overcast",
+        "date_short": "Oct 5",
+        "day": "Today",
+        "dew_point": {
+          "text": "42°",
+          "unit": "°F",
+          "value": 42.284492
+        },
+        "feels_like": {
+          "text": "52°",
+          "unit": "°F",
+          "value": 51.620003
+        },
+        "humidity": 65,
+        "humidity_text": "65%",
+        "icon": "overcast_night",
+        "is_day": false,
+        "label": "9 PM",
+        "precip_probability": 30,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.04 inHg",
+          "unit": "inHg",
+          "value": 30.038488
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "54°",
+          "unit": "°F",
+          "value": 53.78
+        },
+        "time": 1791248400,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "WSW",
+          "direction_deg": 242.0,
+          "gust": {
+            "text": "25 mph",
+            "unit": "mph",
+            "value": 25.277378
+          },
+          "speed": {
+            "text": "13 mph",
+            "unit": "mph",
+            "value": 12.638689
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "52°",
+          "unit": "°F",
+          "value": 52.34
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Cloudy",
+        "date_short": "Oct 5",
+        "day": "Today",
+        "dew_point": {
+          "text": "39°",
+          "unit": "°F",
+          "value": 38.855312
+        },
+        "feels_like": {
+          "text": "50°",
+          "unit": "°F",
+          "value": 50.18
+        },
+        "humidity": 60,
+        "humidity_text": "60%",
+        "icon": "cloudy",
+        "is_day": false,
+        "label": "10 PM",
+        "precip_probability": 15,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.03 inHg",
+          "unit": "inHg",
+          "value": 30.033173
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "52°",
+          "unit": "°F",
+          "value": 52.34
+        },
+        "time": 1791252000,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "WSW",
+          "direction_deg": 244.0,
+          "gust": {
+            "text": "26 mph",
+            "unit": "mph",
+            "value": 25.94846
+          },
+          "speed": {
+            "text": "13 mph",
+            "unit": "mph",
+            "value": 12.97423
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 51.08
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Clear",
+        "date_short": "Oct 5",
+        "day": "Today",
+        "dew_point": {
+          "text": "36°",
+          "unit": "°F",
+          "value": 36.216476
+        },
+        "feels_like": {
+          "text": "49°",
+          "unit": "°F",
+          "value": 48.920002
+        },
+        "humidity": 57,
+        "humidity_text": "57%",
+        "icon": "clear_night",
+        "is_day": false,
+        "label": "11 PM",
+        "precip_probability": 5,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.03 inHg",
+          "unit": "inHg",
+          "value": 30.027859
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 51.08
+        },
+        "time": 1791255600,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "WSW",
+          "direction_deg": 246.0,
+          "gust": {
+            "text": "27 mph",
+            "unit": "mph",
+            "value": 26.61954
+          },
+          "speed": {
+            "text": "13 mph",
+            "unit": "mph",
+            "value": 13.30977
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 51.440002
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Clear",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "36°",
+          "unit": "°F",
+          "value": 35.79776
+        },
+        "feels_like": {
+          "text": "49°",
+          "unit": "°F",
+          "value": 49.28
+        },
+        "humidity": 55,
+        "humidity_text": "55%",
+        "icon": "clear_night",
+        "is_day": false,
+        "label": "12 AM",
+        "precip_probability": 0,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.02 inHg",
+          "unit": "inHg",
+          "value": 30.022543
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 51.440002
+        },
+        "time": 1791259200,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↑",
+          "compass": "SSW",
+          "direction_deg": 200.0,
+          "gust": {
+            "text": "11 mph",
+            "unit": "mph",
+            "value": 11.184681
+          },
+          "speed": {
+            "text": "6 mph",
+            "unit": "mph",
+            "value": 5.5923405
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 50.72
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Clear",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "35°",
+          "unit": "°F",
+          "value": 35.126163
+        },
+        "feels_like": {
+          "text": "49°",
+          "unit": "°F",
+          "value": 48.559998
+        },
+        "humidity": 55,
+        "humidity_text": "55%",
+        "icon": "clear_night",
+        "is_day": false,
+        "label": "1 AM",
+        "precip_probability": 0,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.02 inHg",
+          "unit": "inHg",
+          "value": 30.017227
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 50.72
+        },
+        "time": 1791262800,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↑",
+          "compass": "SSW",
+          "direction_deg": 202.0,
+          "gust": {
+            "text": "12 mph",
+            "unit": "mph",
+            "value": 11.855762
+          },
+          "speed": {
+            "text": "6 mph",
+            "unit": "mph",
+            "value": 5.927881
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "50°",
+          "unit": "°F",
+          "value": 50.0
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Clear",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "34°",
+          "unit": "°F",
+          "value": 34.454494
+        },
+        "feels_like": {
+          "text": "48°",
+          "unit": "°F",
+          "value": 47.84
+        },
+        "humidity": 55,
+        "humidity_text": "55%",
+        "icon": "clear_night",
+        "is_day": false,
+        "label": "2 AM",
+        "precip_probability": 0,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.01 inHg",
+          "unit": "inHg",
+          "value": 30.011913
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "50°",
+          "unit": "°F",
+          "value": 50.0
+        },
+        "time": 1791266400,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SSW",
+          "direction_deg": 204.0,
+          "gust": {
+            "text": "13 mph",
+            "unit": "mph",
+            "value": 12.526842
+          },
+          "speed": {
+            "text": "6 mph",
+            "unit": "mph",
+            "value": 6.263421
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "49°",
+          "unit": "°F",
+          "value": 49.46
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Clear",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "34°",
+          "unit": "°F",
+          "value": 33.950695
+        },
+        "feels_like": {
+          "text": "47°",
+          "unit": "°F",
+          "value": 47.3
+        },
+        "humidity": 55,
+        "humidity_text": "55%",
+        "icon": "clear_night",
+        "is_day": false,
+        "label": "3 AM",
+        "precip_probability": 0,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.01 inHg",
+          "unit": "inHg",
+          "value": 30.006598
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "49°",
+          "unit": "°F",
+          "value": 49.46
+        },
+        "time": 1791270000,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SSW",
+          "direction_deg": 206.0,
+          "gust": {
+            "text": "13 mph",
+            "unit": "mph",
+            "value": 13.197923
+          },
+          "speed": {
+            "text": "7 mph",
+            "unit": "mph",
+            "value": 6.5989614
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "49°",
+          "unit": "°F",
+          "value": 49.1
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Clear",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "34°",
+          "unit": "°F",
+          "value": 33.614807
+        },
+        "feels_like": {
+          "text": "47°",
+          "unit": "°F",
+          "value": 46.940002
+        },
+        "humidity": 55,
+        "humidity_text": "55%",
+        "icon": "clear_night",
+        "is_day": false,
+        "label": "4 AM",
+        "precip_probability": 0,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.00 inHg",
+          "unit": "inHg",
+          "value": 30.001282
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "49°",
+          "unit": "°F",
+          "value": 49.1
+        },
+        "time": 1791273600,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SSW",
+          "direction_deg": 208.0,
+          "gust": {
+            "text": "14 mph",
+            "unit": "mph",
+            "value": 13.869003
+          },
+          "speed": {
+            "text": "7 mph",
+            "unit": "mph",
+            "value": 6.9345016
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "49°",
+          "unit": "°F",
+          "value": 48.92
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Clear",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "33°",
+          "unit": "°F",
+          "value": 33.446854
+        },
+        "feels_like": {
+          "text": "47°",
+          "unit": "°F",
+          "value": 46.76
+        },
+        "humidity": 55,
+        "humidity_text": "55%",
+        "icon": "clear_night",
+        "is_day": false,
+        "label": "5 AM",
+        "precip_probability": 0,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "30.00 inHg",
+          "unit": "inHg",
+          "value": 29.995968
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "49°",
+          "unit": "°F",
+          "value": 48.92
+        },
+        "time": 1791277200,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SSW",
+          "direction_deg": 210.0,
+          "gust": {
+            "text": "15 mph",
+            "unit": "mph",
+            "value": 14.540085
+          },
+          "speed": {
+            "text": "7 mph",
+            "unit": "mph",
+            "value": 7.2700424
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "49°",
+          "unit": "°F",
+          "value": 49.28
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Clear",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "34°",
+          "unit": "°F",
+          "value": 33.782753
+        },
+        "feels_like": {
+          "text": "47°",
+          "unit": "°F",
+          "value": 47.120003
+        },
+        "humidity": 55,
+        "humidity_text": "55%",
+        "icon": "clear_night",
+        "is_day": false,
+        "label": "6 AM",
+        "precip_probability": 0,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.99 inHg",
+          "unit": "inHg",
+          "value": 29.99065
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "49°",
+          "unit": "°F",
+          "value": 49.28
+        },
+        "time": 1791280800,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SSW",
+          "direction_deg": 212.0,
+          "gust": {
+            "text": "15 mph",
+            "unit": "mph",
+            "value": 15.211165
+          },
+          "speed": {
+            "text": "8 mph",
+            "unit": "mph",
+            "value": 7.6055827
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 50.54
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Clear",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "35°",
+          "unit": "°F",
+          "value": 34.958252
+        },
+        "feels_like": {
+          "text": "48°",
+          "unit": "°F",
+          "value": 48.38
+        },
+        "humidity": 55,
+        "humidity_text": "55%",
+        "icon": "clear_night",
+        "is_day": false,
+        "label": "7 AM",
+        "precip_probability": 0,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.99 inHg",
+          "unit": "inHg",
+          "value": 29.985334
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 50.54
+        },
+        "time": 1791284400,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 214.0,
+          "gust": {
+            "text": "16 mph",
+            "unit": "mph",
+            "value": 15.882247
+          },
+          "speed": {
+            "text": "8 mph",
+            "unit": "mph",
+            "value": 7.9411235
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "53°",
+          "unit": "°F",
+          "value": 52.88
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Clear",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "37°",
+          "unit": "°F",
+          "value": 37.14074
+        },
+        "feels_like": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 50.72
+        },
+        "humidity": 55,
+        "humidity_text": "55%",
+        "icon": "clear_day",
+        "is_day": true,
+        "label": "8 AM",
+        "precip_probability": 0,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.98 inHg",
+          "unit": "inHg",
+          "value": 29.98002
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "53°",
+          "unit": "°F",
+          "value": 52.88
+        },
+        "time": 1791288000,
+        "uv": 0.26114142,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 216.0,
+          "gust": {
+            "text": "17 mph",
+            "unit": "mph",
+            "value": 16.553328
+          },
+          "speed": {
+            "text": "8 mph",
+            "unit": "mph",
+            "value": 8.276664
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "56°",
+          "unit": "°F",
+          "value": 55.76
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Partly cloudy",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "40°",
+          "unit": "°F",
+          "value": 40.21312
+        },
+        "feels_like": {
+          "text": "54°",
+          "unit": "°F",
+          "value": 53.6
+        },
+        "humidity": 56,
+        "humidity_text": "56%",
+        "icon": "partly_cloudy_day",
+        "is_day": true,
+        "label": "9 AM",
+        "precip_probability": 3,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.97 inHg",
+          "unit": "inHg",
+          "value": 29.974705
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "56°",
+          "unit": "°F",
+          "value": 55.76
+        },
+        "time": 1791291600,
+        "uv": 0.7098558,
+        "uv_text": "1",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 218.0,
+          "gust": {
+            "text": "17 mph",
+            "unit": "mph",
+            "value": 17.224407
+          },
+          "speed": {
+            "text": "9 mph",
+            "unit": "mph",
+            "value": 8.612204
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "59°",
+          "unit": "°F",
+          "value": 58.64
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Partly cloudy",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "43°",
+          "unit": "°F",
+          "value": 42.901733
+        },
+        "feels_like": {
+          "text": "56°",
+          "unit": "°F",
+          "value": 56.48
+        },
+        "humidity": 56,
+        "humidity_text": "56%",
+        "icon": "partly_cloudy_day",
+        "is_day": true,
+        "label": "10 AM",
+        "precip_probability": 3,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.97 inHg",
+          "unit": "inHg",
+          "value": 29.969389
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "59°",
+          "unit": "°F",
+          "value": 58.64
+        },
+        "time": 1791295200,
+        "uv": 1.5450937,
+        "uv_text": "2",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 220.0,
+          "gust": {
+            "text": "18 mph",
+            "unit": "mph",
+            "value": 17.895489
+          },
+          "speed": {
+            "text": "9 mph",
+            "unit": "mph",
+            "value": 8.947744
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "61°",
+          "unit": "°F",
+          "value": 61.34
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Partly cloudy",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "46°",
+          "unit": "°F",
+          "value": 45.812485
+        },
+        "feels_like": {
+          "text": "59°",
+          "unit": "°F",
+          "value": 59.18
+        },
+        "humidity": 57,
+        "humidity_text": "57%",
+        "icon": "partly_cloudy_day",
+        "is_day": true,
+        "label": "11 AM",
+        "precip_probability": 5,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.96 inHg",
+          "unit": "inHg",
+          "value": 29.964075
+        },
+        "temp_level": "mild",
+        "temperature": {
+          "text": "61°",
+          "unit": "°F",
+          "value": 61.34
+        },
+        "time": 1791298800,
+        "uv": 2.6929576,
+        "uv_text": "3",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 222.0,
+          "gust": {
+            "text": "19 mph",
+            "unit": "mph",
+            "value": 18.56657
+          },
+          "speed": {
+            "text": "9 mph",
+            "unit": "mph",
+            "value": 9.283285
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "64°",
+          "unit": "°F",
+          "value": 63.5
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Partly cloudy",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "48°",
+          "unit": "°F",
+          "value": 47.830914
+        },
+        "feels_like": {
+          "text": "61°",
+          "unit": "°F",
+          "value": 61.34
+        },
+        "humidity": 57,
+        "humidity_text": "57%",
+        "icon": "partly_cloudy_day",
+        "is_day": true,
+        "label": "12 PM",
+        "precip_probability": 5,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.96 inHg",
+          "unit": "inHg",
+          "value": 29.95876
+        },
+        "temp_level": "mild",
+        "temperature": {
+          "text": "64°",
+          "unit": "°F",
+          "value": 63.5
+        },
+        "time": 1791302400,
+        "uv": 3.7583249,
+        "uv_text": "4",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 224.0,
+          "gust": {
+            "text": "19 mph",
+            "unit": "mph",
+            "value": 19.237652
+          },
+          "speed": {
+            "text": "10 mph",
+            "unit": "mph",
+            "value": 9.618826
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "65°",
+          "unit": "°F",
+          "value": 65.119995
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Partly cloudy",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "50°",
+          "unit": "°F",
+          "value": 49.736553
+        },
+        "feels_like": {
+          "text": "63°",
+          "unit": "°F",
+          "value": 62.96
+        },
+        "humidity": 58,
+        "humidity_text": "58%",
+        "icon": "partly_cloudy_day",
+        "is_day": true,
+        "label": "1 PM",
+        "precip_probability": 8,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.95 inHg",
+          "unit": "inHg",
+          "value": 29.953444
+        },
+        "temp_level": "mild",
+        "temperature": {
+          "text": "65°",
+          "unit": "°F",
+          "value": 65.119995
+        },
+        "time": 1791306000,
+        "uv": 4.2,
+        "uv_text": "4",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 226.0,
+          "gust": {
+            "text": "20 mph",
+            "unit": "mph",
+            "value": 19.90873
+          },
+          "speed": {
+            "text": "10 mph",
+            "unit": "mph",
+            "value": 9.954365
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "66°",
+          "unit": "°F",
+          "value": 66.02
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Cloudy",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 50.96732
+        },
+        "feels_like": {
+          "text": "64°",
+          "unit": "°F",
+          "value": 63.859997
+        },
+        "humidity": 58,
+        "humidity_text": "58%",
+        "icon": "cloudy",
+        "is_day": true,
+        "label": "2 PM",
+        "precip_probability": 10,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.95 inHg",
+          "unit": "inHg",
+          "value": 29.948128
+        },
+        "temp_level": "mild",
+        "temperature": {
+          "text": "66°",
+          "unit": "°F",
+          "value": 66.02
+        },
+        "time": 1791309600,
+        "uv": 3.7583249,
+        "uv_text": "4",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 228.0,
+          "gust": {
+            "text": "21 mph",
+            "unit": "mph",
+            "value": 20.579813
+          },
+          "speed": {
+            "text": "10 mph",
+            "unit": "mph",
+            "value": 10.2899065
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "66°",
+          "unit": "°F",
+          "value": 66.2
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Cloudy",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "52°",
+          "unit": "°F",
+          "value": 52.274223
+        },
+        "feels_like": {
+          "text": "64°",
+          "unit": "°F",
+          "value": 64.04
+        },
+        "humidity": 61,
+        "humidity_text": "61%",
+        "icon": "cloudy",
+        "is_day": true,
+        "label": "3 PM",
+        "precip_probability": 18,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.94 inHg",
+          "unit": "inHg",
+          "value": 29.942812
+        },
+        "temp_level": "mild",
+        "temperature": {
+          "text": "66°",
+          "unit": "°F",
+          "value": 66.2
+        },
+        "time": 1791313200,
+        "uv": 2.6929576,
+        "uv_text": "3",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 230.0,
+          "gust": {
+            "text": "21 mph",
+            "unit": "mph",
+            "value": 21.250893
+          },
+          "speed": {
+            "text": "11 mph",
+            "unit": "mph",
+            "value": 10.625446
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "65°",
+          "unit": "°F",
+          "value": 65.48
+        },
+        "cloud_cover": {
+          "text": "28%",
+          "unit": "%",
+          "value": 27.5
+        },
+        "condition_label": "Overcast",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "53°",
+          "unit": "°F",
+          "value": 53.046883
+        },
+        "feels_like": {
+          "text": "63°",
+          "unit": "°F",
+          "value": 63.32
+        },
+        "humidity": 64,
+        "humidity_text": "64%",
+        "icon": "overcast_day",
+        "is_day": true,
+        "label": "4 PM",
+        "precip_probability": 28,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.94 inHg",
+          "unit": "inHg",
+          "value": 29.937496
+        },
+        "temp_level": "mild",
+        "temperature": {
+          "text": "65°",
+          "unit": "°F",
+          "value": 65.48
+        },
+        "time": 1791316800,
+        "uv": 1.5450937,
+        "uv_text": "2",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 232.0,
+          "gust": {
+            "text": "22 mph",
+            "unit": "mph",
+            "value": 21.921974
+          },
+          "speed": {
+            "text": "11 mph",
+            "unit": "mph",
+            "value": 10.960987
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "64°",
+          "unit": "°F",
+          "value": 64.04
+        },
+        "cloud_cover": {
+          "text": "35%",
+          "unit": "%",
+          "value": 35.0
+        },
+        "condition_label": "Overcast",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "53°",
+          "unit": "°F",
+          "value": 52.720715
+        },
+        "feels_like": {
+          "text": "62°",
+          "unit": "°F",
+          "value": 61.879997
+        },
+        "humidity": 67,
+        "humidity_text": "67%",
+        "icon": "overcast_day",
+        "is_day": true,
+        "label": "5 PM",
+        "precip_probability": 35,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.93 inHg",
+          "unit": "inHg",
+          "value": 29.932182
+        },
+        "temp_level": "mild",
+        "temperature": {
+          "text": "64°",
+          "unit": "°F",
+          "value": 64.04
+        },
+        "time": 1791320400,
+        "uv": 0.7098558,
+        "uv_text": "1",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 234.0,
+          "gust": {
+            "text": "23 mph",
+            "unit": "mph",
+            "value": 22.593056
+          },
+          "speed": {
+            "text": "11 mph",
+            "unit": "mph",
+            "value": 11.296528
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "62°",
+          "unit": "°F",
+          "value": 61.88
+        },
+        "cloud_cover": {
+          "text": "40%",
+          "unit": "%",
+          "value": 40.0
+        },
+        "condition_label": "Overcast",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 51.33103
+        },
+        "feels_like": {
+          "text": "60°",
+          "unit": "°F",
+          "value": 59.72
+        },
+        "humidity": 68,
+        "humidity_text": "68%",
+        "icon": "overcast_day",
+        "is_day": true,
+        "label": "6 PM",
+        "precip_probability": 40,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.93 inHg",
+          "unit": "inHg",
+          "value": 29.926867
+        },
+        "temp_level": "mild",
+        "temperature": {
+          "text": "62°",
+          "unit": "°F",
+          "value": 61.88
+        },
+        "time": 1791324000,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "SW",
+          "direction_deg": 236.0,
+          "gust": {
+            "text": "23 mph",
+            "unit": "mph",
+            "value": 23.264135
+          },
+          "speed": {
+            "text": "12 mph",
+            "unit": "mph",
+            "value": 11.632068
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "60°",
+          "unit": "°F",
+          "value": 59.54
+        },
+        "cloud_cover": {
+          "text": "33%",
+          "unit": "%",
+          "value": 32.5
+        },
+        "condition_label": "Overcast",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "48°",
+          "unit": "°F",
+          "value": 48.097965
+        },
+        "feels_like": {
+          "text": "57°",
+          "unit": "°F",
+          "value": 57.38
+        },
+        "humidity": 66,
+        "humidity_text": "66%",
+        "icon": "overcast_night",
+        "is_day": false,
+        "label": "7 PM",
+        "precip_probability": 33,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.92 inHg",
+          "unit": "inHg",
+          "value": 29.92155
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "60°",
+          "unit": "°F",
+          "value": 59.54
+        },
+        "time": 1791327600,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "WSW",
+          "direction_deg": 238.0,
+          "gust": {
+            "text": "24 mph",
+            "unit": "mph",
+            "value": 23.935219
+          },
+          "speed": {
+            "text": "12 mph",
+            "unit": "mph",
+            "value": 11.967609
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "57°",
+          "unit": "°F",
+          "value": 57.38
+        },
+        "cloud_cover": {
+          "text": "23%",
+          "unit": "%",
+          "value": 22.5
+        },
+        "condition_label": "Cloudy",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "45°",
+          "unit": "°F",
+          "value": 44.672215
+        },
+        "feels_like": {
+          "text": "55°",
+          "unit": "°F",
+          "value": 55.22
+        },
+        "humidity": 63,
+        "humidity_text": "63%",
+        "icon": "cloudy",
+        "is_day": false,
+        "label": "8 PM",
+        "precip_probability": 23,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.92 inHg",
+          "unit": "inHg",
+          "value": 29.916235
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "57°",
+          "unit": "°F",
+          "value": 57.38
+        },
+        "time": 1791331200,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "WSW",
+          "direction_deg": 240.0,
+          "gust": {
+            "text": "25 mph",
+            "unit": "mph",
+            "value": 24.606297
+          },
+          "speed": {
+            "text": "12 mph",
+            "unit": "mph",
+            "value": 12.303148
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "56°",
+          "unit": "°F",
+          "value": 55.58
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Cloudy",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "42°",
+          "unit": "°F",
+          "value": 41.906677
+        },
+        "feels_like": {
+          "text": "53°",
+          "unit": "°F",
+          "value": 53.420002
+        },
+        "humidity": 60,
+        "humidity_text": "60%",
+        "icon": "cloudy",
+        "is_day": false,
+        "label": "9 PM",
+        "precip_probability": 15,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.91 inHg",
+          "unit": "inHg",
+          "value": 29.910921
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "56°",
+          "unit": "°F",
+          "value": 55.58
+        },
+        "time": 1791334800,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "WSW",
+          "direction_deg": 242.0,
+          "gust": {
+            "text": "25 mph",
+            "unit": "mph",
+            "value": 25.277378
+          },
+          "speed": {
+            "text": "13 mph",
+            "unit": "mph",
+            "value": 12.638689
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "54°",
+          "unit": "°F",
+          "value": 54.14
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Clear",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "39°",
+          "unit": "°F",
+          "value": 39.454636
+        },
+        "feels_like": {
+          "text": "52°",
+          "unit": "°F",
+          "value": 51.98
+        },
+        "humidity": 58,
+        "humidity_text": "58%",
+        "icon": "clear_night",
+        "is_day": false,
+        "label": "10 PM",
+        "precip_probability": 8,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.91 inHg",
+          "unit": "inHg",
+          "value": 29.905603
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "54°",
+          "unit": "°F",
+          "value": 54.14
+        },
+        "time": 1791338400,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "WSW",
+          "direction_deg": 244.0,
+          "gust": {
+            "text": "26 mph",
+            "unit": "mph",
+            "value": 25.94846
+          },
+          "speed": {
+            "text": "13 mph",
+            "unit": "mph",
+            "value": 12.97423
+          }
+        }
+      },
+      {
+        "actual": {
+          "text": "53°",
+          "unit": "°F",
+          "value": 52.88
+        },
+        "cloud_cover": {
+          "text": "20%",
+          "unit": "%",
+          "value": 20.0
+        },
+        "condition_label": "Clear",
+        "date_short": "Oct 6",
+        "day": "Tomorrow",
+        "dew_point": {
+          "text": "38°",
+          "unit": "°F",
+          "value": 37.52338
+        },
+        "feels_like": {
+          "text": "51°",
+          "unit": "°F",
+          "value": 50.72
+        },
+        "humidity": 56,
+        "humidity_text": "56%",
+        "icon": "clear_night",
+        "is_day": false,
+        "label": "11 PM",
+        "precip_probability": 3,
+        "precipitation": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "pressure": {
+          "text": "29.90 inHg",
+          "unit": "inHg",
+          "value": 29.900288
+        },
+        "temp_level": "cool",
+        "temperature": {
+          "text": "53°",
+          "unit": "°F",
+          "value": 52.88
+        },
+        "time": 1791342000,
+        "uv": 0.0,
+        "uv_text": "0",
+        "visibility": {
+          "text": "15 mi",
+          "unit": "mi",
+          "value": 14.999901
+        },
+        "wind": {
+          "arrow": "↗",
+          "compass": "WSW",
+          "direction_deg": 246.0,
+          "gust": {
+            "text": "27 mph",
+            "unit": "mph",
+            "value": 26.61954
+          },
+          "speed": {
+            "text": "13 mph",
+            "unit": "mph",
+            "value": 13.30977
+          }
+        }
+      }
+    ],
+    "now_index": 0,
+    "precip_max": 0.07874016,
+    "temp_max": 66.2,
+    "temp_min": 48.92,
+    "timeline": [
+      {
+        "group": "cloudy",
+        "label": "Overcast",
+        "len": 5,
+        "start": 0
+      },
+      {
+        "group": "rain",
+        "label": "Rain",
+        "len": 2,
+        "start": 5
+      },
+      {
+        "group": "heavy_rain",
+        "label": "Heavy rain",
+        "len": 1,
+        "start": 7
+      },
+      {
+        "group": "rain",
+        "label": "Rain",
+        "len": 2,
+        "start": 8
+      },
+      {
+        "group": "cloudy",
+        "label": "Overcast",
+        "len": 2,
+        "start": 10
+      },
+      {
+        "group": "clear",
+        "label": "Clear",
+        "len": 10,
+        "start": 12
+      },
+      {
+        "group": "partly_cloudy",
+        "label": "Partly cloudy",
+        "len": 2,
+        "start": 22
+      }
+    ]
+  },
+  "is_day": true,
+  "location": {
+    "local_time": "Mon 11:00 AM",
+    "name": "New York",
+    "region": "New York, US"
+  },
+  "moon": {
+    "icon": "moon_waning_crescent",
+    "illumination": "30% illuminated",
+    "moonrise": "6:09 PM",
+    "moonset": "10:47 AM",
+    "phase": 0.817,
+    "phase_label": "Waning crescent",
+    "rise": {
+      "at": 1791151751,
+      "label": "Moonrise",
+      "time": "6:09 PM"
+    },
+    "set": {
+      "at": 1791211658,
+      "label": "Moonset",
+      "time": "10:47 AM"
+    }
+  },
+  "nowcast": {
+    "hours": 2,
+    "intensity": [
+      0.0,
+      0.0,
+      0.0,
+      0.16000001,
+      0.16000001,
+      0.16000001,
+      0.16000001,
+      0.16000001
+    ],
+    "levels": [
+      "Light",
+      "Moderate",
+      "Heavy"
+    ],
+    "series_mm": [
+      0.0,
+      0.0,
+      0.0,
+      0.3,
+      0.3,
+      0.3,
+      0.3,
+      0.3
+    ],
+    "step_minutes": 15,
+    "text": "Rain starting in ~45 min.",
+    "ticks": [
+      {
+        "label": "Now",
+        "step": 0
+      },
+      {
+        "label": "1 h",
+        "step": 4
+      },
+      {
+        "label": "2 h",
+        "step": 8
+      }
+    ],
+    "wet": true
+  },
+  "precipitation": {
+    "dry": null,
+    "hours": [
+      {
+        "amount": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "chance": "10%",
+        "chance_value": 10,
+        "frozen": false,
+        "intensity": 0.0,
+        "label": "Now",
+        "time": 1791212400
+      },
+      {
+        "amount": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "chance": "10%",
+        "chance_value": 10,
+        "frozen": false,
+        "intensity": 0.0,
+        "label": "12 PM",
+        "time": 1791216000
+      },
+      {
+        "amount": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "chance": "15%",
+        "chance_value": 15,
+        "frozen": false,
+        "intensity": 0.0,
+        "label": "1 PM",
+        "time": 1791219600
+      },
+      {
+        "amount": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "chance": "20%",
+        "chance_value": 20,
+        "frozen": false,
+        "intensity": 0.0,
+        "label": "2 PM",
+        "time": 1791223200
+      },
+      {
+        "amount": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "chance": "35%",
+        "chance_value": 35,
+        "frozen": false,
+        "intensity": 0.0,
+        "label": "3 PM",
+        "time": 1791226800
+      },
+      {
+        "amount": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "chance": "55%",
+        "chance_value": 55,
+        "frozen": false,
+        "intensity": 0.0,
+        "label": "4 PM",
+        "time": 1791230400
+      },
+      {
+        "amount": {
+          "text": "0.07 in",
+          "unit": "in",
+          "value": 0.06889764
+        },
+        "chance": "70%",
+        "chance_value": 70,
+        "frozen": false,
+        "intensity": 0.23026316,
+        "label": "5 PM",
+        "time": 1791234000
+      },
+      {
+        "amount": {
+          "text": "0.08 in",
+          "unit": "in",
+          "value": 0.07874016
+        },
+        "chance": "80%",
+        "chance_value": 80,
+        "frozen": false,
+        "intensity": 0.2631579,
+        "label": "6 PM",
+        "time": 1791237600
+      },
+      {
+        "amount": {
+          "text": "0.06 in",
+          "unit": "in",
+          "value": 0.06397638
+        },
+        "chance": "65%",
+        "chance_value": 65,
+        "frozen": false,
+        "intensity": 0.2138158,
+        "label": "7 PM",
+        "time": 1791241200
+      },
+      {
+        "amount": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "chance": "45%",
+        "chance_value": 45,
+        "frozen": false,
+        "intensity": 0.0,
+        "label": "8 PM",
+        "time": 1791244800
+      },
+      {
+        "amount": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "chance": "30%",
+        "chance_value": 30,
+        "frozen": false,
+        "intensity": 0.0,
+        "label": "9 PM",
+        "time": 1791248400
+      },
+      {
+        "amount": {
+          "text": "0.00 in",
+          "unit": "in",
+          "value": 0.0
+        },
+        "chance": "15%",
+        "chance_value": 15,
+        "frozen": false,
+        "intensity": 0.0,
+        "label": "10 PM",
+        "time": 1791252000
+      }
+    ],
+    "max_chance": "80%",
+    "total": {
+      "text": "0.21 in",
+      "unit": "in",
+      "value": 0.21161418
+    }
+  },
+  "radar": null,
+  "status": {
+    "error": null,
+    "observed": null,
+    "provider": "Open-Meteo",
+    "refreshing": false,
+    "stale": false,
+    "updated": "Updated just now"
+  },
+  "summary": "Partly cloudy. High 64°, low 47°. Rain starting in ~45 min.",
+  "sun": {
+    "daylight": "11h 35m",
+    "is_day": true,
+    "noon": {
+      "at": 1791218661,
+      "label": "Solar noon",
+      "time": "12:44 PM"
+    },
+    "progress": 0.3405561,
+    "rise": {
+      "at": 1791198192,
+      "label": "Sunrise",
+      "time": "7:03 AM"
+    },
+    "set": {
+      "at": 1791239912,
+      "label": "Sunset",
+      "time": "6:38 PM"
+    },
+    "solar_noon": "12:44 PM",
+    "sunrise": "7:03 AM",
+    "sunset": "6:38 PM",
+    "twilight": [
+      {
+        "at": 1791192325,
+        "kind": "astronomical",
+        "label": "Astronomical dawn",
+        "morning": true,
+        "time": "5:25 AM"
+      },
+      {
+        "at": 1791194239,
+        "kind": "nautical",
+        "label": "Nautical dawn",
+        "morning": true,
+        "time": "5:57 AM"
+      },
+      {
+        "at": 1791196140,
+        "kind": "civil",
+        "label": "Civil dawn",
+        "morning": true,
+        "time": "6:29 AM"
+      },
+      {
+        "at": 1791199968,
+        "kind": "golden",
+        "label": "Golden hour ends",
+        "morning": true,
+        "time": "7:32 AM"
+      },
+      {
+        "at": 1791237353,
+        "kind": "golden",
+        "label": "Golden hour begins",
+        "morning": false,
+        "time": "5:55 PM"
+      },
+      {
+        "at": 1791241181,
+        "kind": "civil",
+        "label": "Civil dusk",
+        "morning": false,
+        "time": "6:59 PM"
+      },
+      {
+        "at": 1791243083,
+        "kind": "nautical",
+        "label": "Nautical dusk",
+        "morning": false,
+        "time": "7:31 PM"
+      },
+      {
+        "at": 1791244996,
+        "kind": "astronomical",
+        "label": "Astronomical dusk",
+        "morning": false,
+        "time": "8:03 PM"
+      }
+    ]
+  },
+  "tabs": [
+    {
+      "icon": "partly_cloudy_day",
+      "name": "New York",
+      "temp": "60°"
+    },
+    {
+      "icon": "not_available",
+      "name": "Brooklyn",
+      "temp": "—"
+    }
+  ],
+  "theme": "clear_day",
+  "widgets": [
+    "current",
+    "summary",
+    "nowcast",
+    "hourly",
+    "precipitation",
+    "daily",
+    "details",
+    "sun",
+    "moon",
+    "air_quality",
+    "alerts",
+    "history"
+  ]
+}

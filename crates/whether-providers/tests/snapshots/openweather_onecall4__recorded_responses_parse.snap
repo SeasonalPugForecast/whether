@@ -1,0 +1,235 @@
+---
+source: crates/whether-providers/tests/openweather_onecall4.rs
+assertion_line: 386
+expression: "(&s.current, &s.hourly[first], &s.daily[0], &s.minutely_15[..2])"
+---
+(
+    Some(
+        Current {
+            time: UnixTime(
+                1791474885,
+            ),
+            is_day: true,
+            condition: Clear,
+            temperature: Some(
+                Celsius(
+                    22.09,
+                ),
+            ),
+            apparent: Some(
+                Celsius(
+                    21.74,
+                ),
+            ),
+            dew_point: Some(
+                Celsius(
+                    12.07,
+                ),
+            ),
+            humidity: Some(
+                Percent(
+                    53.0,
+                ),
+            ),
+            pressure_msl: Some(
+                Hpa(
+                    1013.0,
+                ),
+            ),
+            cloud_cover: Some(
+                Percent(
+                    0.0,
+                ),
+            ),
+            wind_speed: Some(
+                Mps(
+                    5.66,
+                ),
+            ),
+            wind_gust: Some(
+                Mps(
+                    7.9,
+                ),
+            ),
+            wind_dir: Some(
+                Degrees(
+                    310.0,
+                ),
+            ),
+            visibility: Some(
+                Meters(
+                    10000.0,
+                ),
+            ),
+            uv_index: Some(
+                3.77,
+            ),
+            precipitation: Some(
+                Mm(
+                    0.0,
+                ),
+            ),
+        },
+    ),
+    Hourly {
+        time: UnixTime(
+            1791471600,
+        ),
+        is_day: true,
+        condition: Clear,
+        temperature: Some(
+            Celsius(
+                22.07,
+            ),
+        ),
+        apparent: Some(
+            Celsius(
+                21.74,
+            ),
+        ),
+        precip_probability: Some(
+            Percent(
+                0.0,
+            ),
+        ),
+        precipitation: Some(
+            Mm(
+                0.0,
+            ),
+        ),
+        wind_speed: Some(
+            Mps(
+                3.74,
+            ),
+        ),
+        wind_gust: Some(
+            Mps(
+                8.03,
+            ),
+        ),
+        wind_dir: Some(
+            Degrees(
+                286.0,
+            ),
+        ),
+        humidity: Some(
+            Percent(
+                54.0,
+            ),
+        ),
+        pressure_msl: Some(
+            Hpa(
+                1013.0,
+            ),
+        ),
+        uv_index: Some(
+            2.86,
+        ),
+        visibility: Some(
+            Meters(
+                10000.0,
+            ),
+        ),
+        cloud_cover: Some(
+            Percent(
+                0.0,
+            ),
+        ),
+    },
+    Daily {
+        date: LocalDate {
+            year: 2026,
+            month: 10,
+            day: 8,
+        },
+        condition: Clear,
+        temp_max: Some(
+            Celsius(
+                22.52,
+            ),
+        ),
+        temp_min: Some(
+            Celsius(
+                11.66,
+            ),
+        ),
+        apparent_max: Some(
+            Celsius(
+                15.1,
+            ),
+        ),
+        apparent_min: Some(
+            Celsius(
+                4.7,
+            ),
+        ),
+        precip_sum: Some(
+            Mm(
+                0.0,
+            ),
+        ),
+        precip_probability_max: Some(
+            Percent(
+                0.0,
+            ),
+        ),
+        sunrise: Some(
+            UnixTime(
+                1791457550,
+            ),
+        ),
+        sunset: Some(
+            UnixTime(
+                1791498875,
+            ),
+        ),
+        daylight_s: Some(
+            41325,
+        ),
+        uv_index_max: Some(
+            4.0,
+        ),
+        wind_speed_max: Some(
+            Mps(
+                6.02,
+            ),
+        ),
+        wind_gust_max: Some(
+            Mps(
+                7.4,
+            ),
+        ),
+        wind_dir_dominant: Some(
+            Degrees(
+                290.0,
+            ),
+        ),
+        moon_phase: Some(
+            0.9,
+        ),
+        moonrise: Some(
+            UnixTime(
+                1791358980,
+            ),
+        ),
+        moonset: Some(
+            UnixTime(
+                1791407100,
+            ),
+        ),
+    },
+    [
+        Minutely {
+            time: UnixTime(
+                1791475200,
+            ),
+            precipitation: None,
+        },
+        Minutely {
+            time: UnixTime(
+                1791476100,
+            ),
+            precipitation: None,
+        },
+    ],
+)

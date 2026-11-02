@@ -1,0 +1,45 @@
+---
+source: crates/whether-tui/src/tests.rs
+assertion_line: 212
+expression: "view(View::Air, false)"
+---
+New York, New York, US  Mon 11:00                                                          Updated just now · Open-Meteo
+┌ Air quality ─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│42 Good                                                                                                               │
+│█████████████████                                                                                                     │
+│PM2.5  8.4 µg/m³                                                                                                      │
+│PM10   14.2 µg/m³                                                                                                     │
+│O₃     61.0 µg/m³                                                                                                     │
+│NO₂    12.5 µg/m³                                                                                                     │
+│SO₂    2.1 µg/m³                                                                                                      │
+│CO     210 µg/m³                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+│                                                                                                                      │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+q quit · ←→ location · 1-6 views · r refresh · ? help                                     Weather data by Open-Meteo.com

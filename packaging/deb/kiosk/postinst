@@ -1,0 +1,12 @@
+#!/bin/sh
+# Creates the kiosk service user. The service is not enabled automatically:
+# `systemctl enable --now whether-kiosk`.
+set -e
+if [ "$1" = configure ]; then
+    if command -v systemd-sysusers >/dev/null 2>&1; then
+        systemd-sysusers whether.conf
+    fi
+    if [ -d /run/systemd/system ]; then
+        systemctl daemon-reload || true
+    fi
+fi

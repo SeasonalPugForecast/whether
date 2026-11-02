@@ -1,0 +1,19 @@
+---
+source: crates/whether-core/src/view/tests.rs
+assertion_line: 185
+expression: "brief(&view(Some(&snap), &PresentationConfig::default(), &ok_status()))"
+---
+status: Updated 5 min ago | Open-Meteo | stale=false error=None
+theme: ClearDay day=true widgets: [Current, Summary, Hourly, Precipitation, Details]
+current: 15° Partly cloudy | Feels like 14° | H — L —
+summary: Partly cloudy. No precipitation expected today.
+hourly: Now 15° Some(10)%, 12:00 17° Some(10)%, 13:00 17° Some(15)% | range 15.3..17.4
+detail: Wind = 13 km/h SW (Some("Gusts 26 km/h"))
+detail: Humidity = 62% (Some("Dew point 8°"))
+detail: Pressure = 1020 hPa (None)
+detail: UV index = 3 (Some("Moderate"))
+detail: Visibility = 24 km (None)
+detail: Dew point = 8° (None)
+detail: Cloud cover = 45% (None)
+detail: Precipitation = 0.0 mm (None)
+attribution: Weather data by Open-Meteo.com

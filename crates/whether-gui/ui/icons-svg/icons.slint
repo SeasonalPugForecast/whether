@@ -1,0 +1,65 @@
+// Desktop icons: Meteocons SVGs (MIT, see assets/icons/README.md).
+// Generated from the tables in xtask/src/icons.rs; order = IconId::ALL / UiIcon::ALL.
+export global Icons {
+    out property <[image]> condition: [
+        @image-url("../../assets/icons/meteocons/fill/clear-day.svg"), // ClearDay
+        @image-url("../../assets/icons/meteocons/fill/clear-night.svg"), // ClearNight
+        @image-url("../../assets/icons/meteocons/fill/partly-cloudy-day.svg"), // PartlyCloudyDay
+        @image-url("../../assets/icons/meteocons/fill/partly-cloudy-night.svg"), // PartlyCloudyNight
+        @image-url("../../assets/icons/meteocons/fill/cloudy.svg"), // Cloudy
+        @image-url("../../assets/icons/meteocons/fill/overcast-day.svg"), // OvercastDay
+        @image-url("../../assets/icons/meteocons/fill/overcast-night.svg"), // OvercastNight
+        @image-url("../../assets/icons/meteocons/fill/fog-day.svg"), // FogDay
+        @image-url("../../assets/icons/meteocons/fill/fog-night.svg"), // FogNight
+        @image-url("../../assets/icons/meteocons/fill/haze.svg"), // Haze
+        @image-url("../../assets/icons/meteocons/fill/smoke.svg"), // Smoke
+        @image-url("../../assets/icons/meteocons/fill/dust.svg"), // Dust
+        @image-url("../../assets/icons/meteocons/fill/drizzle.svg"), // Drizzle
+        @image-url("../../assets/icons/meteocons/fill/rain.svg"), // Rain
+        @image-url("../../assets/icons/meteocons/fill/extreme-rain.svg"), // ExtremeRain
+        @image-url("../../assets/icons/meteocons/fill/partly-cloudy-day-rain.svg"), // ShowersDay
+        @image-url("../../assets/icons/meteocons/fill/partly-cloudy-night-rain.svg"), // ShowersNight
+        @image-url("../../assets/icons/meteocons/fill/sleet.svg"), // Sleet
+        @image-url("../../assets/icons/meteocons/fill/snow.svg"), // Snow
+        @image-url("../../assets/icons/meteocons/fill/extreme-snow.svg"), // ExtremeSnow
+        @image-url("../../assets/icons/meteocons/fill/partly-cloudy-day-snow.svg"), // SnowShowersDay
+        @image-url("../../assets/icons/meteocons/fill/partly-cloudy-night-snow.svg"), // SnowShowersNight
+        @image-url("../../assets/icons/meteocons/fill/thunderstorms-day.svg"), // ThunderstormsDay
+        @image-url("../../assets/icons/meteocons/fill/thunderstorms-night.svg"), // ThunderstormsNight
+        @image-url("../../assets/icons/meteocons/fill/thunderstorms-rain.svg"), // ThunderstormsRain
+        @image-url("../../assets/icons/meteocons/fill/hail.svg"), // Hail
+        @image-url("../../assets/icons/meteocons/fill/wind.svg"), // Wind
+        @image-url("../../assets/icons/meteocons/fill/tornado.svg"), // Tornado
+        @image-url("../../assets/icons/meteocons/fill/not-available.svg"), // NotAvailable
+    ];
+    out property <[image]> ui: [
+        @image-url("../../assets/icons/meteocons/fill/sunrise.svg"), // Sunrise
+        @image-url("../../assets/icons/meteocons/fill/sunset.svg"), // Sunset
+        @image-url("../../assets/icons/meteocons/fill/moonrise.svg"), // Moonrise
+        @image-url("../../assets/icons/meteocons/fill/moonset.svg"), // Moonset
+        @image-url("../../assets/icons/meteocons/fill/thermometer.svg"), // Thermometer
+        @image-url("../../assets/icons/meteocons/fill/humidity.svg"), // Humidity
+        @image-url("../../assets/icons/meteocons/fill/barometer.svg"), // Barometer
+        @image-url("../../assets/icons/meteocons/fill/wind.svg"), // Wind
+        @image-url("../../assets/icons/meteocons/fill/raindrop.svg"), // Raindrop
+        @image-url("../../assets/icons/meteocons/fill/uv-index.svg"), // UvIndex
+        @image-url("../../assets/icons/meteocons/fill/mist.svg"), // Visibility
+        @image-url("../../assets/icons/meteocons/fill/cloudy.svg"), // Cloud
+        @image-url("../../assets/icons/meteocons/fill/moon-new.svg"), // MoonNew
+        @image-url("../../assets/icons/meteocons/fill/moon-waxing-crescent.svg"), // MoonWaxingCrescent
+        @image-url("../../assets/icons/meteocons/fill/moon-first-quarter.svg"), // MoonFirstQuarter
+        @image-url("../../assets/icons/meteocons/fill/moon-waxing-gibbous.svg"), // MoonWaxingGibbous
+        @image-url("../../assets/icons/meteocons/fill/moon-full.svg"), // MoonFull
+        @image-url("../../assets/icons/meteocons/fill/moon-waning-gibbous.svg"), // MoonWaningGibbous
+        @image-url("../../assets/icons/meteocons/fill/moon-last-quarter.svg"), // MoonLastQuarter
+        @image-url("../../assets/icons/meteocons/fill/moon-waning-crescent.svg"), // MoonWaningCrescent
+    ];
+    // The image for an `IconId` index.
+    public pure function cond(id: int) -> image {
+        root.condition[id]
+    }
+    // The image for a `UiIcon` index.
+    public pure function uii(id: int) -> image {
+        root.ui[id]
+    }
+}

@@ -1,0 +1,65 @@
+// MCU icons: Meteocons rendered to PNG (64 px conditions, 32 px interface icons).
+// Generated from the tables in xtask/src/icons.rs; order = IconId::ALL / UiIcon::ALL.
+export global Icons {
+    out property <[image]> condition: [
+        @image-url("../../assets/icons/png/64/clear-day.png"), // ClearDay
+        @image-url("../../assets/icons/png/64/clear-night.png"), // ClearNight
+        @image-url("../../assets/icons/png/64/partly-cloudy-day.png"), // PartlyCloudyDay
+        @image-url("../../assets/icons/png/64/partly-cloudy-night.png"), // PartlyCloudyNight
+        @image-url("../../assets/icons/png/64/cloudy.png"), // Cloudy
+        @image-url("../../assets/icons/png/64/overcast-day.png"), // OvercastDay
+        @image-url("../../assets/icons/png/64/overcast-night.png"), // OvercastNight
+        @image-url("../../assets/icons/png/64/fog-day.png"), // FogDay
+        @image-url("../../assets/icons/png/64/fog-night.png"), // FogNight
+        @image-url("../../assets/icons/png/64/haze.png"), // Haze
+        @image-url("../../assets/icons/png/64/smoke.png"), // Smoke
+        @image-url("../../assets/icons/png/64/dust.png"), // Dust
+        @image-url("../../assets/icons/png/64/drizzle.png"), // Drizzle
+        @image-url("../../assets/icons/png/64/rain.png"), // Rain
+        @image-url("../../assets/icons/png/64/extreme-rain.png"), // ExtremeRain
+        @image-url("../../assets/icons/png/64/partly-cloudy-day-rain.png"), // ShowersDay
+        @image-url("../../assets/icons/png/64/partly-cloudy-night-rain.png"), // ShowersNight
+        @image-url("../../assets/icons/png/64/sleet.png"), // Sleet
+        @image-url("../../assets/icons/png/64/snow.png"), // Snow
+        @image-url("../../assets/icons/png/64/extreme-snow.png"), // ExtremeSnow
+        @image-url("../../assets/icons/png/64/partly-cloudy-day-snow.png"), // SnowShowersDay
+        @image-url("../../assets/icons/png/64/partly-cloudy-night-snow.png"), // SnowShowersNight
+        @image-url("../../assets/icons/png/64/thunderstorms-day.png"), // ThunderstormsDay
+        @image-url("../../assets/icons/png/64/thunderstorms-night.png"), // ThunderstormsNight
+        @image-url("../../assets/icons/png/64/thunderstorms-rain.png"), // ThunderstormsRain
+        @image-url("../../assets/icons/png/64/hail.png"), // Hail
+        @image-url("../../assets/icons/png/64/wind.png"), // Wind
+        @image-url("../../assets/icons/png/64/tornado.png"), // Tornado
+        @image-url("../../assets/icons/png/64/not-available.png"), // NotAvailable
+    ];
+    out property <[image]> ui: [
+        @image-url("../../assets/icons/png/32/sunrise.png"), // Sunrise
+        @image-url("../../assets/icons/png/32/sunset.png"), // Sunset
+        @image-url("../../assets/icons/png/32/moonrise.png"), // Moonrise
+        @image-url("../../assets/icons/png/32/moonset.png"), // Moonset
+        @image-url("../../assets/icons/png/32/thermometer.png"), // Thermometer
+        @image-url("../../assets/icons/png/32/humidity.png"), // Humidity
+        @image-url("../../assets/icons/png/32/barometer.png"), // Barometer
+        @image-url("../../assets/icons/png/32/wind.png"), // Wind
+        @image-url("../../assets/icons/png/32/raindrop.png"), // Raindrop
+        @image-url("../../assets/icons/png/32/uv-index.png"), // UvIndex
+        @image-url("../../assets/icons/png/32/mist.png"), // Visibility
+        @image-url("../../assets/icons/png/32/cloudy.png"), // Cloud
+        @image-url("../../assets/icons/png/32/moon-new.png"), // MoonNew
+        @image-url("../../assets/icons/png/32/moon-waxing-crescent.png"), // MoonWaxingCrescent
+        @image-url("../../assets/icons/png/32/moon-first-quarter.png"), // MoonFirstQuarter
+        @image-url("../../assets/icons/png/32/moon-waxing-gibbous.png"), // MoonWaxingGibbous
+        @image-url("../../assets/icons/png/32/moon-full.png"), // MoonFull
+        @image-url("../../assets/icons/png/32/moon-waning-gibbous.png"), // MoonWaningGibbous
+        @image-url("../../assets/icons/png/32/moon-last-quarter.png"), // MoonLastQuarter
+        @image-url("../../assets/icons/png/32/moon-waning-crescent.png"), // MoonWaningCrescent
+    ];
+    // The image for an `IconId` index.
+    public pure function cond(id: int) -> image {
+        root.condition[id]
+    }
+    // The image for a `UiIcon` index.
+    public pure function uii(id: int) -> image {
+        root.ui[id]
+    }
+}

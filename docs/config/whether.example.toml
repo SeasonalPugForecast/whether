@@ -1,0 +1,267 @@
+#:schema ./whether.schema.json
+# ─────────────────────────────────────────────────────────────────────────────
+# whether: example configuration (TOML)
+#
+# Copy to ~/.config/whether/config.toml, or run `whether config init`.
+# Every key is optional unless marked REQUIRED. Values shown are the defaults.
+#   whether config check   validate (unknown keys are errors, with line:col)
+#   whether config show    print the merged, effective configuration
+#   whether config schema  JSON Schema for editor completion (Taplo / Tombi)
+# Saved changes apply to a running whether within a few seconds: locations,
+# providers, refresh, [presentation], [units] and [strings]. The other
+# [display.*] settings apply on the next start.
+#
+# This file is a CONTRACT: a test parses it and checks that [general],
+# [providers], [presentation] and the [display.tui|gui|line] tables equal the
+# built-in defaults. [[location]] and `display.default` are examples. Keep it
+# in the TOML 1.0 subset (single-line inline tables) for editor tooling.
+# ─────────────────────────────────────────────────────────────────────────────
+
+version = 1
+
+[general]
+refresh = "15m"               # fetch interval; minimum "5m"
+units = "auto"                # "auto" (from your locale: en_US → imperial) | "metric" | "imperial" | "custom" (then fill in [units])
+time_format = "24h"           # "24h" | "12h"
+date_format = "mmm d"         # how 1 November reads: "mmm d" Nov 1 | "d mmm" 1 Nov | "MMMd" NOV1 | "m/d" 11/1 |
+                              # "mm/dd" 11/01 | "d/m" 1/11 | "dd/mm" 01/11 | "dd.mm." 01.11. | "yyyy-mm-dd" 2026-11-01
+language = "en"               # geocoding results, alert texts and built-in words ("de", "es", "fr"; else English)
+coordinate_precision = 3      # decimals sent to APIs (privacy, cache hits); max 4
+
+# Per-quantity overrides, applied on top of general.units.
+[units]
+# temperature = "celsius"     # "celsius" | "fahrenheit" | "kelvin"
+# wind = "km/h"               # "m/s" | "km/h" | "mph" | "kn" | "bft"
+# pressure = "hPa"            # "hPa" | "inHg" | "mmHg" | "kPa"
+# precipitation = "mm"        # "mm" | "in"
+# distance = "km"             # "km" | "mi"
+
+# Locations: a postal code (zip + country), coordinates, or a `query`. ZIPs and
+# queries are resolved once by geocoding and then cached. Search with:
+#   whether locate 10001 --zip --country US    (add --add to append the result here, comments preserved)
+[[location]]
+name = "New York"
+zip = "10001"
+country = "US"                # ISO 3166-1 alpha-2; required with zip
+
+# [[location]]
+# name = "Berlin"
+# latitude = 52.52
+# longitude = 13.41
+
+# [[location]]
+# name = "Cabin"
+# query = "Tromsø, Norway"
+# provider = "met-norway"     # per-location provider override
+# timezone = "Europe/Oslo"    # IANA zone; only needed when the provider returns none (MET Norway)
+# units = "metric"           # this place's unit system: "metric" | "imperial"
+# presentation = { widgets = ["current", "daily", "alerts"], daily_days = 10 }
+#                             # [presentation] keys that differ here (over display overrides too)
+
+[providers]
+order = ["openweather", "open-meteo"]   # first = primary; later ids are fallbacks
+                                        # ids: "openweather" | "open-meteo" | "met-norway" | "nws" | "pirate-weather"
+                                        # "nws": the National Weather Service's forecast (US only;
+                                        # places abroad use the next id), e.g. ["nws", "open-meteo"]
+supplement = ["open-meteo"]             # fills what the primary lacks: UV, moon, nowcast, AQI scales, extra days
+                                        # "nws" here adds official US alerts only
+
+[providers.openweather]
+api_key = { env = "OPENWEATHER_API_KEY" }  # Secret forms: "literal" | { env = "VAR" }
+                                           #   | { file = "~/.config/whether/owm.key" } | { command = ["pass", "show", "owm"] }
+                                           # If the variable is unset, OpenWeather is skipped and Open-Meteo serves.
+api = "free"                               # "free" (2.5 endpoints) | "onecall-4" (One Call 4.0; needs the
+                                           #   "One Call by Call" subscription, 1,000 free calls per UTC day)
+daily_call_limit = 900                     # onecall-4: calls this device may make per UTC day (1–1000). Calls
+                                           # beyond it are never sent; Open-Meteo serves instead. Devices sharing
+                                           # one key must split 1,000 between them. Also set the limit to 1,000
+                                           # under "Billing plans" in your OpenWeather account.
+
+[providers.open-meteo]
+# Free API: non-commercial use, < 10,000 calls/day, CC BY 4.0 (attribution is shown automatically).
+# base_url = "https://api.open-meteo.com/v1"
+# air_quality_url = "https://air-quality-api.open-meteo.com/v1"
+# geocoding_url = "https://geocoding-api.open-meteo.com/v1"
+# api_key = { env = "OPEN_METEO_API_KEY" }   # commercial plans only (customer-api host)
+# models = ["ncep_hrrr_conus", "ncep_nbm_conus", "ecmwf_ifs025"]
+#                                            # weather models in priority order (at most 4):
+#                                            # each value comes from the first model that has it.
+#                                            # One id works too: "ncep_nbm_conus" (the NOAA blend).
+#                                            # Unset: Open-Meteo's best match. Models outside their
+#                                            # region are skipped for that place (HRRR, NBM, NAM:
+#                                            # lower 48; HRDPS: Canada and the northern US).
+#                                            # `whether providers models` lists them all.
+#                                            # The settings dialog's presets:
+#                                            #   NOAA blend (US):    "ncep_nbm_conus"
+#                                            #   US high resolution: ["ncep_hrrr_conus", "ncep_nbm_conus", "gfs_seamless"]
+#                                            #   ECMWF:              "ecmwf_ifs025"
+#                                            #   ECMWF AI:           ["ecmwf_aifs025_single", "ecmwf_ifs025"]
+#                                            #   Canada (GEM):       "gem_seamless"
+#                                            #   DWD ICON:           "icon_seamless"
+
+# [providers.met-norway]
+# contact = "you@example.com"                # REQUIRED by MET Norway's terms (sent in the User-Agent)
+# product = "complete"                       # "complete" | "compact"
+
+# [providers.pirate-weather]                 # Pirate Weather: a Dark Sky-style blend of NOAA and other
+#                                            # models, with minutely rain and alerts. Needs a key (free:
+#                                            # 10,000 calls a month, pirate-weather.apiable.io). List
+#                                            # "pirate-weather" in `order` (or `supplement`) to use it; the
+#                                            # section is optional.
+# api_key = { env = "PIRATE_WEATHER_API_KEY" }  # the default; same Secret forms as above. Sent in a
+#                                            # header, never in the URL. If unset, Pirate Weather is skipped.
+# monthly_call_limit = 9000                  # calls this device may make per UTC month (the free key allows
+#                                            # 10,000; devices sharing a key must split them). Calls beyond it
+#                                            # are never sent. About one refresh every 5 minutes uses 9,000.
+# exclude_models = ["gfs"]                   # models to leave out of the blend; the next best serves instead:
+#                                            # hrrr nbm gefs gfs rtma_ru ecmwf_ifs dwd_mosmix ecmwf_aifs
+#                                            # aigefs aigfs raqdps silam hrdps gdps reps geps cmc
+# ai_models = false                          # add the AI models (AIGFS, AIGEFS, ECMWF AIFS) to the blend
+
+# [providers.nws]                            # US National Weather Service: no key, public domain
+# base_url = "https://api.weather.gov"
+# current = "observed"                       # when it forecasts: "observed" (the nearest station's
+#                                            # latest observation, if under 90 min old) | "forecast"
+
+# Where past days, normals and records come from (the "history" widget and the
+# "normals" and "records" detail cards). In the US: NOAA's Regional Climate Centers (ACIS),
+# from the nearest station with records since 1991 that reported yesterday.
+[history]
+order = ["acis", "open-meteo"]   # US stations first; Open-Meteo elsewhere (ERA5 normals, no records)
+supplement = ["open-meteo"]      # fills a day a station has not reported yet
+
+# [history.acis]
+# station = "LGA"                            # a station instead (`whether history --station` lists them)
+# records_station = "LGAthr"                 # records from a city's threaded record (default: the
+#                                            # station's own, e.g. LGA → LGAthr, LaGuardia since 1940)
+
+# What to show and how values are formatted. Shared by every display; any
+# display can override these keys in [display.<name>.presentation].
+[presentation]
+widgets = ["current", "summary", "hourly", "precipitation", "daily", "details", "sun", "air_quality"]
+                              # also available: "moon", "nowcast", "alerts", "radar" (US: NOAA NEXRAD; GUI card, TUI view 5),
+                              # ("precipitation": rain and snow hour by hour; "history": the last days
+                              # as observed, against normal)
+hourly_hours = 24             # 1–48 (OpenWeather's free API gives 3-hour steps)
+hourly_metrics = ["temperature", "precip_probability"]
+                              # also: "feels_like", "precipitation", "wind", "humidity", "uv"
+daily_days = 7                # 1–16 (OpenWeather free provides 5; the supplement adds the rest)
+precip_hours = 12             # hours in the precipitation table (1–48)
+history_days = 7              # days in the history widget (0–31)
+nowcast_hours = 2             # hours of the 15-minute nowcast (1–8)
+temperature_basis = "actual"  # "actual" | "feels_like": which temperature leads (highs and lows too)
+daily_hours = false           # give each day its own hours (displays that expand a day)
+daily_icon = "daylight"       # day icons from sunrise to sunset ("daylight": rain at 1 AM does not
+                              # make a sunny day rainy) | "provider" (its daily code, often the day's worst)
+details = ["wind", "humidity", "pressure", "uv", "visibility", "dew_point", "cloud_cover", "precipitation"]
+                              # also: "gusts", "feels_like", "normals" (today's normal high and low),
+                              # "records" (today's record high and low, with their years)
+aqi_scale = "us"              # "us" | "european"
+precip_threshold = 50         # % probability treated as "likely" in summaries
+temperature_decimals = 0
+show_unit_letter = false      # false → 21°    true → 21 °C
+missing = "—"                 # shown for unavailable values
+twilight_minutes = 45         # window around sunrise/sunset that uses the twilight theme
+
+# Override any user-visible text. `whether config strings` lists every key
+# with its default value.
+[strings]
+# today = "Heute"
+# tomorrow = "Morgen"
+
+[display]
+default = "tui"               # display used when none is named on the command line
+                              # built-ins: "tui" | "gui" | "line" | "json"  (see `whether displays`),
+                              # or an external plugin as "exec:<name>"
+sidecars = []                 # external plugins that run alongside the main display, e.g. ["exec:notify"]
+
+[display.tui]
+layout = "auto"               # "auto" (largest that fits) | "wide" | "dashboard" | "compact" | "minimal" | "custom" (then [[display.tui.rows]])
+icons = "nerd-font"           # "nerd-font" | "emoji" | "ascii"
+art = true                    # large ASCII-art condition icon in the current panel
+graph = "braille"             # "braille" | "block" | "dot" | "none"
+color = "auto"                # "auto" (honours NO_COLOR) | "always" | "never"
+background = "dark"           # "dark" | "light": your terminal background, for contrast
+redraw = "30s"                # periodic redraw for relative times
+mouse = false
+hourly_columns = ["time", "icon", "temp", "precip_prob", "wind"]
+                              # also: "feels", "precip", "humidity", "uv"
+
+[display.tui.colors]          # names ("cyan", "darkgray") or "#rrggbb"
+# accent = "cyan"
+# cold = "#5fafff"
+# warm = "#ffaf5f"
+# hot = "#ff5f5f"
+# muted = "darkgray"
+
+# Custom layout (used when layout = "custom"). Rows stack top to bottom; widgets
+# inside a row sit left to right. Sizes: integer cells | "NN%" | "fill".
+# [[display.tui.rows]]
+# height = 10
+# widgets = [{ kind = "current", width = "40%" }, { kind = "details", width = "fill" }]
+# [[display.tui.rows]]
+# height = "fill"
+# widgets = [{ kind = "hourly" }]
+
+# [display.tui.presentation]  # TUI-only overrides of [presentation]
+# hourly_hours = 48
+
+[display.gui]
+mode = "desktop"              # "desktop" (Mousam-inspired) | "compact" (small screens; same UI as ESP32-S3)
+size = [1000, 720]            # initial window size (desktop mode)
+dynamic_background = true     # sky gradient follows conditions and time of day
+theme = "auto"                # when dynamic_background = false: "auto" | "light" | "dark"
+sky_style = "default"         # sky gradients: "default" | "muted" | "vivid" (palette overrides apply on top)
+# accent = "#FFD166"          # highlights, checkboxes, gauges and the sun (#rrggbb)
+sections = ["current", "nowcast", "hourly", "precipitation", "radar", "details", "daily", "history", "sun", "air_quality"]
+                              # which cards show, in order; wider windows keep each card in
+                              # its usual column (see [display.gui.layout] below). "radar" and
+                              # "history" show once their widget is in widgets
+kiosk = false                 # full screen, no decorations (on a desktop: whether gui --fullscreen). Raspberry Pi without a desktop:
+                              # build with feature "kiosk" and run with SLINT_BACKEND=linuxkms
+cycle_locations = "0s"        # > 0 rotates through locations (kiosk walls)
+page_interval = "0s"          # compact mode: > 0 (at least "5s") turns the pages on a timer, for screens without touch
+font_scale = "auto"           # "auto": 1.0 in a window, scales with screen height full screen / in kiosk; or a number like 1.25
+
+# Columns per window width, top to bottom; cards that `sections` shows but a tier
+# leaves out go at the end of its last column.
+# [display.gui.layout]
+# standard = [["current", "hourly", "precipitation", "daily"], ["radar", "details", "sun", "air_quality"]]  # 900–1600 px wide: up to 2 columns
+# wide = [["current", "radar", "sun"], ["hourly", "precipitation", "daily"], ["details", "air_quality"]]     # 1600 px and wider: up to 3
+
+# Override any sky palette: clear_day, clear_night, cloudy_day, cloudy_night,
+# rain, snow, storm, fog, twilight.
+# [display.gui.palette.clear_day]
+# top = "#2F80ED"
+# bottom = "#56CCF2"
+# text = "#FFFFFF"
+
+# [display.gui.presentation]  # GUI-only overrides of [presentation]
+# hourly_hours = 48
+
+[display.line]
+format = "{icon} {temp} {condition}"
+                              # {alert}: the first active alert's title (needs "alerts" in widgets)
+                              # {normal_high} {normal_low} {record_high} {yesterday_delta}: history
+                              # (needs "history" in [display.line.presentation] widgets)
+tooltip = "{location}: {summary}"
+output = "plain"              # "plain" | "waybar" (one JSON object per line)
+icons = "emoji"               # "emoji" | "nerd-font" | "none"
+# location = "New York"    # default: the first location
+
+# [display.exec.notify]       # an external display plugin (JSON Lines over stdio; see sdk/)
+# command = ["whether-notify"] # argv, no shell
+# env = {}                     # extra environment variables
+# send_snapshot = false        # also send the raw data, not only the formatted view
+# restart = "on-failure"       # "never" | "on-failure" | "always" (backoff 1 s → 60 s)
+# config = { lead_minutes = 60 } # passed verbatim in `hello`; never put secrets here
+
+# Radar for the "radar" widget: NOAA NEXRAD (public domain, via the Iowa
+# Environmental Mesonet) on OpenStreetMap, contiguous US only, every 5 minutes.
+[radar]
+zoom = 8                      # 6 (several states) to 10 (a county); 8 is about 360 km across
+
+[runtime]
+# cache_dir = "~/.cache/whether"
+# log_file = "~/.local/state/whether/whether.log"
+# log_level = "warn"          # "error" | "warn" | "info" | "debug" | "trace"

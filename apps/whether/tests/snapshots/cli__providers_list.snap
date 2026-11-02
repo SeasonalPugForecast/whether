@@ -1,0 +1,29 @@
+---
+source: apps/whether/tests/cli.rs
+expression: text(&out.stdout)
+---
+openweather
+  auth:         OPENWEATHER_API_KEY
+  capabilities: current hourly daily minutely-precip air-quality alerts sun moon geocoding
+  limits:       free: 60/min, 1M/month; onecall-4: daily_call_limit, at most 1000 per UTC day
+  attribution:  Weather data provided by OpenWeather (CC BY-SA 4.0)
+open-meteo
+  auth:         none
+  capabilities: current hourly daily minutely-precip air-quality sun moon geocoding
+  limits:       10,000 calls/day, non-commercial
+  attribution:  Weather data by Open-Meteo.com (CC BY 4.0)
+met-norway
+  auth:         none; [providers.met-norway] contact goes in the User-Agent
+  capabilities: current hourly daily sun
+  limits:       honours Expires and If-Modified-Since (terms of service)
+  attribution:  Data from MET Norway (CC BY 4.0)
+nws
+  auth:         none; a User-Agent naming the app
+  capabilities: current hourly daily alerts
+  limits:       US only; forecasts in providers.order, alerts only as a supplement
+  attribution:  Forecast by the NOAA National Weather Service (Public domain (US government work))
+pirate-weather
+  auth:         PIRATE_WEATHER_API_KEY (sent in a header)
+  capabilities: current hourly daily minutely-precip alerts sun moon
+  limits:       free: 10000/month; monthly_call_limit defaults to 9000; one call per fetch, refreshed at most every 15 min
+  attribution:  Weather data by Pirate Weather (Pirate Weather API terms)

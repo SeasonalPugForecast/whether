@@ -1,0 +1,95 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH whether 1  "whether 0.1.0" 
+.SH NAME
+whether \- Weather for the terminal, the desktop and status bars
+.SH SYNOPSIS
+\fBwhether\fR [\fB\-c\fR|\fB\-\-config\fR] [\fB\-d\fR|\fB\-\-display\fR] [\fB\-l\fR|\fB\-\-location\fR] [\fB\-\-units\fR] [\fB\-\-offline\fR] [\fB\-v\fR|\fB\-\-verbose\fR]... [\fB\-\-watch\fR] [\fB\-\-attach\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIsubcommands\fR]
+.SH DESCRIPTION
+Weather for the terminal, the desktop and status bars
+.SH OPTIONS
+.TP
+\fB\-c\fR, \fB\-\-config\fR \fI<PATH>\fR
+Use only this configuration file
+.TP
+\fB\-d\fR, \fB\-\-display\fR \fI<NAME>\fR
+Display to run (see `whether displays`)
+.TP
+\fB\-l\fR, \fB\-\-location\fR \fI<NAME|INDEX>\fR
+Location to show first, by name or 1\-based index
+.TP
+\fB\-\-units\fR \fI<UNITS>\fR
+Override the unit system
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+metric: °C, km/h, hPa, mm, km
+.IP \(bu 2
+imperial: °F, mph, inHg, in, mi
+.RE
+.TP
+\fB\-\-offline\fR
+Never use the network; show cached data
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+More logging (\-v info, \-vv debug, \-vvv trace)
+.TP
+\fB\-\-watch\fR
+line and json: print again on every change
+.TP
+\fB\-\-attach\fR
+Show data from a running `whether daemon` instead of fetching
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.SH SUBCOMMANDS
+.TP
+whether\-run(1)
+Run the selected display (the default)
+.TP
+whether\-tui(1)
+Run the terminal display
+.TP
+whether\-gui(1)
+Run the desktop display
+.TP
+whether\-line(1)
+Print one line for status bars
+.TP
+whether\-json(1)
+Print JSON for scripts
+.TP
+whether\-config(1)
+Inspect and create the configuration
+.TP
+whether\-displays(1)
+List the compiled\-in displays
+.TP
+whether\-locate(1)
+Search for a place; print a `[[location]]` snippet or add it
+.TP
+whether\-providers(1)
+List providers: authentication, capabilities, limits and attribution
+.TP
+whether\-fetch(1)
+Fetch once and print the snapshot as JSON (debugging)
+.TP
+whether\-history(1)
+Print a place\*(Aqs history: normals, records and the last days as observed
+.TP
+whether\-climate(1)
+How chosen dates were over chosen years, for planning a trip (\-\-location may be any place\*(Aqs name)
+.TP
+whether\-daemon(1)
+Fetch in the background and serve displays on a socket (use them with \-\-attach)
+.TP
+whether\-help(1)
+Print this message or the help of the given subcommand(s)
+.SH VERSION
+v0.1.0

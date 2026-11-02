@@ -1,0 +1,27 @@
+[package]
+name = "whether-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+serde = ["dep:serde"]
+schema = ["serde", "dep:schemars"]
+testdata = []
+
+[dependencies]
+bitflags.workspace = true
+libm.workspace = true
+thiserror.workspace = true
+serde = { workspace = true, optional = true }
+schemars = { workspace = true, optional = true }
+
+[dev-dependencies]
+insta.workspace = true
+serde_json = { workspace = true, features = ["std"] }
+proptest.workspace = true
+
+[lints]
+workspace = true

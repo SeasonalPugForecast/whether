@@ -1,0 +1,21 @@
+# whether's fetch service for the user session: displays started with --attach
+# (`whether --attach tui`, `whether --attach --watch line` in a status bar, …) share
+# its data, so each refresh fetches once. Sidecars (display.sidecars) run here too.
+#   systemctl --user enable --now whether-daemon
+# Logs: journalctl --user -u whether-daemon
+# An OpenWeather key can go in ~/.config/whether/env as OPENWEATHER_API_KEY=… (mode 600).
+
+[Unit]
+Description=whether weather service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=-%h/.config/whether/env
+ExecStart=/usr/bin/whether daemon
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,21 @@
+# A cross image for armv7-unknown-linux-gnueabihf on Debian bookworm, the base of Raspberry
+# Pi OS, so glibc and the linked libraries match the Pi. It holds Debian's cross
+# toolchain and the target libraries the GUI and kiosk builds link (fontconfig,
+# libinput, udev, gbm, drm, xkbcommon). There is no qemu runner: user-mode qemu
+# hangs on threads with a dynamically linked glibc here, so tests run on the Pi.
+# `cargo xtask dist --target armv7-unknown-linux-gnueabihf` builds the image as
+# whether-cross:armv7-unknown-linux-gnueabihf; Cross.toml points cross at it.
+FROM debian:bookworm
+RUN dpkg --add-architecture armhf \
+    && apt-get update \
+    && apt-get install --assume-yes --no-install-recommends \
+        ca-certificates build-essential crossbuild-essential-armhf pkg-config \
+        libfontconfig1-dev:armhf libxkbcommon-dev:armhf libinput-dev:armhf \
+        libudev-dev:armhf libgbm-dev:armhf libdrm-dev:armhf \
+    && rm -rf /var/lib/apt/lists/*
+ENV CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER=arm-linux-gnueabihf-gcc \
+    CC_armv7_unknown_linux_gnueabihf=arm-linux-gnueabihf-gcc \
+    CXX_armv7_unknown_linux_gnueabihf=arm-linux-gnueabihf-g++ \
+    AR_armv7_unknown_linux_gnueabihf=arm-linux-gnueabihf-ar \
+    PKG_CONFIG_PATH=/usr/lib/arm-linux-gnueabihf/pkgconfig \
+    PKG_CONFIG_ALLOW_CROSS=1
