@@ -58,7 +58,7 @@ struct SourcesView: View {
                 Text("Always last")
             } footer: {
                 Text(
-                    "Open-Meteo is the fallback: it serves when nothing above does, and fills what the others lack (UV, moon, air quality, the next hour). MET Norway (Norwegian Meteorological Institute) forecasts anywhere, without a key, but only when Open-Meteo cannot."
+                    "Open-Meteo is the fallback: it serves when nothing above does, and fills what the others lack (UV, moon, air quality, the next hour). MET Norway (Norwegian Meteorological Institute) forecasts anywhere, without a key, but only when Open-Meteo cannot, and only while you use the app (never for widgets or in the background). It is asked again only after the time it names."
                         + (apiContact() == nil ? " Needs the app's contact address." : "")
                 )
             }

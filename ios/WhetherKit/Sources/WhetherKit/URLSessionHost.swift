@@ -5,12 +5,17 @@ import Foundation
 public final class URLSessionHost: FetchHost, @unchecked Sendable {
     private let session: URLSession
     private let ledgerURL: URL
+    /// Where the waits some services ask for are kept: beside the ledger.
+    private let holdURL: URL
+    /// One at a time: the places of a refresh send side by side and share the file.
+    private static let holdLock = NSLock()
 
     /// `ledgerURL`: where the call ledger lives (pass its contents back as
     /// `Cached.usageJson` on the next fetch).
     public init(session: URLSession = .shared, ledgerURL: URL) {
         self.session = session
         self.ledgerURL = ledgerURL
+        holdURL = ledgerURL.deletingLastPathComponent().appending(path: "service-holds.json")
     }
 
     #if DEBUG
@@ -42,14 +47,38 @@ public final class URLSessionHost: FetchHost, @unchecked Sendable {
         for header in request.headers {
             urlRequest.setValue(header.value, forHTTPHeaderField: header.name)
         }
+        // A service that asked for a wait (MET Norway: until `Expires`, an hour after a refusal)
+        // is not asked before then.
+        let waits = ServiceHold.applies(to: url)
+        if waits {
+            let seconds = Self.holdLock.withLock {
+                ServiceHold.load(from: holdURL).wait(
+                    for: request.url, now: Int64(Date().timeIntervalSince1970))
+            }
+            if seconds > 0 {
+                throw HostError.Failed(
+                    message: "\(url.host ?? "the service") asked apps to wait \((seconds + 59) / 60) more min")
+            }
+        }
         do {
             let (data, response) = try await session.data(for: urlRequest)
             let http = response as? HTTPURLResponse
+            let status = UInt16(clamping: http?.statusCode ?? 0)
+            let expires = Self.unixTime(http?.value(forHTTPHeaderField: "Expires"))
+            if waits {
+                Self.holdLock.withLock {
+                    var holds = ServiceHold.load(from: holdURL)
+                    holds.record(
+                        url: request.url, status: status, expires: expires,
+                        now: Int64(Date().timeIntervalSince1970))
+                    holds.save(to: holdURL)
+                }
+            }
             return HostResponse(
-                status: UInt16(clamping: http?.statusCode ?? 0),
+                status: status,
                 body: data,
                 date: Self.unixTime(http?.value(forHTTPHeaderField: "Date")),
-                expires: Self.unixTime(http?.value(forHTTPHeaderField: "Expires")),
+                expires: expires,
                 lastModified: http?.value(forHTTPHeaderField: "Last-Modified")
             )
         } catch {

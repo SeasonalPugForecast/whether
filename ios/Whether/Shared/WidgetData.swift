@@ -61,7 +61,7 @@ extension WidgetData {
             settings.oneCall = false
             let ledger = FileManager.default.temporaryDirectory.appending(path: "widget-ledger.json")
             if let outcome = try? await fetch(
-                place: place.corePlace(now: now), settings: settings,
+                place: place.corePlace(now: now), settings: settings.forBackground(),
                 cached: Cached(snapshotJson: nil, lastModified: nil, usageJson: nil),
                 now: Int64(now.timeIntervalSince1970), host: URLSessionHost(ledgerURL: ledger))
             {

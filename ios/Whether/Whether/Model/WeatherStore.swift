@@ -617,7 +617,8 @@ final class WeatherStore {
         }
         refreshing = true
         rebuild()
-        let settings = preferences.settings()
+        // In the background some sources are left out (`Sources.foregroundOnly`).
+        let settings = inBackground ? preferences.settings().forBackground() : preferences.settings()
         let host = URLSessionHost(ledgerURL: ledgerURL)
         queue = RefreshQueue(only: only)
         while let ids = queue?.next(among: places.map(\.id)), !ids.isEmpty {

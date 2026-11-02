@@ -5,6 +5,10 @@ import WhetherKit
 /// are, what each covers and adds, and the rules for the saved order. Pure logic,
 /// shared by the Sources screen, Settings and the tests; the core builds the chain.
 enum Sources {
+    /// Sources whose terms forbid fetching while the app is not in use (MET Norway: "must not
+    /// retrieve new data" then), so a widget or a background refresh leaves them out.
+    static let foregroundOnly: Set<String> = [metNorway]
+
     static let nws = "nws"
     static let models = "open-meteo-models"
     static let openWeather = "openweather"
@@ -244,5 +248,19 @@ extension Preferences {
         } else {
             sources = Sources.complete(sources + [SourceRow(provider: provider, enabled: enabled)])
         }
+    }
+}
+
+extension Settings {
+    /// These settings for a fetch made while the app is not in use (a widget, a background
+    /// refresh): the foreground-only sources are switched off.
+    func forBackground() -> Settings {
+        var copy = self
+        copy.metNorway = false
+        copy.sources = sources.map {
+            Sources.foregroundOnly.contains($0.provider)
+                ? SourceChoice(provider: $0.provider, enabled: false) : $0
+        }
+        return copy
     }
 }

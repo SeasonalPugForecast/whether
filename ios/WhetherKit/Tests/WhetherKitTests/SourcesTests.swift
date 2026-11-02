@@ -15,6 +15,22 @@ final class SourcesTests: XCTestCase {
 
     private func ids(_ rows: [Preferences.SourceRow]) -> [String] { rows.map(\.provider) }
 
+    // MARK: Sources that wait for the app to be in use
+
+    func testAWidgetOrBackgroundFetchLeavesMetNorwayOut() {
+        let settings = Preferences().settings(withKey: false)
+        XCTAssertTrue(settings.metNorway)
+        XCTAssertTrue(settings.sources.contains(SourceChoice(provider: "met-norway", enabled: true)))
+        let background = settings.forBackground()
+        XCTAssertFalse(background.metNorway)
+        XCTAssertTrue(background.sources.contains(SourceChoice(provider: "met-norway", enabled: false)))
+        XCTAssertEqual(
+            background.sources.filter { $0.provider != "met-norway" },
+            settings.sources.filter { $0.provider != "met-norway" }, "nothing else changes")
+        XCTAssertEqual(background.sources.count, settings.sources.count)
+        XCTAssertEqual(Sources.foregroundOnly, ["met-norway"])
+    }
+
     // MARK: Preferences saved before the list
 
     func testANewInstallStartsWithTheCoresDefaultOrder() {

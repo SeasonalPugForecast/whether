@@ -9,22 +9,29 @@ struct AcknowledgementsView: View {
     private var notices: AcknowledgementList { Self.loaded }
 
     /// The weather data's credits (the core's attribution says the same).
-    private static let credits: [(source: String, terms: String)] = [
-        ("Open-Meteo.com", "Weather data under CC BY 4.0"),
+    private static let ccBy = URL(string: "https://creativecommons.org/licenses/by/4.0/")
+
+    private static let credits: [(source: String, terms: String, license: URL?)] = [
+        ("Open-Meteo.com", "Weather data under CC BY 4.0. Converted to your units and combined.", ccBy),
         (
             "ERA5 (history, normals)",
-            "Contains modified Copernicus Climate Change Service information"
+            "Contains modified Copernicus Climate Change Service information", nil
         ),
-        ("MET Norway", "Backup forecasts under CC BY 4.0 (Norwegian Meteorological Institute)"),
-        ("NOAA / National Weather Service", "Forecasts, alerts and observations: US government, public domain"),
-        ("NOAA Regional Climate Centers (ACIS)", "US climate normals and history"),
-        ("Iowa Environmental Mesonet", "NEXRAD radar tiles from NOAA"),
-        ("OpenWeather", "Only with your own API key, under OpenWeather's terms"),
+        (
+            "MET Norway",
+            "Backup forecasts. Based on data from the Norwegian Meteorological Institute under CC BY 4.0, converted to your units.",
+            ccBy
+        ),
+        ("NOAA / National Weather Service", "Forecasts, alerts and observations: US government, public domain", nil),
+        ("NOAA Regional Climate Centers (ACIS)", "US climate normals and history", nil),
+        ("Iowa Environmental Mesonet", "NEXRAD radar tiles from NOAA", nil),
+        ("OpenWeather", "Only with your own API key, under OpenWeather's terms", nil),
         (
             "Pirate Weather",
-            "Only with your own API key, under Pirate Weather's terms (a blend of NOAA and other public weather models)"
+            "Only with your own API key, under Pirate Weather's terms (a blend of NOAA and other public weather models)",
+            nil
         ),
-        ("Apple Weather", "The next hour minute by minute"),
+        ("Apple Weather", "The next hour minute by minute", nil),
     ]
 
     var body: some View {
@@ -38,6 +45,9 @@ struct AcknowledgementsView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(credit.source)
                         Text(credit.terms).font(.caption).foregroundStyle(.secondary)
+                        if let license = credit.license {
+                            Link("CC BY 4.0 license", destination: license).font(.caption)
+                        }
                     }
                 }
             }
