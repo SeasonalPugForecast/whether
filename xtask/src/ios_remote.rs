@@ -1370,6 +1370,7 @@ pub(crate) fn run(args: &[&str]) -> Result<(), String> {
         }
     }
     if args.step == Step::Archive && !args.dry_run {
+        crate::ios::check_archive(&workspace_root().join("target/ios-archive/Whether.xcarchive"))?;
         println!("{ARCHIVE_NEXT_STEPS}");
     }
     Ok(())

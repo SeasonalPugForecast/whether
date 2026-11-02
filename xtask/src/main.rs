@@ -154,9 +154,19 @@ fn main() -> ExitCode {
 
 /// Runs `program args…` in the workspace root, streaming output.
 pub(crate) fn run_cmd(program: &str, args: &[&str]) -> Result<(), String> {
+    run_cmd_env(program, args, &[])
+}
+
+/// [`run_cmd`] with extra environment variables for the child.
+pub(crate) fn run_cmd_env(
+    program: &str,
+    args: &[&str],
+    envs: &[(&str, &str)],
+) -> Result<(), String> {
     println!("$ {program} {}", args.join(" "));
     let status = std::process::Command::new(program)
         .args(args)
+        .envs(envs.iter().copied())
         .current_dir(workspace_root())
         .status()
         .map_err(|e| format!("failed to start `{program}`: {e}"))?;
