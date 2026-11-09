@@ -1,6 +1,6 @@
 # Privacy
 
-*Last updated: 2 November 2026.* This policy is for the Pug Forecast iPhone app (the Whether
+*Last updated: 9 November 2026.* This policy is for the Pug Forecast iPhone app (the Whether
 project, <https://github.com/SeasonalPugForecast/whether>).
 
 Whether has no accounts, no ads, no analytics and no tracking. The project runs no server, and
@@ -20,6 +20,10 @@ address, as any web request does, and keep their own logs under their own polici
 None of the weather services receives your name, a device identifier or the names of your plans.
 (A place's name can reach Apple Maps or Open-Meteo only as search text you type.) A service you
 give your own key to (OpenWeather, Pirate Weather) can tie your requests to your account with it.
+
+The App Store's privacy label lists this as **Coarse Location** and **Search History**, used for
+the app's functions, not linked to you and not used for tracking. The project itself receives
+neither; it lists the search text because it reaches a third party (Open-Meteo).
 
 | Service | Used for |
 |---|---|

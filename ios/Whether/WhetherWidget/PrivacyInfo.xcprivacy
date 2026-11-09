@@ -7,7 +7,11 @@
      forecasts, rounded to two decimals (about 1 km) on every path, WeatherKit and
      reverse geocoding included; Apple counts three or more decimals as
      precise location, so two is what keeps this honestly coarse. They are declared
-     as coarse location for app functionality, not linked, no tracking. -->
+     as coarse location for app functionality, not linked, no tracking.
+     Search history: the text typed in the place search goes to Apple Maps and, when
+     Apple has no suggestion, to Open-Meteo's geocoder. Declared too (app
+     functionality, not linked, no tracking), on the side of saying more; the widget
+     declares the same as the app so the two never disagree. -->
 <plist version="1.0">
 <dict>
 	<key>NSPrivacyTracking</key>
@@ -38,6 +42,18 @@
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeCoarseLocation</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeSearchHistory</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
