@@ -53,7 +53,7 @@ struct RadarSection: View {
             .buttonStyle(.plain)
             .accessibilityLabel(source == .openWeather ? "Open the radar" : "Play the radar loop")
             if source == .openWeather {
-                Text(radarOpenweatherCredit()).font(.caption2).foregroundStyle(.secondary)
+                OpenWeatherCredit().font(.caption2).foregroundStyle(.secondary)
             }
             if let failure = loop.failure {
                 Text(failure).font(.caption).foregroundStyle(.orange)
@@ -230,7 +230,7 @@ struct RadarScreen: View {
     private var openWeatherCredit: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Precipitation now").font(.headline)
-            Text(radarOpenweatherCredit())
+            OpenWeatherCredit()
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -343,5 +343,16 @@ struct RadarSteps: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Radar, light to heavy")
         .accessibilityValue(words.joined(separator: ", "))
+    }
+}
+
+/// OpenWeather's radar credit, a link to openweathermap.org as its terms ask.
+private struct OpenWeatherCredit: View {
+    var body: some View {
+        if let site = URL(string: "https://openweathermap.org") {
+            Link(radarOpenweatherCredit(), destination: site)
+        } else {
+            Text(radarOpenweatherCredit())
+        }
     }
 }
