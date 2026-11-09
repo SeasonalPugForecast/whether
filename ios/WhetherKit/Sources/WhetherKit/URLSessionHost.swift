@@ -3,7 +3,7 @@ import Foundation
 /// Performs the core's requests (GET, or POST with a JSON body) with `URLSession` and keeps the One Call ledger in
 /// a file. The URL may carry the OpenWeather key: never log it.
 public final class URLSessionHost: FetchHost, @unchecked Sendable {
-    private let session: URLSession
+    let session: URLSession
     private let ledgerURL: URL
     /// Where the waits some services ask for are kept: beside the ledger.
     private let holdURL: URL
@@ -12,7 +12,7 @@ public final class URLSessionHost: FetchHost, @unchecked Sendable {
 
     /// `ledgerURL`: where the call ledger lives (pass its contents back as
     /// `Cached.usageJson` on the next fetch).
-    public init(session: URLSession = .shared, ledgerURL: URL) {
+    public init(session: URLSession = .noStore, ledgerURL: URL) {
         self.session = session
         self.ledgerURL = ledgerURL
         holdURL = ledgerURL.deletingLastPathComponent().appending(path: "service-holds.json")
@@ -103,4 +103,15 @@ public final class URLSessionHost: FetchHost, @unchecked Sendable {
         formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
         return formatter.date(from: header).map { Int64($0.timeIntervalSince1970) }
     }
+}
+
+extension URLSession {
+    /// The session for every request the app makes itself. An OpenWeather URL carries the user's
+    /// key (`appid=`), so responses are cached in memory only and nothing (cache, cookies,
+    /// credentials) is written to disk, where the shared session's cache would keep the URL.
+    public static let noStore: URLSession = {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.urlCache = URLCache(memoryCapacity: 8 << 20, diskCapacity: 0)
+        return URLSession(configuration: configuration)
+    }()
 }

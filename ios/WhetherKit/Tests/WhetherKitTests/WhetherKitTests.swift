@@ -107,6 +107,14 @@ final class WhetherKitTests: XCTestCase {
         XCTAssertNil(URLSessionHost.unixTime("yesterday"))
     }
 
+    /// Keys travel in URLs (OpenWeather's `appid`): the host's session keeps nothing on disk.
+    func testTheHostWritesNoCacheToDisk() throws {
+        let host = URLSessionHost(ledgerURL: FileManager.default.temporaryDirectory.appending(path: "l.json"))
+        XCTAssertTrue(host.session === URLSession.noStore)
+        let cache = try XCTUnwrap(URLSession.noStore.configuration.urlCache)
+        XCTAssertEqual(cache.diskCapacity, 0)
+    }
+
     /// One live fetch for New York from Open-Meteo (no key needed).
     func testLiveFetch() async throws {
         let ledger = FileManager.default.temporaryDirectory.appendingPathComponent("ledger.json")

@@ -3,6 +3,7 @@ import Foundation
 import ImageIO
 import MapKit
 import UniformTypeIdentifiers
+import WhetherKit
 
 /// NEXRAD tiles repainted from a radar ramp (color vision): each tile is
 /// fetched as `MKTileOverlay` would, its n0q colors mapped back to their dBZ step
@@ -32,7 +33,7 @@ nonisolated final class RecoloredTileOverlay: MKTileOverlay {
         }
         let reply = TileReply(send: result)
         let ramp = ramp
-        URLSession.shared.dataTask(with: url) { data, response, error in
+        URLSession.noStore.dataTask(with: url) { data, response, error in
             let http = response as? HTTPURLResponse
             guard let data, error == nil, RadarTileCache.succeeded(status: http?.statusCode) else {
                 reply.send(nil, error ?? URLError(.badServerResponse))
@@ -88,6 +89,22 @@ nonisolated final class RecoloredTileOverlay: MKTileOverlay {
             return CGImageDestinationFinalize(destination)
         }
         return made ? out as Data : nil
+    }
+}
+
+/// Tiles fetched as `MKTileOverlay` would, but through `URLSession.noStore`: OpenWeather's tile
+/// URLs carry the user's key, which MapKit's own loading could keep in the disk cache.
+nonisolated final class UncachedTileOverlay: MKTileOverlay {
+    override func loadTile(at path: MKTileOverlayPath, result: @escaping (Data?, (any Error)?) -> Void) {
+        let reply = TileReply(send: result)
+        URLSession.noStore.dataTask(with: url(forTilePath: path)) { data, response, error in
+            let status = (response as? HTTPURLResponse)?.statusCode
+            guard let data, error == nil, RadarTileCache.succeeded(status: status) else {
+                reply.send(nil, error ?? URLError(.badServerResponse))
+                return
+            }
+            reply.send(data, nil)
+        }.resume()
     }
 }
 

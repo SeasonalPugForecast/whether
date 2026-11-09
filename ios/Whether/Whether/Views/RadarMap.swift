@@ -92,7 +92,7 @@ struct RadarMap: UIViewRepresentable {
                     if let ramp, RadarPalette.recolors(template: template) {
                         RecoloredTileOverlay(urlTemplate: template, ramp: ramp)
                     } else {
-                        MKTileOverlay(urlTemplate: template)
+                        UncachedTileOverlay(urlTemplate: template)
                     }
                 overlay.canReplaceMapContent = false
                 overlay.maximumZ = maximumZ

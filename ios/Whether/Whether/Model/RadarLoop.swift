@@ -47,7 +47,7 @@ final class RadarLoop {
     private func loadNexrad(place: AppPlace, settings: Settings) async {
         do {
             guard let url = URL(string: radarMetaUrl()) else { return }
-            let (data, _) = try await URLSession.shared.data(from: url)
+            let (data, _) = try await URLSession.noStore.data(from: url)
             let latest = try radarLatestValid(body: data)
             let frames = radarFrames(latest: latest)
             labels = radarFrameLabels(
