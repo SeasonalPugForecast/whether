@@ -12,6 +12,10 @@ ignore = [
     { id = "RUSTSEC-2026-0370", reason = "unmaintained only; transitive via slint/accesskit, no fix available" },
     { id = "RUSTSEC-2026-0371", reason = "unmaintained only; transitive via slint/accesskit, no fix available" },
     { id = "RUSTSEC-2026-0372", reason = "unmaintained only; transitive via slint/accesskit, no fix available" },
+    # pin-utils is unmaintained (not a vulnerability). It arrives through Slint's
+    # renderer and macros (spin_on → pin-utils) and has no maintained upgrade yet
+    # (2026-11-07).
+    { id = "RUSTSEC-2026-0441", reason = "unmaintained only; transitive via slint/spin_on, no fix available" },
 ]
 
 [licenses]
