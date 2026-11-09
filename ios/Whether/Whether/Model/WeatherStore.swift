@@ -1632,7 +1632,11 @@ final class WeatherStore {
         #if DEBUG
             Self.weatherKitCalls += 1
         #endif
-        return await MinuteForecast.minutes(for: place)
+        let minutes = await MinuteForecast.minutes(for: place)
+        // The widgets and the Live Activity show Apple's minutes with its mark, which they
+        // can't fetch themselves.
+        if minutes != nil { await MinuteForecast.saveMarkForWidgets() }
+        return minutes
     }
 
     /// Whether a WeatherKit call is due for `place` now: the switch is on, the

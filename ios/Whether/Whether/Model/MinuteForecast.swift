@@ -1,5 +1,6 @@
 import CoreLocation
 import Foundation
+import UIKit
 import WeatherKit
 import WhetherKit
 
@@ -24,5 +25,21 @@ enum MinuteForecast {
     /// require wherever WeatherKit data is shown.
     static func attribution() async -> WeatherAttribution? {
         try? await WeatherService.shared.attribution
+    }
+
+    /// Saves Apple's mark and the address of its data sources for the widgets and the Live
+    /// Activity (`AppleWeatherMark`), when none is saved or it is a month old.
+    static func saveMarkForWidgets() async {
+        guard AppleWeatherMark.isDue(savedAt: AppleWeatherMark.savedAt(), now: .now),
+            let attribution = await attribution()
+        else { return }
+        // The dark mark first: the light one's date says the pair is saved.
+        for (url, dark) in [(attribution.combinedMarkDarkURL, true), (attribution.combinedMarkLightURL, false)] {
+            guard let (data, response) = try? await URLSession.noStore.data(from: url),
+                (response as? HTTPURLResponse)?.statusCode == 200, UIImage(data: data) != nil
+            else { return }
+            try? data.write(to: AppleWeatherMark.file(dark: dark), options: .atomic)
+        }
+        SharedContainer.defaults.set(attribution.legalPageURL.absoluteString, forKey: AppleWeatherMark.legalPageKey)
     }
 }

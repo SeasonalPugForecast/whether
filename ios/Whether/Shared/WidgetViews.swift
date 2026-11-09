@@ -30,14 +30,19 @@ struct WeatherWidgetView: View {
         "H \(current.high.text)  L \(current.low.text)"
     }
 
-    /// The forecast's source (core text), and Apple Weather when its minutes show.
+    /// The forecast's source (core text), and Apple's Weather mark when its minutes show.
     private func credit(_ view: ViewModel) -> some View {
-        let apple = view.nowcast?.stepMinutes == 1
-        return Text(apple ? "\(view.status.provider) · Apple Weather" : view.status.provider)
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
+        HStack(spacing: 4) {
+            Text(view.status.provider)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            if view.nowcast?.stepMinutes == 1 {
+                Text("·")
+                AppleWeatherBadge()
+            }
+        }
+        .font(.caption2)
+        .foregroundStyle(.secondary)
     }
 
     /// Switches to the next saved place (interactive widgets).
@@ -309,5 +314,33 @@ struct WeatherWidgetView: View {
         Label(
             "\(current.temperature.text) \(current.conditionLabel)",
             systemImage: WeatherSymbols.symbol(current.icon))
+    }
+}
+
+/// Apple's Weather mark as the app saved it (`AppleWeatherMark`), or its name until then, and a
+/// tap on it opens Apple's page of data sources: WeatherKit's credit in the widgets and the
+/// Live Activity, which can't fetch the mark themselves.
+struct AppleWeatherBadge: View {
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        if let page = AppleWeatherMark.legalPage {
+            Link(destination: page) { mark }
+        } else {
+            mark
+        }
+    }
+
+    @ViewBuilder private var mark: some View {
+        let file = AppleWeatherMark.file(dark: scheme == .dark)
+        if let image = UIImage(contentsOfFile: file.path(percentEncoded: false)) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 10)
+                .accessibilityLabel("Apple Weather")
+        } else {
+            Text("Apple Weather")
+        }
     }
 }

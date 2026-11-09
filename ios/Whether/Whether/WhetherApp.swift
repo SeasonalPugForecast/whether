@@ -22,8 +22,15 @@ struct WhetherApp: App {
                 .preferredColorScheme(store.colorScheme)
                 .modifier(ColorSettings(preferences: store.preferences, theme: store.colorTheme))
                 .task { await store.requestNotificationsIfUseful() }
-                // A `.whetherplan` or `.whethertheme` opened from Messages, Mail, AirDrop or Files.
-                .onOpenURL { store.receiveFile(from: $0) }
+                // A `.whetherplan` or `.whethertheme` opened from Messages, Mail, AirDrop or Files;
+                // a web page is a widget's link (Apple's data sources), which opens in Safari.
+                .onOpenURL { url in
+                    if url.scheme == "https" {
+                        UIApplication.shared.open(url)
+                    } else {
+                        store.receiveFile(from: url)
+                    }
+                }
                 // An invitation to a live shared plan, tapped in Messages or Mail.
                 .task { IncomingShares.attach { store.receiveShare($0) } }
                 #if DEBUG

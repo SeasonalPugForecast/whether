@@ -5,11 +5,12 @@ import WidgetKit
 /// "Rain starting in ~10 min." on the lock screen and in the Dynamic Island, with
 /// the next hours' graph; the app starts it when rain is near and ends it after.
 struct RainLiveActivity: Widget {
-    /// Apple's credit under the graph while its minutes are shown.
+    /// Apple's credit under the graph while its minutes are shown: its mark, a link to its data
+    /// sources.
     @ViewBuilder
     private func credit(_ state: RainAttributes.ContentState) -> some View {
-        if let credit = state.credit {
-            Text(credit).font(.caption2).foregroundStyle(.secondary)
+        if state.credit != nil {
+            AppleWeatherBadge().font(.caption2).foregroundStyle(.secondary)
         }
     }
 
