@@ -129,6 +129,9 @@ final class WeatherStore {
     private(set) var planBanners: [PlanBanner] = []
     /// Set by `openPlan`: the app shows the Plan tab (the view clears it).
     var planTabRequested = false
+    /// The alert (`alertKey`) whose notification was tapped: the Now tab opens its sheet and
+    /// clears it.
+    var alertToOpen: String?
     /// Syncs wait for the one before them: a launch, becoming active and a push can all ask at
     /// once, and two fetches from one change token would find each change twice.
     @ObservationIgnored private var syncChain: Task<Void, Never>?
@@ -1404,6 +1407,13 @@ final class WeatherStore {
         planTabRequested = true
     }
 
+    /// Shows the place of an alert whose notification was tapped and opens the alert.
+    func openAlert(_ key: String, place id: String) {
+        guard let index = places.firstIndex(where: { $0.id == id }) else { return }
+        active = index
+        alertToOpen = key
+    }
+
     /// Whether the run is a screenshot run (no permission prompts).
     private var isScreenshotRun: Bool {
         #if DEBUG
@@ -1829,9 +1839,13 @@ final class WeatherStore {
             guard post, allowed, preferences.alertNotifications else { continue }
             for alert in notices {
                 let content = UNMutableNotificationContent()
-                content.title = "\(alert.title) · \(place.name)"
-                content.subtitle = alert.period
-                content.body = String(alert.body.prefix(240))
+                let message = AlertNotifier.message(for: alert, placeName: place.name)
+                content.title = message.title
+                content.subtitle = message.subtitle
+                content.body = message.body
+                content.userInfo = [
+                    NotificationTaps.alertPlaceKey: place.id, NotificationTaps.alertKey: Self.alertKey(alert),
+                ]
                 content.sound = .default
                 if ["very_poor", "extreme"].contains(alert.level) {
                     content.interruptionLevel = .timeSensitive

@@ -79,20 +79,33 @@ enum PlanUpdates {
     static func open(_ id: UUID) {
         if let store { store.openPlan(id) } else { waiting = id }
     }
+
+    /// A weather alert's notification was tapped.
+    static func openAlert(_ key: String, place: String) {
+        store?.openAlert(key, place: place)
+    }
 }
 
-/// Hears taps on notifications. Only plan-change notifications carry a plan id; the weather
-/// alerts' taps just open the app.
+/// Hears taps on notifications: a plan change opens the plan, a weather alert opens the alert
+/// (its sheet has the issuer and the details link).
 nonisolated final class NotificationTaps: NSObject, UNUserNotificationCenterDelegate {
     static let planKey = "planID"
+    /// The place (`AppPlace.id`) and alert (`WeatherStore.alertKey`) an alert's notification names.
+    static let alertPlaceKey = "alertPlace"
+    static let alertKey = "alertKey"
     /// The thread the plan-change notifications group in.
     static let planThread = "plans"
 
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse
     ) async {
+        let info = response.notification.request.content.userInfo
+        if let place = info[Self.alertPlaceKey] as? String, let key = info[Self.alertKey] as? String {
+            await PlanUpdates.openAlert(key, place: place)
+            return
+        }
         guard
-            let text = response.notification.request.content.userInfo[Self.planKey] as? String,
+            let text = info[Self.planKey] as? String,
             let id = UUID(uuidString: text)
         else { return }
         await PlanUpdates.open(id)

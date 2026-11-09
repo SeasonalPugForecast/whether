@@ -102,6 +102,21 @@ final class WhetherKitTests: XCTestCase {
         XCTAssertTrue(n.notified.isEmpty, "ended alerts are forgotten")
     }
 
+    /// A notification names who issued the alert and keeps all of its text.
+    func testAnAlertNotificationNamesTheIssuerAndKeepsTheText() {
+        let text = String(repeating: "Heavy snow is expected. ", count: 20)
+        let alert = ViewModel.Alert(
+            id: "apple:Met Office|Snow|London", title: "Snow", body: text, level: "poor",
+            period: "Since 9:00", end: 0, source: "Met Office", url: "https://example.com/a")
+        let message = AlertNotifier.message(for: alert, placeName: "London")
+        XCTAssertEqual(message.title, "Snow · London")
+        XCTAssertEqual(message.subtitle, "Since 9:00 · Met Office")
+        XCTAssertEqual(message.body, text)
+        var unsourced = alert
+        unsourced.source = nil
+        XCTAssertEqual(AlertNotifier.message(for: unsourced, placeName: "London").subtitle, "Since 9:00")
+    }
+
     func testHTTPDates() {
         XCTAssertEqual(URLSessionHost.unixTime("Sun, 11 Oct 2026 12:00:00 GMT"), 1_791_720_000)
         XCTAssertNil(URLSessionHost.unixTime("yesterday"))

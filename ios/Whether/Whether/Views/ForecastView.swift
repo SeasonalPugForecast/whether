@@ -243,6 +243,16 @@ struct ForecastView: View {
                 Task { await store.followSharedPlans() }
             }
         }
+        // An alert's notification was tapped: Now shows it (the alerts open it), or nothing
+        // when the alert has ended since.
+        .onChange(of: store.alertToOpen) {
+            guard let key = store.alertToOpen else { return }
+            if store.view?.alerts.contains(where: { WeatherStore.alertKey($0) == key }) == true {
+                tab = .now
+            } else {
+                store.alertToOpen = nil
+            }
+        }
         // A banner or a notification about a shared plan was tapped: the Plan tab shows it.
         .onChange(of: store.planTabRequested) {
             if store.planTabRequested {
@@ -670,7 +680,8 @@ struct ForecastView: View {
         case .alerts:
             if !view.alerts.isEmpty {
                 AlertsSection(
-                    alerts: view.alerts, read: store.readAlerts, markRead: { store.markRead($0) })
+                    alerts: view.alerts, read: store.readAlerts, markRead: { store.markRead($0) },
+                    toOpen: store.alertToOpen, opened: { store.alertToOpen = nil })
             }
         case .hours:
             if let hourly = view.hourly {

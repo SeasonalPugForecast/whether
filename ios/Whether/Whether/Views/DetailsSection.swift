@@ -10,6 +10,10 @@ struct AlertsSection: View {
     /// The read ones, by `WeatherStore.alertKey`: dimmed, and left out of the badge.
     let read: Set<String>
     let markRead: ([ViewModel.Alert]) -> Void
+    /// An alert to open now (`WeatherStore.alertToOpen`: its notification was tapped), cleared
+    /// through `opened`.
+    var toOpen: String?
+    var opened: () -> Void = {}
     @State private var shown: ViewModel.Alert?
 
     private func isRead(_ alert: ViewModel.Alert) -> Bool { read.contains(WeatherStore.alertKey(alert)) }
@@ -85,6 +89,14 @@ struct AlertsSection: View {
                 .navigationBarTitleDisplayMode(.inline)
             }
             .presentationDetents([.medium, .large])
+        }
+        .onChange(of: toOpen, initial: true) {
+            guard let key = toOpen else { return }
+            if let alert = alerts.first(where: { WeatherStore.alertKey($0) == key }) {
+                shown = alert
+                markRead([alert])
+            }
+            opened()
         }
         .onAppear {
             #if DEBUG

@@ -22,6 +22,17 @@ public struct AlertNotifier: Sendable {
 
     static func rank(_ level: String) -> Int { levels.firstIndex(of: level) ?? 0 }
 
+    /// What a notification about `alert` at the place named `placeName` says: the title and
+    /// place, the period and who issued it, and the whole text. A tap opens the alert's sheet,
+    /// which has the details link.
+    public static func message(
+        for alert: ViewModel.Alert, placeName: String
+    ) -> (title: String, subtitle: String, body: String) {
+        var subtitle = [alert.period]
+        if let source = alert.source, !source.isEmpty { subtitle.append(source) }
+        return ("\(alert.title) · \(placeName)", subtitle.joined(separator: " · "), alert.body)
+    }
+
     /// The key of `alert` at `place`.
     public static func key(_ alert: ViewModel.Alert, place: String) -> String {
         if let id = alert.id { return "\(place)|\(id)" }
