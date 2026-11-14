@@ -19,14 +19,26 @@ struct StormsTab: View {
     var body: some View {
         Group {
             if let view = storms.view {
-                ScrollView {
-                    StormsContent(
-                        view: view, stale: storms.stale, failure: storms.failure,
-                        loading: storms.loading
-                    ) { await storms.loadPastRuns(for: $0) }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 40)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        StormsContent(
+                            view: view, stale: storms.stale, failure: storms.failure,
+                            loading: storms.loading
+                        ) { await storms.loadPastRuns(for: $0) }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+                        .padding(.bottom, 40)
+                    }
+                    .task {
+                        #if DEBUG
+                            // Screenshots: `-scrollTo storms-runs` (or `storms-plumes`,
+                            // `storms-credits`) scrolls once the storms are laid out.
+                            let args = ProcessInfo.processInfo.arguments
+                            guard let i = args.firstIndex(of: "-scrollTo"), i + 1 < args.count else { return }
+                            try? await Task.sleep(for: .milliseconds(600))
+                            proxy.scrollTo(args[i + 1], anchor: .top)
+                        #endif
+                    }
                 }
             } else if let failure = storms.failure {
                 ContentUnavailableView {

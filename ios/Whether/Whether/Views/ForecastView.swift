@@ -118,6 +118,7 @@ struct ForecastView: View {
                         case "days": .days
                         case "radar": .radar
                         case "plan": .plan
+                        case "storms": .storms
                         default: .now
                         }
                 }
@@ -145,6 +146,8 @@ struct ForecastView: View {
                     showSettings = ["settings", "sections", "units", "tabs", "customize", "colors", "sources", "source-openweather", "source-pirate-weather", "compare", "compare-models"].contains(args[i + 1])
                     showWidgets = args[i + 1] == "widgets"
                     showCustomize = args[i + 1] == "customize-sheet"
+                    // `-show storms`: the Storms tab, shown for the launch even while hidden.
+                    if args[i + 1] == "storms" { tab = .storms }
                 }
                 // `-receivePlan sample` (or a `.whetherplan` file's path) opens the sheet for a
                 // plan that was sent to this phone.
@@ -365,6 +368,13 @@ struct ForecastView: View {
         #if DEBUG
             if let names = ProcessInfo.processInfo.launchList("-tabs") {
                 return TabChoice.arranged(by: names).shownItems()
+            }
+            // `-show storms` shows the Storms tab for the launch, without saving, in the
+            // last of the four places the tab bar has beside Now (no More tab).
+            let args = ProcessInfo.processInfo.arguments
+            if let i = args.firstIndex(of: "-show"), i + 1 < args.count, args[i + 1] == "storms" {
+                let saved = TabLayout.visible(store.preferences.tabs)
+                return saved.contains(.storms) ? saved : Array(saved.prefix(3)) + [.storms]
             }
         #endif
         return TabLayout.visible(store.preferences.tabs)

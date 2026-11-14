@@ -42,6 +42,10 @@ final class StormsStore {
     @ObservationIgnored private var runningPastRuns: Set<String> = []
     private let directory: URL
     private let ledgerURL: URL
+    #if DEBUG
+        /// A launch's built-in outlook (`-storms`), shown at its own time with no request.
+        private let sample = StormsSample.fromLaunch()
+    #endif
 
     init(
         directory: URL = SharedContainer.cachesDirectory.appending(path: "storms", directoryHint: .isDirectory),
@@ -52,8 +56,13 @@ final class StormsStore {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 
-    /// The time the view is built for.
-    private var now: Date { .now }
+    /// The time the view is built for: the clock, or a sample's own time.
+    private var now: Date {
+        #if DEBUG
+            if let sample { return sample.now }
+        #endif
+        return .now
+    }
 
     // MARK: Loading
 
@@ -68,6 +77,17 @@ final class StormsStore {
             failureDetail = nil
             stale = false
         }
+        #if DEBUG
+            if let sample {
+                show(sample.outlookJson, for: place)
+                if let past = sample.pastRunsJson {
+                    pastRuns["sample"] = past
+                    shown?.pastRunKeys = ["sample"]
+                }
+                rebuild()
+                return
+            }
+        #endif
         let kept = outlooks[place.id] ?? readOutlook(place)
         if shown == nil, let kept {
             show(kept, for: place)
@@ -120,6 +140,9 @@ final class StormsStore {
     /// Fetches ECMWF's and GFS's earlier runs over `event`'s window (each set once, then
     /// kept for good) and builds the view again with them.
     func loadPastRuns(for event: StormsView.Event) async {
+        #if DEBUG
+            if sample != nil { return }
+        #endif
         guard let current = shown, let view else { return }
         let requests = StormsRules.pastRunsRequests(for: event, models: view.models, runs: current.runs)
         var added = false
@@ -188,3 +211,29 @@ final class StormsStore {
         try? Data(json.utf8).write(to: url, options: .atomic)
     }
 }
+
+#if DEBUG
+    /// A built-in outlook for screenshots: `-storms` shows the nor'easter (with its
+    /// earlier runs), `-storms dry` the dry week, each at the time it was made for.
+    struct StormsSample {
+        var outlookJson: String
+        var pastRunsJson: String?
+        var now: Date
+
+        static func fromLaunch() -> StormsSample? {
+            let args = ProcessInfo.processInfo.arguments
+            guard let i = args.firstIndex(of: "-storms") else { return nil }
+            let dry = i + 1 < args.count && args[i + 1] == "dry"
+            let resource = { (name: String) in
+                Bundle.main.url(forResource: name, withExtension: "json")
+                    .flatMap { try? String(contentsOf: $0, encoding: .utf8) }
+            }
+            guard let outlook = resource(dry ? "storms-dry-week" : "storms-noreaster"),
+                let runs = try? StormOutlookRuns.decode(outlook)
+            else { return nil }
+            return StormsSample(
+                outlookJson: outlook, pastRunsJson: dry ? nil : resource("storms-noreaster-past-runs"),
+                now: Date(timeIntervalSince1970: TimeInterval(runs.fetchedAt)))
+        }
+    }
+#endif

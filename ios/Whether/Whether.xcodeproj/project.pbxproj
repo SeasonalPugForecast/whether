@@ -316,6 +316,7 @@
 				CODE_SIGN_ENTITLEMENTS = Whether.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				ENABLE_PREVIEWS = YES;
+				EXCLUDED_SOURCE_FILE_NAMES = "storms-*.json";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Whether-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pug Forecast";

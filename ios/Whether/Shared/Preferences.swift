@@ -547,8 +547,8 @@ struct Preferences: Codable, Equatable {
             // color vision and patterns.
             let args = ProcessInfo.processInfo.arguments
             // `-editTheme aurora` and `-customTheme aurora` make a custom theme for one launch,
-            // and `-dates compact` the dates.
-            if ["-units", "-skyTime", "-colors", "-vision", "-patterns", "-editTheme", "-customTheme", "-dates"]
+            // and `-dates compact` the dates; `-storms` shots set the background and appearance.
+            if ["-units", "-skyTime", "-colors", "-vision", "-patterns", "-editTheme", "-customTheme", "-dates", "-storms"]
                 .contains(where: args.contains)
             {
                 return
