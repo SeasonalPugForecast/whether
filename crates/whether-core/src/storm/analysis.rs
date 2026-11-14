@@ -14,7 +14,7 @@ use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use crate::storm::{PointSeries, StormOutlook};
+use crate::storm::{Agreement, PointSeries, StormOutlook};
 use crate::time::UnixTime;
 
 const HOUR: i64 = 3_600;
@@ -316,6 +316,217 @@ pub fn deepest_low(outlook: &StormOutlook) -> Option<(String, f32, UnixTime)> {
         .map(|(p, hpa, t)| (p.model.clone(), hpa, t))
 }
 
+/// Agreement on totals is High when their spread is under this.
+pub const SPREAD_HIGH_MAX: f32 = 0.35;
+
+/// Agreement on totals is Medium when their spread is under this, and Low
+/// otherwise.
+pub const SPREAD_MEDIUM_MAX: f32 = 0.75;
+
+/// The totals spread divides by the models' mean total, but never by less
+/// than this, in mm, so light events don't look uncertain.
+pub const SPREAD_FLOOR_MM: f32 = 5.0;
+
+/// Agreement on the storm's centre is High when the two centres furthest
+/// apart are closer than this, in km.
+pub const CENTERS_HIGH_MAX_KM: f64 = 150.0;
+
+/// Agreement on the storm's centre is Medium when the two centres furthest
+/// apart are closer than this, in km, and Low otherwise.
+pub const CENTERS_MEDIUM_MAX_KM: f64 = 400.0;
+
+/// The Earth's mean radius, in km.
+pub const EARTH_RADIUS_KM: f64 = 6_371.0;
+
+/// Where one model puts the storm's low: its centre when it is deepest near
+/// the place.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StormCenter {
+    /// The Open-Meteo `models` id.
+    pub model: String,
+    /// The centre's latitude, in degrees.
+    pub latitude: f64,
+    /// The centre's longitude, in degrees.
+    pub longitude: f64,
+    /// When the low is there.
+    pub time: UnixTime,
+    /// Its central pressure, in hPa.
+    pub pressure_hpa: f32,
+}
+
+/// One model's precipitation total over an event.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ModelTotal {
+    /// The Open-Meteo `models` id.
+    pub model: String,
+    /// Precipitation over the event, in mm.
+    pub total_mm: f32,
+}
+
+/// How far one model's storm centre is from the place.
+#[derive(Clone, Debug, PartialEq)]
+pub struct CenterDistance {
+    /// The Open-Meteo `models` id.
+    pub model: String,
+    /// The great-circle distance from the place, in km.
+    pub distance_km: f64,
+}
+
+/// How closely the models agree on an event, with what a sentence about it
+/// needs.
+#[derive(Clone, Debug, PartialEq)]
+pub struct AgreementResult {
+    /// The worse of `totals` and `centers`, or the one that is known; `None`
+    /// when neither is.
+    pub verdict: Option<Agreement>,
+    /// The verdict from the totals spread; `None` with fewer than 2 models'
+    /// totals.
+    pub totals: Option<Agreement>,
+    /// `(max − min) / max(mean, SPREAD_FLOOR_MM)` over the models' totals.
+    pub spread: Option<f32>,
+    /// The model with the largest total (the first on a tie).
+    pub wettest: Option<ModelTotal>,
+    /// The model with the smallest total (the first on a tie).
+    pub driest: Option<ModelTotal>,
+    /// The verdict from the storm centres; `None` with fewer than 2 centres.
+    pub centers: Option<Agreement>,
+    /// The largest distance between two models' centres, in km.
+    pub center_spread_km: Option<f64>,
+    /// The centre nearest the place (the first on a tie).
+    pub closest: Option<CenterDistance>,
+    /// The centre furthest from the place (the first on a tie).
+    pub farthest: Option<CenterDistance>,
+}
+
+/// The great-circle distance between two points given in degrees, in km
+/// (the haversine formula on a sphere of [`EARTH_RADIUS_KM`]).
+pub fn distance_km(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+    let (p1, p2) = (lat1.to_radians(), lat2.to_radians());
+    let half_dlat = (p2 - p1) / 2.0;
+    let half_dlon = (lon2 - lon1).to_radians() / 2.0;
+    let a = libm::sin(half_dlat) * libm::sin(half_dlat)
+        + libm::cos(p1) * libm::cos(p2) * libm::sin(half_dlon) * libm::sin(half_dlon);
+    2.0 * EARTH_RADIUS_KM * libm::asin(libm::sqrt(a.clamp(0.0, 1.0)))
+}
+
+/// The verdict for a totals spread.
+pub fn totals_agreement(spread: f32) -> Agreement {
+    if spread < SPREAD_HIGH_MAX {
+        Agreement::High
+    } else if spread < SPREAD_MEDIUM_MAX {
+        Agreement::Medium
+    } else {
+        Agreement::Low
+    }
+}
+
+/// The verdict for the largest distance between storm centres, in km.
+pub fn centers_agreement(spread_km: f64) -> Agreement {
+    if spread_km < CENTERS_HIGH_MAX_KM {
+        Agreement::High
+    } else if spread_km < CENTERS_MEDIUM_MAX_KM {
+        Agreement::Medium
+    } else {
+        Agreement::Low
+    }
+}
+
+/// The worse of two verdicts.
+pub fn worse(a: Agreement, b: Agreement) -> Agreement {
+    a.max(b)
+}
+
+/// The first item with the extreme key: the largest when `largest`, else the
+/// smallest.
+fn extreme<T, K: PartialOrd + Copy>(
+    items: impl Iterator<Item = T>,
+    key: impl Fn(&T) -> K,
+    largest: bool,
+) -> Option<T> {
+    items.fold(None, |best, item| match best {
+        Some(b) if (largest && key(&b) >= key(&item)) || (!largest && key(&b) <= key(&item)) => {
+            Some(b)
+        }
+        _ => Some(item),
+    })
+}
+
+/// How closely the models agree on an event at the place
+/// `(place_latitude, place_longitude)`, from each model's `stats` over it and
+/// where each puts the storm's centre.
+///
+/// The totals spread is `(max − min) / max(mean, SPREAD_FLOOR_MM)` over the
+/// models with a total: High under [`SPREAD_HIGH_MAX`], Medium under
+/// [`SPREAD_MEDIUM_MAX`], Low otherwise. The centres' spread is the largest
+/// great-circle distance between two of them: High under
+/// [`CENTERS_HIGH_MAX_KM`], Medium under [`CENTERS_MEDIUM_MAX_KM`], Low
+/// otherwise. The verdict is the worse of the two; with fewer than 2 centres
+/// it is the totals' alone.
+pub fn agreement(
+    stats: &[ModelEventStats],
+    centers: &[StormCenter],
+    place_latitude: f64,
+    place_longitude: f64,
+) -> AgreementResult {
+    let totals: Vec<ModelTotal> = stats
+        .iter()
+        .filter_map(|s| {
+            s.total_mm.map(|total_mm| ModelTotal {
+                model: s.model.clone(),
+                total_mm,
+            })
+        })
+        .collect();
+    let wettest = extreme(totals.iter(), |t| t.total_mm, true).cloned();
+    let driest = extreme(totals.iter(), |t| t.total_mm, false).cloned();
+    let spread = match (&wettest, &driest) {
+        (Some(max), Some(min)) if totals.len() >= 2 => {
+            let mean = totals.iter().map(|t| t.total_mm).sum::<f32>() / totals.len() as f32;
+            Some((max.total_mm - min.total_mm) / mean.max(SPREAD_FLOOR_MM))
+        }
+        _ => None,
+    };
+
+    let center_spread_km = (centers.len() >= 2).then(|| {
+        centers
+            .iter()
+            .enumerate()
+            .flat_map(|(i, a)| {
+                centers[i + 1..]
+                    .iter()
+                    .map(move |b| distance_km(a.latitude, a.longitude, b.latitude, b.longitude))
+            })
+            .fold(0.0, f64::max)
+    });
+    let distances: Vec<CenterDistance> = centers
+        .iter()
+        .map(|c| CenterDistance {
+            model: c.model.clone(),
+            distance_km: distance_km(place_latitude, place_longitude, c.latitude, c.longitude),
+        })
+        .collect();
+    let closest = extreme(distances.iter(), |d| d.distance_km, false).cloned();
+    let farthest = extreme(distances.iter(), |d| d.distance_km, true).cloned();
+
+    let totals_verdict = spread.map(totals_agreement);
+    let centers_verdict = center_spread_km.map(centers_agreement);
+    let verdict = match (totals_verdict, centers_verdict) {
+        (Some(a), Some(b)) => Some(worse(a, b)),
+        (a, b) => a.or(b),
+    };
+    AgreementResult {
+        verdict,
+        totals: totals_verdict,
+        spread,
+        wettest,
+        driest,
+        centers: centers_verdict,
+        center_spread_km,
+        closest,
+        farthest,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -547,5 +758,148 @@ mod tests {
         assert_eq!(bin_of(UnixTime(SATURDAY + 7 * HOUR)), SATURDAY + BIN_SECS);
         assert_eq!(bin_of(UnixTime(SATURDAY)), SATURDAY - BIN_SECS);
         assert_eq!(find_events(&StormOutlook::default()), []);
+    }
+
+    /// New York (Manhattan).
+    const NYC: (f64, f64) = (40.7128, -74.0060);
+
+    fn totals(mm: &[Option<f32>]) -> Vec<ModelEventStats> {
+        mm.iter()
+            .zip([
+                "ecmwf_ifs025",
+                "gfs_seamless",
+                "gem_seamless",
+                "icon_seamless",
+            ])
+            .map(|(total_mm, model)| ModelEventStats {
+                model: model.to_string(),
+                total_mm: *total_mm,
+                total_snow_cm: None,
+                peak_gust_kmh: None,
+                lowest_hpa: None,
+                lowest_at: None,
+                onset: None,
+            })
+            .collect()
+    }
+
+    fn center(model: &str, latitude: f64, longitude: f64) -> StormCenter {
+        StormCenter {
+            model: model.to_string(),
+            latitude,
+            longitude,
+            time: STORM_PEAK,
+            pressure_hpa: 990.0,
+        }
+    }
+
+    fn verdict(mm: &[f32], centers: &[StormCenter]) -> Option<Agreement> {
+        let mm: Vec<Option<f32>> = mm.iter().copied().map(Some).collect();
+        agreement(&totals(&mm), centers, NYC.0, NYC.1).verdict
+    }
+
+    #[test]
+    fn new_york_to_boston_is_about_306_km() {
+        let km = distance_km(NYC.0, NYC.1, 42.3601, -71.0589);
+        assert!((km - 306.0).abs() < 5.0, "{km}");
+        assert_eq!(distance_km(NYC.0, NYC.1, NYC.0, NYC.1), 0.0);
+        // One degree of longitude on the equator, across the antimeridian.
+        let km = distance_km(0.0, 179.5, 0.0, -179.5);
+        assert!((km - 111.2).abs() < 0.1, "{km}");
+    }
+
+    #[test]
+    fn the_noreaster_models_disagree() {
+        let outlook = noreaster();
+        let events = find_events(&outlook);
+        let place = &outlook.place;
+        let result = agreement(&events[0].models, &[], place.latitude, place.longitude);
+        assert_eq!(result.verdict, Some(Agreement::Low));
+        assert_eq!(result.totals, Some(Agreement::Low));
+        assert_eq!((result.centers, result.center_spread_km), (None, None));
+        assert!(
+            result.spread.is_some_and(|s| s > SPREAD_MEDIUM_MAX),
+            "{result:?}"
+        );
+        let wettest = result.wettest.unwrap();
+        let driest = result.driest.unwrap();
+        assert_eq!(
+            (wettest.model.as_str(), driest.model.as_str()),
+            ("ecmwf_ifs025", "gfs_seamless")
+        );
+        assert!(wettest.total_mm > 40.0 && driest.total_mm < 15.0);
+
+        // Where each model's low is deepest: ECMWF close in, GFS offshore.
+        let centers = [
+            center("ecmwf_ifs025", 40.2, -73.2),
+            center("gfs_seamless", 39.0, -71.0),
+        ];
+        let result = agreement(&events[0].models, &centers, place.latitude, place.longitude);
+        assert_eq!(result.centers, Some(Agreement::Medium));
+        assert_eq!(result.verdict, Some(Agreement::Low));
+        let closest = result.closest.unwrap();
+        let farthest = result.farthest.unwrap();
+        assert_eq!(closest.model, "ecmwf_ifs025");
+        assert!((closest.distance_km - 87.0).abs() < 10.0, "{closest:?}");
+        assert_eq!(farthest.model, "gfs_seamless");
+        assert!((farthest.distance_km - 320.0).abs() < 20.0, "{farthest:?}");
+        let spread = result.center_spread_km.unwrap();
+        assert!((spread - 240.0).abs() < 20.0, "{spread}");
+    }
+
+    #[test]
+    fn the_worse_verdict_wins() {
+        let near = [center("a", 40.0, -74.0), center("b", 40.3, -74.0)];
+        let far = [center("a", 40.0, -74.0), center("b", 40.0, -68.0)];
+        assert_eq!(verdict(&[20.0, 21.0, 22.0], &near), Some(Agreement::High));
+        assert_eq!(verdict(&[20.0, 21.0, 22.0], &far), Some(Agreement::Low));
+        assert_eq!(verdict(&[5.0, 40.0], &near), Some(Agreement::Low));
+        assert_eq!(verdict(&[20.0, 30.0], &near), Some(Agreement::Medium));
+        // One centre has nothing to compare with: the totals decide.
+        assert_eq!(verdict(&[20.0, 21.0], &far[1..]), Some(Agreement::High));
+        assert_eq!(verdict(&[20.0], &far), Some(Agreement::Low));
+        assert_eq!(verdict(&[20.0], &[]), None);
+        assert_eq!(worse(Agreement::High, Agreement::Medium), Agreement::Medium);
+        assert_eq!(worse(Agreement::Low, Agreement::Medium), Agreement::Low);
+    }
+
+    #[test]
+    fn the_thresholds_are_exclusive_upper_bounds() {
+        assert_eq!(totals_agreement(0.349), Agreement::High);
+        assert_eq!(totals_agreement(SPREAD_HIGH_MAX), Agreement::Medium);
+        assert_eq!(totals_agreement(SPREAD_MEDIUM_MAX), Agreement::Low);
+        assert_eq!(centers_agreement(149.9), Agreement::High);
+        assert_eq!(centers_agreement(CENTERS_HIGH_MAX_KM), Agreement::Medium);
+        assert_eq!(centers_agreement(CENTERS_MEDIUM_MAX_KM), Agreement::Low);
+    }
+
+    #[test]
+    fn light_events_divide_by_the_floor() {
+        let result = agreement(&totals(&[Some(1.0), Some(3.0)]), &[], NYC.0, NYC.1);
+        // 2 mm apart over the 5 mm floor, not over the 2 mm mean.
+        assert_eq!(result.spread, Some(0.4));
+        assert_eq!(result.verdict, Some(Agreement::Medium));
+    }
+
+    #[test]
+    fn models_without_totals_are_left_out() {
+        let result = agreement(
+            &totals(&[Some(10.0), None, Some(10.0), Some(12.0)]),
+            &[],
+            NYC.0,
+            NYC.1,
+        );
+        assert_eq!(
+            result.driest.map(|d| d.model).as_deref(),
+            Some("ecmwf_ifs025")
+        );
+        assert_eq!(
+            result.wettest.map(|d| d.model).as_deref(),
+            Some("icon_seamless")
+        );
+        assert_eq!(result.verdict, Some(Agreement::High));
+        let one = agreement(&totals(&[None, Some(10.0)]), &[], NYC.0, NYC.1);
+        assert_eq!((one.spread, one.verdict), (None, None));
+        assert_eq!(one.wettest.map(|d| d.total_mm), Some(10.0));
     }
 }
