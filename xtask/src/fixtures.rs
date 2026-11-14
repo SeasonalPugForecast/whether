@@ -34,6 +34,7 @@ pub(crate) fn run(args: &[&str]) -> Result<(), String> {
         ["--provider", "openweather"] => openweather(),
         ["--provider", "open-meteo"] => open_meteo(),
         ["--provider", "open-meteo-models"] => open_meteo_models(),
+        ["--provider", "open-meteo-storm"] => open_meteo_storm(),
         ["--provider", "nws"] => nws(),
         ["--provider", "nws-observation"] => nws_observation(),
         ["--provider", "acis"] => acis(),
@@ -45,7 +46,7 @@ pub(crate) fn run(args: &[&str]) -> Result<(), String> {
         ["--provider", "pirate-weather"] => pirate_weather(),
         ["--provider", other] => Err(format!("fixtures for `{other}` are not implemented yet")),
         _ => Err(
-            "usage: cargo xtask fixtures --provider openweather|openweather-onecall4|openweather-geocode|open-meteo|open-meteo-models|nws|nws-observation|acis|open-meteo-history|climate|met-norway|pirate-weather"
+            "usage: cargo xtask fixtures --provider openweather|openweather-onecall4|openweather-geocode|open-meteo|open-meteo-models|open-meteo-storm|nws|nws-observation|acis|open-meteo-history|climate|met-norway|pirate-weather"
                 .into(),
         ),
     }
@@ -935,6 +936,64 @@ fn open_meteo_models() -> Result<(), String> {
         &forecast.url,
         200,
     )
+}
+
+/// Storm outlook requests for New York, built by the provider's storm
+/// builders: every model's hours, both ensembles over 10 days, the 7×7
+/// pressure grid, ECMWF's 2026-11-13 00 UTC run, and each run domain's
+/// `meta.json`.
+fn open_meteo_storm() -> Result<(), String> {
+    use whether_providers::open_meteo::storm::{
+        ENSEMBLE_DOMAINS, RUN_DOMAINS, ensemble_request, grid_request, meta_request, point_request,
+        single_run_request,
+    };
+
+    /// 2026-11-13 00:00 UTC.
+    const EARLIER_RUN: UnixTime = UnixTime(1_794_528_000);
+    let dir = fixture_dir("open_meteo");
+    fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    let loc = &TEST_LOCATION;
+    record(
+        &dir,
+        "storm_point_10001.json",
+        &point_request(loc, &[]).url,
+        200,
+    )?;
+    record(
+        &dir,
+        "storm_ensemble_10001.json",
+        &ensemble_request(loc, &[], 10).url,
+        200,
+    )?;
+    record(
+        &dir,
+        "storm_grid_10001.json",
+        &grid_request(loc, &[]).url,
+        200,
+    )?;
+    let single = single_run_request(
+        loc,
+        "ecmwf_ifs025",
+        EARLIER_RUN,
+        EARLIER_RUN,
+        UnixTime(EARLIER_RUN.0 + 10 * 86_400),
+    )
+    .map_err(|e| e.to_string())?;
+    record(
+        &dir,
+        "storm_single_run_ecmwf_ifs025_10001.json",
+        &single.url,
+        200,
+    )?;
+    for (_, domain) in RUN_DOMAINS.iter().chain(&ENSEMBLE_DOMAINS) {
+        record(
+            &dir,
+            &format!("storm_meta_{domain}.json"),
+            &meta_request(domain).url,
+            200,
+        )?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
