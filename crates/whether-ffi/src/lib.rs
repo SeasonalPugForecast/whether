@@ -18,6 +18,7 @@ mod pirate_weather;
 mod radar;
 mod search;
 mod settings;
+mod storms;
 mod units;
 mod view;
 
@@ -44,6 +45,7 @@ pub use settings::{
     DEFAULT_DAILY_CALLS, ModelPreset, OffsetChange, Place, Settings, SourceChoice, Units,
     default_settings, default_sources, model_presets, models_from_noaa_blend, nws_covers,
 };
+pub use storms::{StormsOutcome, fetch_past_runs, fetch_storms, past_run_key, storms_view};
 pub use units::{
     DistanceOption, DistanceUnit, PrecipitationOption, PrecipitationUnit, PressureOption,
     PressureUnit, TemperatureOption, TemperatureUnit, UnitLabels, UnitOverrides, WindOption,
@@ -67,6 +69,13 @@ pub enum WhetherError {
     #[error("no history: {summary}")]
     NoHistory {
         /// One line per attempt.
+        summary: String,
+    },
+    /// No storm outlook could be fetched; `summary` lists what each request
+    /// said.
+    #[error("no storm outlook: {summary}")]
+    NoStorms {
+        /// One line per request, or why nothing was asked.
         summary: String,
     },
     /// A trip that cannot be planned (dates backwards, over 31 days).

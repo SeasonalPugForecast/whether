@@ -169,7 +169,7 @@ pub struct FetchOutcome {
     pub attempts: Vec<AttemptInfo>,
 }
 
-fn name(value: &impl serde::Serialize) -> String {
+pub(crate) fn name(value: &impl serde::Serialize) -> String {
     match serde_json::to_value(value) {
         Ok(serde_json::Value::String(s)) => s,
         _ => String::new(),

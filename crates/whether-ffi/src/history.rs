@@ -130,7 +130,7 @@ fn failed(attempts: &[Attempt]) -> WhetherError {
     }
 }
 
-fn to_json(what: &str, value: &impl Serialize) -> Result<String, WhetherError> {
+pub(crate) fn to_json(what: &str, value: &impl Serialize) -> Result<String, WhetherError> {
     serde_json::to_string(value).map_err(|e| WhetherError::InvalidJson {
         what: what.into(),
         message: e.to_string(),
