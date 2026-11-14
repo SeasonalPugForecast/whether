@@ -1,5 +1,6 @@
-//! Storm analysis: finding the coming events in a [`StormOutlook`] and
-//! summarising what each model says about them.
+//! Storm analysis: finding the coming events in a [`StormOutlook`],
+//! summarising what each model and ensemble says about them, and rating how
+//! closely the models agree.
 //!
 //! Everything here is a pure function of the outlook and returns raw domain
 //! values in the outlook's units (mm, cm, km/h, hPa); `view::storms` formats
@@ -14,7 +15,7 @@ use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use crate::storm::{Agreement, PointSeries, StormOutlook};
+use crate::storm::{Agreement, EnsembleSeries, PointSeries, StormOutlook};
 use crate::time::UnixTime;
 
 const HOUR: i64 = 3_600;
@@ -527,6 +528,182 @@ pub fn agreement(
     }
 }
 
+/// The 10th, 50th and 90th percentiles of a set of values.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Percentiles {
+    /// The 10th percentile.
+    pub p10: f32,
+    /// The median.
+    pub p50: f32,
+    /// The 90th percentile.
+    pub p90: f32,
+}
+
+/// The `p`th quantile (`p` in `0.0..=1.0`) of `sorted`, which must be in
+/// ascending order; `None` when it is empty.
+///
+/// The method interpolates linearly between order statistics (Hyndman and
+/// Fan's type 7, the default in R and NumPy): with `n` values and
+/// `h = (n − 1)·p`, the result is `x[⌊h⌋] + (h − ⌊h⌋)·(x[⌊h⌋ + 1] − x[⌊h⌋])`,
+/// counting from 0. The 0th and 100th percentiles are the extremes.
+pub fn quantile(sorted: &[f32], p: f32) -> Option<f32> {
+    let last = sorted.len().checked_sub(1)?;
+    let h = last as f32 * p.clamp(0.0, 1.0);
+    let lo = (libm::floorf(h) as usize).min(last);
+    let hi = (lo + 1).min(last);
+    let (a, b) = (sorted[lo], sorted[hi]);
+    Some(a + (h - lo as f32) * (b - a))
+}
+
+/// The P10, P50 and P90 of `values` by [`quantile`], ignoring NaNs; `None`
+/// when there is no value.
+pub fn percentiles(values: impl IntoIterator<Item = f32>) -> Option<Percentiles> {
+    let mut sorted: Vec<f32> = values.into_iter().filter(|v| !v.is_nan()).collect();
+    sorted.sort_unstable_by(f32::total_cmp);
+    Some(Percentiles {
+        p10: quantile(&sorted, 0.1)?,
+        p50: quantile(&sorted, 0.5)?,
+        p90: quantile(&sorted, 0.9)?,
+    })
+}
+
+/// One quantity (precipitation or snowfall) across an ensemble's members
+/// over an event.
+#[derive(Clone, Debug, PartialEq)]
+pub struct MemberSpread {
+    /// Each member's total over the window, the control first; `None` for a
+    /// member with no value in it.
+    pub totals: Vec<Option<f32>>,
+    /// The percentiles of the members' totals.
+    pub percentiles: Option<Percentiles>,
+    /// Each member's running total at each of the steps, as
+    /// `[member][step]`; `None` until the member's first value.
+    pub plumes: Vec<Vec<Option<f32>>>,
+    /// The members' 10th percentile at each step.
+    pub plume_p10: Vec<Option<f32>>,
+    /// The members' median at each step.
+    pub plume_p50: Vec<Option<f32>>,
+    /// The members' 90th percentile at each step.
+    pub plume_p90: Vec<Option<f32>>,
+}
+
+/// One ensemble's spread over an event.
+#[derive(Clone, Debug, PartialEq)]
+pub struct EnsembleEventStats {
+    /// The Ensemble API `models` id.
+    pub model: String,
+    /// How many members (the control included) the ensemble has.
+    pub members: usize,
+    /// The plume's steps: the end of each 6-hour step across the window, the
+    /// last one at the window's end.
+    pub steps: Vec<UnixTime>,
+    /// Precipitation, in mm.
+    pub precipitation: MemberSpread,
+    /// Snowfall in cm, when the event has snow.
+    pub snowfall: Option<MemberSpread>,
+}
+
+/// The ends of the 6-hour steps across `[start, end)`; the last one is `end`.
+pub fn plume_steps(start: UnixTime, end: UnixTime) -> Vec<UnixTime> {
+    let mut steps = Vec::new();
+    let mut t = start.0 + BIN_SECS;
+    while t < end.0 {
+        steps.push(UnixTime(t));
+        t += BIN_SECS;
+    }
+    if end > start {
+        steps.push(end);
+    }
+    steps
+}
+
+/// One member's running total at each step from `start`.
+fn plume(
+    times: &[UnixTime],
+    values: &[Option<f32>],
+    start: UnixTime,
+    steps: &[UnixTime],
+) -> Vec<Option<f32>> {
+    let mut from = start;
+    let mut running: Option<f32> = None;
+    steps
+        .iter()
+        .map(|&to| {
+            if let Some(sum) = window_sum(times, values, from, to) {
+                running = Some(running.unwrap_or(0.0) + sum);
+            }
+            from = to;
+            running
+        })
+        .collect()
+}
+
+/// The percentile line `pick` of the members' plumes at each step.
+fn plume_line(
+    plumes: &[Vec<Option<f32>>],
+    steps: usize,
+    pick: fn(&Percentiles) -> f32,
+) -> Vec<Option<f32>> {
+    (0..steps)
+        .map(|i| {
+            percentiles(plumes.iter().filter_map(|m| m.get(i).copied().flatten())).map(|p| pick(&p))
+        })
+        .collect()
+}
+
+/// The members' spread from `start` over `steps`, the last of which ends the
+/// window. Each total is its plume's last value, so the two always match.
+fn member_spread(
+    times: &[UnixTime],
+    members: &[Vec<Option<f32>>],
+    start: UnixTime,
+    steps: &[UnixTime],
+) -> MemberSpread {
+    let plumes: Vec<Vec<Option<f32>>> = members
+        .iter()
+        .map(|m| plume(times, m, start, steps))
+        .collect();
+    let totals: Vec<Option<f32>> = plumes.iter().map(|p| p.last().copied().flatten()).collect();
+    MemberSpread {
+        percentiles: percentiles(totals.iter().flatten().copied()),
+        totals,
+        plume_p10: plume_line(&plumes, steps.len(), |p| p.p10),
+        plume_p50: plume_line(&plumes, steps.len(), |p| p.p50),
+        plume_p90: plume_line(&plumes, steps.len(), |p| p.p90),
+        plumes,
+    }
+}
+
+/// `series`' spread over the window `[start, end)`: precipitation, and
+/// snowfall when `with_snow`.
+pub fn ensemble_event_stats(
+    series: &EnsembleSeries,
+    start: UnixTime,
+    end: UnixTime,
+    with_snow: bool,
+) -> EnsembleEventStats {
+    let steps = plume_steps(start, end);
+    let spread =
+        |members: &[Vec<Option<f32>>]| member_spread(&series.times, members, start, &steps);
+    EnsembleEventStats {
+        model: series.model.clone(),
+        members: series.member_count(),
+        precipitation: spread(&series.precipitation_mm),
+        snowfall: with_snow.then(|| spread(&series.snowfall_cm)),
+        steps,
+    }
+}
+
+/// Every ensemble's spread over `event`, in the outlook's order, with
+/// snowfall when the event has snow.
+pub fn ensemble_stats(outlook: &StormOutlook, event: &StormEvent) -> Vec<EnsembleEventStats> {
+    outlook
+        .ensembles
+        .iter()
+        .map(|e| ensemble_event_stats(e, event.start, event.end, event.has_snow()))
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -538,8 +715,9 @@ mod tests {
     /// Saturday 2027-01-16 00:00 UTC.
     const SATURDAY: i64 = STORM_START.0 + 24 * HOUR;
 
-    /// A series of `hours` hourly stamps from `STORM_START` with the given
-    /// precipitation and no snow, a steady 1012 hPa and 20 km/h gusts.
+    /// An hourly series stamped from an hour after `STORM_START`, one stamp
+    /// per precipitation value, with no snow, a steady 1012 hPa and 20 km/h
+    /// gusts.
     fn series(model: &str, precipitation_mm: Vec<Option<f32>>) -> PointSeries {
         let n = precipitation_mm.len();
         PointSeries {
@@ -901,5 +1079,107 @@ mod tests {
         let one = agreement(&totals(&[None, Some(10.0)]), &[], NYC.0, NYC.1);
         assert_eq!((one.spread, one.verdict), (None, None));
         assert_eq!(one.wettest.map(|d| d.total_mm), Some(10.0));
+    }
+
+    fn close(a: Option<f32>, b: f32) -> bool {
+        a.is_some_and(|a| (a - b).abs() < 1e-4)
+    }
+
+    #[test]
+    fn percentiles_interpolate_between_order_statistics() {
+        let p = percentiles((1..=10).rev().map(|v| v as f32)).unwrap();
+        assert!(close(Some(p.p10), 1.9), "{p:?}");
+        assert!(close(Some(p.p50), 5.5), "{p:?}");
+        assert!(close(Some(p.p90), 9.1), "{p:?}");
+        let sorted: Vec<f32> = (1..=10).map(|v| v as f32).collect();
+        assert_eq!(quantile(&sorted, 0.0), Some(1.0));
+        assert_eq!(quantile(&sorted, 1.0), Some(10.0));
+        let one = percentiles([4.0, f32::NAN]).unwrap();
+        assert_eq!((one.p10, one.p50, one.p90), (4.0, 4.0, 4.0));
+        assert_eq!(percentiles([]), None);
+        assert_eq!(quantile(&[], 0.5), None);
+    }
+
+    #[test]
+    fn plume_steps_run_six_hours_to_the_end() {
+        assert_eq!(plume_steps(bin(2), bin(5)), [bin(3), bin(4), bin(5)]);
+        let end = UnixTime(bin(1).0 + 2 * HOUR);
+        assert_eq!(plume_steps(bin(0), end), [bin(1), end]);
+        assert_eq!(plume_steps(bin(1), bin(1)), []);
+    }
+
+    #[test]
+    fn the_noreaster_ensembles_spread_around_their_controls() {
+        let outlook = noreaster();
+        let event = &find_events(&outlook)[0];
+        let stats = ensemble_stats(&outlook, event);
+        let models: Vec<(&str, usize)> = stats
+            .iter()
+            .map(|s| (s.model.as_str(), s.members))
+            .collect();
+        assert_eq!(models, [("ecmwf_ifs025", 51), ("gfs025", 31)]);
+        for (e, control) in stats.iter().zip([&event.models[0], &event.models[1]]) {
+            assert_eq!(e.steps, plume_steps(event.start, event.end));
+            assert_eq!(e.steps.len(), 7);
+            for spread in [Some(&e.precipitation), e.snowfall.as_ref()] {
+                let spread = spread.unwrap();
+                assert_eq!(spread.totals.len(), e.members);
+                assert_eq!(spread.plumes.len(), e.members);
+                let p = spread.percentiles.unwrap();
+                assert!(p.p10 < p.p50 && p.p50 < p.p90, "{}: {p:?}", e.model);
+                for (plume, total) in spread.plumes.iter().zip(&spread.totals) {
+                    assert_eq!(plume.len(), e.steps.len());
+                    assert!(plume.windows(2).all(|w| w[0] <= w[1]), "{plume:?}");
+                    assert_eq!(plume.last().copied().flatten(), *total);
+                }
+                let last = e.steps.len() - 1;
+                assert!(close(spread.plume_p10[last], p.p10));
+                assert!(close(spread.plume_p50[last], p.p50));
+                assert!(close(spread.plume_p90[last], p.p90));
+                assert!(
+                    spread
+                        .plume_p10
+                        .iter()
+                        .zip(&spread.plume_p90)
+                        .all(|(a, b)| a <= b)
+                );
+            }
+            // The control is the deterministic run.
+            let total = e.precipitation.totals[0].unwrap();
+            assert!(
+                (total - control.total_mm.unwrap()).abs() < 1.0,
+                "{}",
+                e.model
+            );
+        }
+        // ECMWF's members bring more than GFS's.
+        let medians: Vec<f32> = stats
+            .iter()
+            .map(|s| s.precipitation.percentiles.unwrap().p50)
+            .collect();
+        assert!(medians[0] > medians[1], "{medians:?}");
+    }
+
+    #[test]
+    fn ensembles_skip_snow_without_it_and_missing_members() {
+        let mut series = dry_week().ensembles.remove(1);
+        series.precipitation_mm[1] = vec![None; series.times.len()];
+        series.precipitation_mm[2][10] = Some(3.0);
+        let start = STORM_START;
+        let end = UnixTime(STORM_START.0 + 24 * HOUR);
+        let stats = ensemble_event_stats(&series, start, end, false);
+        assert_eq!(stats.snowfall, None);
+        let spread = &stats.precipitation;
+        assert_eq!(spread.totals[1], None);
+        assert_eq!(spread.plumes[1], [None; 4]);
+        assert_eq!(spread.totals[2], Some(3.0));
+        // Stamped 10 h in: the second step's running total and after.
+        assert_eq!(
+            spread.plumes[2],
+            [Some(0.0), Some(3.0), Some(3.0), Some(3.0)]
+        );
+        // 30 members with a total: 29 zeros and one 3 mm.
+        let p = spread.percentiles.unwrap();
+        assert_eq!((p.p50, p.p90), (0.0, 0.0));
     }
 }
