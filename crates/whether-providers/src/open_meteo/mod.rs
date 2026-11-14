@@ -7,6 +7,7 @@ mod forecast;
 pub mod geocode;
 pub mod history;
 pub mod models;
+pub mod storm;
 mod vars;
 
 use alloc::string::{String, ToString};
