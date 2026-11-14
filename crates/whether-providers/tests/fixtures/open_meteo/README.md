@@ -29,3 +29,27 @@ is the archived model forecast for ZIP 10001 from 26 October to 1 November (dail
 precipitation and snowfall), the past days of the history fallback. The ERA5
 archive for 1991–2020 (277 KB) is not recorded: `tests/open_meteo_history.rs` generates
 one in its shape.
+
+`storm_*.json` (2026-11-14, about 22:50 UTC, `cargo xtask fixtures --provider
+open-meteo-storm`) are the storm outlook requests for ZIP 10001, built by
+`open_meteo::storm`:
+- `storm_point_10001.json`: hourly precipitation, snowfall, gusts and pressure for
+  `ecmwf_ifs025`, `gfs_seamless`, `gem_seamless` and `icon_seamless` over 10 days, each
+  column suffixed with its model; ICON's last 52 hours are null.
+- `storm_ensemble_10001.json`: precipitation and snowfall from the Ensemble API for
+  `ecmwf_ifs025` (control and 50 members, suffix `ecmwf_ifs025_ensemble`) and `gfs025`
+  (control and 30 members, suffix `ncep_gefs025`) over 10 days. Some ECMWF members
+  have hours of -0.1 mm.
+- `storm_grid_10001.json`: `pressure_msl` every 6 hours (40 steps) at the 49 points of
+  the 7×7 grid around New York, for the four models. The response is an array in
+  request order; the echoed points snap to a model grid (two differ: -79 → -79.25 and 45.75 → 46). ICON's last
+  7 steps are null.
+- `storm_single_run_ecmwf_ifs025_10001.json`: the Single Runs API's `ecmwf_ifs025` run
+  of 2026-11-13 00:00 UTC over 10 days, unsuffixed; its hours start at the run.
+- `storm_meta_<domain>.json`: `meta.json` of each run domain.
+
+Hand-made storm files: `storm_point_missing_model.synthetic.json` is the point
+recording cut to 6 hours without GEM's columns; `storm_grid_nulls.synthetic.json` is
+the grid recording cut to 2 steps with ICON null at point 10 and GEM's column missing
+at point 11; `storm_error.synthetic.json` has the shape of the 400 the Ensemble API
+returns for an unknown model.

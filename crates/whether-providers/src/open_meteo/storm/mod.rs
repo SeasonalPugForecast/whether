@@ -201,7 +201,9 @@ impl HourlyBlock {
     }
 
     /// Removes column `key`, checked to have one value per time; values that
-    /// are not finite become `None`.
+    /// are not finite become `None`. None of the storm variables can be
+    /// negative, so values below zero become zero: ECMWF ensemble members
+    /// report hours of -0.1 mm.
     fn take_key(&mut self, key: &str) -> Result<Option<Vec<Option<f32>>>, ProviderError> {
         let Some(column) = self.columns.remove(key) else {
             return Ok(None);
@@ -214,7 +216,10 @@ impl HourlyBlock {
             )));
         }
         Ok(Some(
-            column.into_iter().map(|v| v.and_then(finite)).collect(),
+            column
+                .into_iter()
+                .map(|v| v.and_then(finite).map(|v| v.max(0.0)))
+                .collect(),
         ))
     }
 
@@ -316,12 +321,18 @@ mod tests {
     }
 
     #[test]
-    fn columns_lose_values_that_are_not_finite() {
+    fn columns_lose_values_that_are_not_finite_or_below_zero() {
         let mut block = HourlyBlock {
-            time: vec![0, 1],
-            columns: BTreeMap::from([("x_a".to_string(), vec![Some(f32::NAN), Some(1.0)])]),
+            time: vec![0, 1, 2],
+            columns: BTreeMap::from([(
+                "x_a".to_string(),
+                vec![Some(f32::NAN), Some(1.0), Some(-0.1)],
+            )]),
         };
-        assert_eq!(block.take("x", "a", false), Ok(Some(vec![None, Some(1.0)])));
+        assert_eq!(
+            block.take("x", "a", false),
+            Ok(Some(vec![None, Some(1.0), Some(0.0)]))
+        );
         assert_eq!(block.take("x", "a", false), Ok(None));
     }
 }
