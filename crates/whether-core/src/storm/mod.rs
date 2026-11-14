@@ -13,6 +13,7 @@ use crate::model::{OffsetChange, ResolvedLocation};
 use crate::scales::Level;
 use crate::time::{UnixTime, UtcOffset};
 
+pub mod analysis;
 #[cfg(any(test, feature = "testdata"))]
 pub mod testdata;
 
