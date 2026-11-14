@@ -12,16 +12,28 @@
 //! snapped to a quarter degree. Nothing secret goes into these URLs.
 
 mod meta;
+mod point;
 
+use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::vec;
+use alloc::vec::Vec;
 
 use serde::Deserialize;
+use whether_core::model::ResolvedLocation;
+use whether_core::storm::DETERMINISTIC_MODELS;
+use whether_core::time::{UnixTime, UtcOffset};
+use whether_core::units::finite;
 
+use super::models::MAX_MODELS;
 use crate::error::ProviderError;
 use crate::http::{Endpoint, HttpRequest, Method};
+use crate::url::{Coordinates, QueryBuilder};
 
 pub use meta::{meta_request, meta_url, parse_run_meta, parse_update_interval};
+pub use point::{
+    POINT_HOURLY, PointForecast, parse_points, parse_single_run, point_request, single_run_request,
+};
 
 /// The forecast API, for the point and grid requests.
 pub const FORECAST_URL: &str = "https://api.open-meteo.com/v1/forecast";
@@ -110,10 +122,117 @@ fn from_body<'a, T: Deserialize<'a>>(body: &'a [u8]) -> Result<T, ProviderError>
     serde_json::from_slice(body).map_err(|e| parse_failure(body, &e))
 }
 
+/// `base` with the place's rounded coordinates.
+fn at_place(base: &str, loc: &Coordinates) -> QueryBuilder {
+    let (lat, lon) = loc.fmt_param(COORDINATE_DECIMALS);
+    QueryBuilder::new(base)
+        .param("latitude", lat)
+        .param("longitude", lon)
+}
+
+/// The deterministic models a request carries: the first [`MAX_MODELS`] of
+/// `models`, or [`DETERMINISTIC_MODELS`] when it is empty.
+fn model_list<'a>(models: &[&'a str]) -> Vec<&'a str> {
+    if models.is_empty() {
+        DETERMINISTIC_MODELS.to_vec()
+    } else {
+        models.iter().take(MAX_MODELS).copied().collect()
+    }
+}
+
+/// One place's response from the forecast, ensemble or single-runs API.
+#[derive(Deserialize)]
+struct PlaceResponse {
+    latitude: f64,
+    longitude: f64,
+    elevation: Option<f32>,
+    #[serde(default)]
+    utc_offset_seconds: i32,
+    timezone: Option<String>,
+    timezone_abbreviation: Option<String>,
+    hourly: Option<HourlyBlock>,
+}
+
+impl PlaceResponse {
+    /// The place as Open-Meteo resolved it, without a name.
+    fn location(&self) -> ResolvedLocation {
+        ResolvedLocation {
+            name: String::new(),
+            region: None,
+            latitude: self.latitude,
+            longitude: self.longitude,
+            elevation_m: self.elevation.and_then(finite),
+            utc_offset: UtcOffset(self.utc_offset_seconds),
+            tz_name: self.timezone.clone(),
+            tz_abbrev: self.timezone_abbreviation.clone(),
+            station: None,
+        }
+    }
+
+    /// The hourly block, checked to have ascending times.
+    fn hourly(self) -> Result<HourlyBlock, ProviderError> {
+        let hourly = self
+            .hourly
+            .ok_or_else(|| ProviderError::Malformed("no hourly block".to_string()))?;
+        if hourly.time.windows(2).any(|w| w[0] >= w[1]) {
+            return Err(ProviderError::Malformed(
+                "hourly times are not ascending".to_string(),
+            ));
+        }
+        Ok(hourly)
+    }
+}
+
+/// An hourly block: the times and every column by key.
+#[derive(Deserialize)]
+struct HourlyBlock {
+    time: Vec<i64>,
+    #[serde(flatten)]
+    columns: BTreeMap<String, Vec<Option<f32>>>,
+}
+
+impl HourlyBlock {
+    fn times(&self) -> Vec<UnixTime> {
+        self.time.iter().copied().map(UnixTime).collect()
+    }
+
+    /// Removes column `key`, checked to have one value per time; values that
+    /// are not finite become `None`.
+    fn take_key(&mut self, key: &str) -> Result<Option<Vec<Option<f32>>>, ProviderError> {
+        let Some(column) = self.columns.remove(key) else {
+            return Ok(None);
+        };
+        if column.len() != self.time.len() {
+            return Err(ProviderError::Malformed(alloc::format!(
+                "hourly.{key} has {} values for {} time steps",
+                column.len(),
+                self.time.len()
+            )));
+        }
+        Ok(Some(
+            column.into_iter().map(|v| v.and_then(finite)).collect(),
+        ))
+    }
+
+    /// Removes `var`'s column for `model` (`<var>_<model>`). With `single`, a
+    /// request for one model, an unsuffixed `<var>` is the model's too.
+    fn take(
+        &mut self,
+        var: &str,
+        model: &str,
+        single: bool,
+    ) -> Result<Option<Vec<Option<f32>>>, ProviderError> {
+        match self.take_key(&alloc::format!("{var}_{model}"))? {
+            Some(column) => Ok(Some(column)),
+            None if single => self.take_key(var),
+            None => Ok(None),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc::vec::Vec;
     use whether_core::storm::{DETERMINISTIC_MODELS, ENSEMBLE_MODELS};
 
     #[test]
@@ -172,5 +291,33 @@ mod tests {
         assert!(matches!(r, Err(ProviderError::Malformed(_))));
         let r: Result<Vec<u8>, _> = from_body(b"<html>");
         assert!(matches!(r, Err(ProviderError::Malformed(_))));
+    }
+
+    #[test]
+    fn coordinates_are_rounded_to_two_decimals() {
+        let loc = Coordinates {
+            latitude: 40.7143,
+            longitude: -74.005_97,
+        };
+        assert_eq!(
+            at_place(FORECAST_URL, &loc).finish(),
+            "https://api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01"
+        );
+    }
+
+    #[test]
+    fn model_lists_default_and_stop_at_four() {
+        assert_eq!(model_list(&[]), DETERMINISTIC_MODELS);
+        assert_eq!(model_list(&["a", "b", "c", "d", "e"]), ["a", "b", "c", "d"]);
+    }
+
+    #[test]
+    fn columns_lose_values_that_are_not_finite() {
+        let mut block = HourlyBlock {
+            time: vec![0, 1],
+            columns: BTreeMap::from([("x_a".to_string(), vec![Some(f32::NAN), Some(1.0)])]),
+        };
+        assert_eq!(block.take("x", "a", false), Ok(Some(vec![None, Some(1.0)])));
+        assert_eq!(block.take("x", "a", false), Ok(None));
     }
 }
