@@ -16,6 +16,7 @@ use crate::time::{UnixTime, UtcOffset};
 pub mod analysis;
 #[cfg(any(test, feature = "testdata"))]
 pub mod testdata;
+pub mod track;
 
 /// The deterministic models compared by default, as Open-Meteo `models` ids.
 pub const DETERMINISTIC_MODELS: [&str; 4] = [
