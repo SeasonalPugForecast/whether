@@ -142,6 +142,19 @@ impl<'a> Formatter<'a> {
         }
     }
 
+    /// Snowfall given in centimetres of snow: "35.6 cm" where precipitation
+    /// shows in millimetres, "14.0 in" where it shows in inches.
+    pub fn snowfall(&self, cm: Option<f32>) -> Quantity {
+        let (unit, factor) = match self.presentation.units.precipitation {
+            PrecipUnit::Mm => ("cm", 1.0),
+            PrecipUnit::In => ("in", Mm(10.0).to(PrecipUnit::In)),
+        };
+        match cm {
+            Some(cm) => Self::quantity(cm * factor, 1, unit),
+            None => self.missing(unit),
+        }
+    }
+
     /// Visibility: one decimal below 10, whole numbers up to 50, then "> 50 km".
     pub fn distance(&self, v: Option<Meters>) -> Quantity {
         let u = self.presentation.units.distance;
@@ -296,6 +309,7 @@ mod tests {
             assert_eq!(f.wind(Some(Mps(3.6))).text, "13 km/h");
             assert_eq!(f.pressure(Some(Hpa(1_019.8))).text, "1020 hPa");
             assert_eq!(f.precipitation(Some(Mm(2.0))).text, "2.0 mm");
+            assert_eq!(f.snowfall(Some(35.6)).text, "35.6 cm");
             assert_eq!(f.distance(Some(Meters(8_000.0))).text, "8.0 km");
             assert_eq!(f.distance(Some(Meters(24_140.0))).text, "24 km");
             assert_eq!(f.distance(Some(Meters(60_000.0))).text, "> 50 km");
@@ -310,6 +324,8 @@ mod tests {
             assert_eq!(f.wind(Some(Mps(3.6))).text, "8 mph");
             assert_eq!(f.pressure(Some(Hpa(1_019.8))).text, "30.11 inHg");
             assert_eq!(f.precipitation(Some(Mm(2.0))).text, "0.08 in");
+            assert_eq!(f.snowfall(Some(35.6)).text, "14.0 in");
+            assert_eq!(f.snowfall(None).unit, "in");
             assert_eq!(f.distance(Some(Meters(24_140.0))).text, "15 mi");
         });
         let mut units = UnitPrefs::METRIC;

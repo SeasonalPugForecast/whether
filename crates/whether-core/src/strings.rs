@@ -250,6 +250,13 @@ texts! {
     StormNight => "storm_night", "{day} night";
     StormNone => "storm_none", "No storm in the next {n} days.";
     StormLowest => "storm_lowest", "Lowest pressure: {pressure} {when} ({model}).";
+    StormSpan => "storm_span", "{start} – {end}";
+    StormAgreementHigh => "storm_agreement_high", "High agreement";
+    StormAgreementMedium => "storm_agreement_medium", "Medium agreement";
+    StormAgreementLow => "storm_agreement_low", "Low agreement";
+    StormLowNearFar => "storm_low_near_far", "{near} brings the low within {near_distance} of {place}; {far} keeps it {far_distance} away.";
+    StormSnowRange => "storm_snow_range", "{wet} brings {wet_amount} of snow; {dry} {dry_amount}.";
+    StormRainRange => "storm_rain_range", "{wet} brings {wet_amount} of rain; {dry} {dry_amount}.";
 }
 
 impl Text {

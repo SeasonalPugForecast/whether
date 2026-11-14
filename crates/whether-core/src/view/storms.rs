@@ -13,13 +13,13 @@ use alloc::vec::Vec;
 use crate::models;
 use crate::presentation::PresentationConfig;
 use crate::scales::Level;
-use crate::storm::analysis::{self, StormEvent};
+use crate::storm::analysis::{self, AgreementResult, ModelEventStats, StormCenter, StormEvent};
 use crate::storm::track::{self, Track};
 use crate::storm::{Agreement, ModelRole, ModelRun, PastRun, StormOutlook};
 use crate::strings::{Strings, Text, weekday_text};
 use crate::time::{UnixTime, UtcOffset, Weekday};
-use crate::units::Hpa;
-use crate::view::format::{Formatter, Quantity};
+use crate::units::{Hpa, Meters, Mm, Mps, WindUnit};
+use crate::view::format::{Formatter, Quantity, number};
 
 const HOUR: i64 = 3_600;
 const DAY: i64 = 24 * HOUR;
@@ -75,7 +75,8 @@ pub struct ModelChipVm {
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct StormEventVm {
-    /// When it happens, e.g. "Sat night – Mon".
+    /// When the rain or snow falls (the window without its padding), e.g.
+    /// "Sat night – Sun night" or "Sun afternoon".
     pub title: String,
     /// The event window's start, for highlighting the scrubber.
     pub start: UnixTime,
@@ -83,8 +84,9 @@ pub struct StormEventVm {
     pub end: UnixTime,
     /// One row per model.
     pub rows: Vec<ModelRowVm>,
-    /// How closely the models agree.
-    pub agreement: AgreementVm,
+    /// How closely the models agree; `None` when fewer than two models have
+    /// a total or a storm centre to compare.
+    pub agreement: Option<AgreementVm>,
     /// The ensembles' spread for the event.
     pub ensembles: Vec<EnsembleVm>,
     /// How each model's totals changed over its recent runs.
@@ -127,7 +129,9 @@ pub struct AgreementVm {
     pub level: Level,
     /// Its name, e.g. "Low agreement".
     pub label: String,
-    /// Why, e.g. "Euro brings the low within 60 mi; GFS keeps it 200 mi out".
+    /// Why, e.g. "ECMWF brings the low within 55 mi of New York; GFS keeps
+    /// it 200 mi away.", or without storm centres "ECMWF brings 14 in of
+    /// snow; GFS 3 in."; empty when the models can't be told apart.
     pub sentence: String,
 }
 
@@ -310,7 +314,10 @@ pub fn build_storms(
         longitude: outlook.place.longitude,
         models: chips(outlook, presentation),
         summary: summary(outlook, &events, &f),
-        events: Vec::new(),
+        events: events
+            .iter()
+            .map(|e| event_vm(outlook, &found, e, &f))
+            .collect(),
         tracks: tracks(outlook, &found, events.first(), &f),
         steps: steps(outlook, &f, now),
         attribution: attribution(outlook),
@@ -342,6 +349,256 @@ fn day_part_label(f: &Formatter<'_>, t: UnixTime, offset: UtcOffset) -> String {
     let (day, part) = part_of_day(t, offset);
     f.strings
         .fmt(part, &[("day", f.strings.get(weekday_text(day)))])
+}
+
+/// "Sun 1 PM" or "Sun 13:00".
+fn day_time(f: &Formatter<'_>, t: UnixTime, offset: UtcOffset) -> String {
+    let day = f.strings.get(weekday_text(t.to_local(offset).weekday));
+    format!("{day} {}", f.hour_label(t, offset))
+}
+
+/// When the rain or snow of `event` falls: its window without the padding
+/// [`analysis::find_events`] adds, except where the window meets the edge of
+/// the data and was not padded.
+fn wet_span(outlook: &StormOutlook, event: &StormEvent) -> (UnixTime, UnixTime) {
+    let first = outlook.points.iter().filter_map(|p| p.times.first()).min();
+    let last = outlook.points.iter().filter_map(|p| p.times.last()).max();
+    let pad = analysis::EVENT_PAD_SECS;
+    let start = match first {
+        Some(first) if event.start.0 > first.0 - HOUR => event.start.0 + pad,
+        _ => event.start.0,
+    };
+    let end = match last {
+        Some(last) if event.end.0 < last.0 => event.end.0 - pad,
+        _ => event.end.0,
+    };
+    if end > start {
+        (UnixTime(start), UnixTime(end))
+    } else {
+        (event.start, event.end)
+    }
+}
+
+/// The span `[start, end)` in parts of days: "Sun afternoon", "Sun morning –
+/// Sun night", or for a day or more "Sat night – Mon" (the end's part is
+/// kept when it is a night, which runs into the next day).
+fn event_title(
+    f: &Formatter<'_>,
+    outlook: &StormOutlook,
+    start: UnixTime,
+    end: UnixTime,
+) -> String {
+    let last = UnixTime((end.0 - 1).max(start.0));
+    let long = end.0 - start.0 >= DAY;
+    let from = day_part_label(f, start, outlook.offset_at(start));
+    let (start_day, start_part) = part_of_day(start, outlook.offset_at(start));
+    let (end_day, end_part) = part_of_day(last, outlook.offset_at(last));
+    if (start_day, start_part) == (end_day, end_part) {
+        return from;
+    }
+    let to = if long && end_part != Text::StormNight {
+        f.strings.get(weekday_text(end_day)).to_string()
+    } else {
+        day_part_label(f, last, outlook.offset_at(last))
+    };
+    f.strings
+        .fmt(Text::StormSpan, &[("start", &from), ("end", &to)])
+}
+
+/// One event: its span, each model's numbers and how well they agree.
+fn event_vm(
+    outlook: &StormOutlook,
+    found: &[Vec<Track>],
+    event: &StormEvent,
+    f: &Formatter<'_>,
+) -> StormEventVm {
+    let centers = storm_centers(outlook, found, event);
+    let (wet_start, wet_end) = wet_span(outlook, event);
+    StormEventVm {
+        title: event_title(f, outlook, wet_start, wet_end),
+        start: event.start,
+        end: event.end,
+        rows: event.models.iter().map(|m| row(outlook, m, f)).collect(),
+        agreement: agreement_vm(outlook, event, &centers, f),
+        ensembles: Vec::new(),
+        run_to_run: Vec::new(),
+    }
+}
+
+/// One model's row: snow, precipitation, peak gust, the lowest pressure and
+/// when it comes, and the onset.
+fn row(outlook: &StormOutlook, stats: &ModelEventStats, f: &Formatter<'_>) -> ModelRowVm {
+    let at = |t: Option<UnixTime>| {
+        t.map_or_else(
+            || f.presentation.missing.clone(),
+            |t| day_time(f, t, outlook.offset_at(t)),
+        )
+    };
+    ModelRowVm {
+        model: stats.model.clone(),
+        short: models::short_name(&stats.model).to_string(),
+        role: ModelRole::of(&stats.model),
+        snow: f.snowfall(stats.total_snow_cm),
+        precipitation: f.precipitation(stats.total_mm.map(Mm)),
+        gust: f.wind(
+            stats
+                .peak_gust_kmh
+                .and_then(|kmh| Mps::from_unit(kmh, WindUnit::Kmh)),
+        ),
+        low: f.pressure(stats.lowest_hpa.map(Hpa)),
+        low_at: at(stats.lowest_at),
+        onset: at(stats.onset),
+    }
+}
+
+/// Where each grid's model puts the storm of `event`: the lowest point of
+/// its storm track inside the event window.
+fn storm_centers(
+    outlook: &StormOutlook,
+    found: &[Vec<Track>],
+    event: &StormEvent,
+) -> Vec<StormCenter> {
+    let place = place_of(outlook);
+    outlook
+        .grids
+        .iter()
+        .zip(found)
+        .filter_map(|(grid, lows)| {
+            let storm = track::storm_track(lows, place, (event.start, event.end))?;
+            let deepest = lows[storm]
+                .points
+                .iter()
+                .filter(|p| p.time >= event.start && p.time < event.end)
+                .reduce(|best, p| {
+                    if p.pressure_hpa < best.pressure_hpa {
+                        p
+                    } else {
+                        best
+                    }
+                })?;
+            Some(StormCenter {
+                model: grid.model.clone(),
+                latitude: deepest.latitude,
+                longitude: deepest.longitude,
+                time: deepest.time,
+                pressure_hpa: deepest.pressure_hpa,
+            })
+        })
+        .collect()
+}
+
+/// How sentences round an amount already in display units: whole numbers
+/// from 1 up and one decimal below, with one more decimal for inches of
+/// rain.
+fn rough(value: f32, unit: &str, snow: bool) -> String {
+    let extra = u8::from(!snow && unit == "in");
+    let decimals = u8::from(value < 1.0) + extra;
+    format!("{} {unit}", number(value, decimals))
+}
+
+/// Snowfall in centimetres, rounded for a sentence: "14 in".
+fn rough_snow(f: &Formatter<'_>, cm: f32) -> String {
+    let q = f.snowfall(Some(cm));
+    rough(q.value.unwrap_or(0.0), q.unit, true)
+}
+
+/// Precipitation in millimetres, rounded for a sentence: "1.7 in", "44 mm".
+fn rough_precipitation(f: &Formatter<'_>, mm: f32) -> String {
+    let q = f.precipitation(Some(Mm(mm)));
+    rough(q.value.unwrap_or(0.0), q.unit, false)
+}
+
+/// A distance in km, rounded for a sentence to the nearest 5 (or whole
+/// units under 10), in the presentation's distance unit: "55 mi".
+fn rough_distance(f: &Formatter<'_>, km: f64) -> String {
+    let unit = f.presentation.units.distance;
+    let value = Meters((km * 1_000.0) as f32).to(unit);
+    let rounded = if value < 10.0 {
+        libm::roundf(value)
+    } else {
+        libm::roundf(value / 5.0) * 5.0
+    };
+    format!("{} {}", number(rounded, 0), unit.symbol())
+}
+
+/// The models' agreement on `event`, with a sentence on where they differ.
+fn agreement_vm(
+    outlook: &StormOutlook,
+    event: &StormEvent,
+    centers: &[StormCenter],
+    f: &Formatter<'_>,
+) -> Option<AgreementVm> {
+    let (lat, lon) = place_of(outlook);
+    let result = analysis::agreement(&event.models, centers, lat, lon);
+    let verdict = result.verdict?;
+    let label = match verdict {
+        Agreement::High => Text::StormAgreementHigh,
+        Agreement::Medium => Text::StormAgreementMedium,
+        Agreement::Low => Text::StormAgreementLow,
+    };
+    Some(AgreementVm {
+        agreement: verdict,
+        level: verdict.level(),
+        label: f.strings.get(label).to_string(),
+        sentence: agreement_sentence(outlook, event, &result, f),
+    })
+}
+
+/// Which model brings the storm's centre closest to the place and which
+/// keeps it farthest; without centres, which brings the most snow (or rain)
+/// and which the least.
+fn agreement_sentence(
+    outlook: &StormOutlook,
+    event: &StormEvent,
+    result: &AgreementResult,
+    f: &Formatter<'_>,
+) -> String {
+    if let (Some(near), Some(far)) = (&result.closest, &result.farthest)
+        && near.model != far.model
+    {
+        return f.strings.fmt(
+            Text::StormLowNearFar,
+            &[
+                ("near", models::short_name(&near.model)),
+                ("near_distance", &rough_distance(f, near.distance_km)),
+                ("place", &outlook.place.name),
+                ("far", models::short_name(&far.model)),
+                ("far_distance", &rough_distance(f, far.distance_km)),
+            ],
+        );
+    }
+    if let (Some(wet), Some(dry)) = (&result.wettest, &result.driest)
+        && wet.model != dry.model
+    {
+        let snow_of = |model: &str| {
+            event
+                .models
+                .iter()
+                .find(|m| m.model == model)
+                .and_then(|m| m.total_snow_cm)
+        };
+        let (text, wet_amount, dry_amount) =
+            match (event.has_snow(), snow_of(&wet.model), snow_of(&dry.model)) {
+                (true, Some(a), Some(b)) => {
+                    (Text::StormSnowRange, rough_snow(f, a), rough_snow(f, b))
+                }
+                _ => (
+                    Text::StormRainRange,
+                    rough_precipitation(f, wet.total_mm),
+                    rough_precipitation(f, dry.total_mm),
+                ),
+            };
+        return f.strings.fmt(
+            text,
+            &[
+                ("wet", models::short_name(&wet.model)),
+                ("wet_amount", &wet_amount),
+                ("dry", models::short_name(&dry.model)),
+                ("dry_amount", &dry_amount),
+            ],
+        );
+    }
+    String::new()
 }
 
 /// "No storm in the next 10 days. Lowest pressure: 1004 hPa Tue night
@@ -663,6 +920,173 @@ mod tests {
         assert!(vm.summary.is_some_and(|s| s.contains(" inHg ")));
         let empty = build(&StormOutlook::default(), &PresentationConfig::default());
         assert_eq!(empty.summary, None);
+    }
+
+    #[test]
+    fn the_noreaster_rows_compare_the_models() {
+        let vm = build(&noreaster(), &imperial());
+        assert_eq!(vm.events.len(), 1);
+        let event = &vm.events[0];
+        assert_eq!(event.title, "Sat night – Sun night");
+        let rows: Vec<[&str; 7]> = event
+            .rows
+            .iter()
+            .map(|r| {
+                [
+                    r.short.as_str(),
+                    r.snow.text.as_str(),
+                    r.precipitation.text.as_str(),
+                    r.gust.text.as_str(),
+                    r.low.text.as_str(),
+                    r.low_at.as_str(),
+                    r.onset.as_str(),
+                ]
+            })
+            .collect();
+        assert_eq!(
+            rows,
+            [
+                [
+                    "ECMWF",
+                    "13.9 in",
+                    "1.72 in",
+                    "52 mph",
+                    "28.92 inHg",
+                    "Sun 1 PM",
+                    "Sat 10 PM"
+                ],
+                [
+                    "GFS",
+                    "3.0 in",
+                    "0.54 in",
+                    "29 mph",
+                    "29.50 inHg",
+                    "Sun 4 PM",
+                    "Sun 8 AM"
+                ],
+                [
+                    "GEM",
+                    "8.4 in",
+                    "1.17 in",
+                    "39 mph",
+                    "29.22 inHg",
+                    "Sun 1 PM",
+                    "Sun 12 AM"
+                ],
+                [
+                    "ICON",
+                    "10.9 in",
+                    "1.49 in",
+                    "47 mph",
+                    "29.04 inHg",
+                    "Sun 10 AM",
+                    "Sat 8 PM"
+                ],
+            ]
+        );
+        let metric = build(&noreaster(), &PresentationConfig::default());
+        let ecmwf = &metric.events[0].rows[0];
+        assert_eq!(
+            [
+                ecmwf.snow.text.as_str(),
+                ecmwf.precipitation.text.as_str(),
+                ecmwf.gust.text.as_str()
+            ],
+            ["35.2 cm", "43.6 mm", "84 km/h"]
+        );
+        assert_eq!(
+            (ecmwf.low.text.as_str(), ecmwf.low_at.as_str()),
+            ("979 hPa", "Sun 13:00")
+        );
+    }
+
+    #[test]
+    fn the_noreaster_agreement_is_low() {
+        let vm = build(&noreaster(), &imperial());
+        let agreement = vm.events[0].agreement.clone().unwrap();
+        assert_eq!(agreement.agreement, Agreement::Low);
+        assert_eq!(agreement.level, Level::Poor);
+        assert_eq!(agreement.label, "Low agreement");
+        assert_eq!(
+            agreement.sentence,
+            "ECMWF brings the low within 55 mi of New York; GFS keeps it 210 mi away."
+        );
+        let metric = build(&noreaster(), &PresentationConfig::default());
+        assert_eq!(
+            metric.events[0].agreement.clone().unwrap().sentence,
+            "ECMWF brings the low within 85 km of New York; GFS keeps it 340 km away."
+        );
+    }
+
+    #[test]
+    fn without_tracks_the_sentence_compares_totals() {
+        let mut outlook = noreaster();
+        outlook.grids.clear();
+        let vm = build(&outlook, &imperial());
+        assert_eq!(
+            vm.events[0].agreement.clone().unwrap().sentence,
+            "ECMWF brings 14 in of snow; GFS 3 in."
+        );
+        for point in &mut outlook.points {
+            point.snowfall_cm.iter_mut().for_each(|v| *v = Some(0.0));
+        }
+        let vm = build(&outlook, &PresentationConfig::default());
+        let agreement = vm.events[0].agreement.clone().unwrap();
+        assert_eq!(agreement.sentence, "ECMWF brings 44 mm of rain; GFS 14 mm.");
+        let vm = build(&outlook, &imperial());
+        assert_eq!(
+            vm.events[0].agreement.clone().unwrap().sentence,
+            "ECMWF brings 1.7 in of rain; GFS 0.54 in."
+        );
+    }
+
+    #[test]
+    fn missing_values_show_the_placeholder() {
+        let mut outlook = noreaster();
+        outlook.points.truncate(1);
+        outlook.grids.clear();
+        let point = &mut outlook.points[0];
+        point.gust_kmh.iter_mut().for_each(|v| *v = None);
+        point.pressure_hpa.iter_mut().for_each(|v| *v = None);
+        let vm = build(&outlook, &PresentationConfig::default());
+        let row = &vm.events[0].rows[0];
+        assert_eq!(
+            (
+                row.gust.text.as_str(),
+                row.low.text.as_str(),
+                row.low_at.as_str()
+            ),
+            ("—", "—", "—")
+        );
+        assert_eq!(row.gust.unit, "km/h");
+        // One model has nothing to agree with.
+        assert_eq!(vm.events[0].agreement, None);
+    }
+
+    #[test]
+    fn titles_name_parts_of_days() {
+        let p = PresentationConfig::default();
+        let s = Strings::default();
+        let f = Formatter::new(&p, &s);
+        let outlook = noreaster();
+        let title = |from: i64, to: i64| {
+            event_title(
+                &f,
+                &outlook,
+                UnixTime(STORM_PEAK.0 + from * HOUR),
+                UnixTime(STORM_PEAK.0 + to * HOUR),
+            )
+        };
+        // STORM_PEAK is Sunday 1 PM EST.
+        assert_eq!(title(0, 5), "Sun afternoon");
+        assert_eq!(title(-6, 5), "Sun morning – Sun afternoon");
+        assert_eq!(title(-6, 6), "Sun morning – Sun night");
+        assert_eq!(title(0, 12), "Sun afternoon – Sun night");
+        assert_eq!(title(-18, 18), "Sat night – Mon");
+        assert_eq!(title(-6, 29), "Sun morning – Mon");
+        assert_eq!(title(-6, 30), "Sun morning – Mon night");
+        assert_eq!(title(-18, 12), "Sat night – Sun night");
+        assert_eq!(title(0, 0), "Sun afternoon");
     }
 
     #[test]

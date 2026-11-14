@@ -271,6 +271,22 @@ const DE: Pack = &[
         Text::StormLowest,
         "Tiefster Luftdruck: {pressure} {when} ({model}).",
     ),
+    (Text::StormSpan, "{start} – {end}"),
+    (Text::StormAgreementHigh, "Hohe Übereinstimmung"),
+    (Text::StormAgreementMedium, "Mittlere Übereinstimmung"),
+    (Text::StormAgreementLow, "Geringe Übereinstimmung"),
+    (
+        Text::StormLowNearFar,
+        "{near} führt das Tief bis auf {near_distance} an {place} heran; bei {far} bleibt es {far_distance} entfernt.",
+    ),
+    (
+        Text::StormSnowRange,
+        "{wet} bringt {wet_amount} Schnee, {dry} {dry_amount}.",
+    ),
+    (
+        Text::StormRainRange,
+        "{wet} bringt {wet_amount} Regen, {dry} {dry_amount}.",
+    ),
 ];
 
 const ES: Pack = &[
@@ -528,6 +544,22 @@ const ES: Pack = &[
     (
         Text::StormLowest,
         "Presión mínima: {pressure} {when} ({model}).",
+    ),
+    (Text::StormSpan, "{start} – {end}"),
+    (Text::StormAgreementHigh, "Concordancia alta"),
+    (Text::StormAgreementMedium, "Concordancia media"),
+    (Text::StormAgreementLow, "Concordancia baja"),
+    (
+        Text::StormLowNearFar,
+        "{near} acerca la baja a {near_distance} de {place}; {far} la mantiene a {far_distance}.",
+    ),
+    (
+        Text::StormSnowRange,
+        "{wet} deja {wet_amount} de nieve; {dry}, {dry_amount}.",
+    ),
+    (
+        Text::StormRainRange,
+        "{wet} deja {wet_amount} de lluvia; {dry}, {dry_amount}.",
     ),
 ];
 
@@ -792,6 +824,22 @@ const FR: Pack = &[
     (
         Text::StormLowest,
         "Pression la plus basse : {pressure} {when} ({model}).",
+    ),
+    (Text::StormSpan, "{start} – {end}"),
+    (Text::StormAgreementHigh, "Accord élevé"),
+    (Text::StormAgreementMedium, "Accord moyen"),
+    (Text::StormAgreementLow, "Accord faible"),
+    (
+        Text::StormLowNearFar,
+        "{near} amène la dépression à {near_distance} de {place} ; {far} la garde à {far_distance}.",
+    ),
+    (
+        Text::StormSnowRange,
+        "{wet} apporte {wet_amount} de neige ; {dry}, {dry_amount}.",
+    ),
+    (
+        Text::StormRainRange,
+        "{wet} apporte {wet_amount} de pluie ; {dry}, {dry_amount}.",
     ),
 ];
 
