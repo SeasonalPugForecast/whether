@@ -13,6 +13,9 @@ use crate::model::{OffsetChange, ResolvedLocation};
 use crate::scales::Level;
 use crate::time::{UnixTime, UtcOffset};
 
+#[cfg(any(test, feature = "testdata"))]
+pub mod testdata;
+
 /// The deterministic models compared by default, as Open-Meteo `models` ids.
 pub const DETERMINISTIC_MODELS: [&str; 4] = [
     "ecmwf_ifs025",
