@@ -12,6 +12,7 @@
 //! snapped to a quarter degree. Nothing secret goes into these URLs.
 
 mod ensemble;
+mod grid;
 mod meta;
 mod point;
 
@@ -32,6 +33,7 @@ use crate::http::{Endpoint, HttpRequest, Method};
 use crate::url::{Coordinates, QueryBuilder};
 
 pub use ensemble::{ENSEMBLE_HOURLY, ensemble_request, parse_ensembles};
+pub use grid::{axes, grid_request, parse_grids};
 pub use meta::{meta_request, meta_url, parse_run_meta, parse_update_interval};
 pub use point::{
     POINT_HOURLY, PointForecast, parse_points, parse_single_run, point_request, single_run_request,
