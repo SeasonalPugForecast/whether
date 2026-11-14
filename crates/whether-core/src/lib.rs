@@ -20,6 +20,7 @@ pub mod presentation;
 pub mod regions;
 pub mod requirements;
 pub mod scales;
+pub mod storm;
 pub mod strings;
 pub mod sun;
 #[cfg(any(test, feature = "testdata"))]
