@@ -1,0 +1,195 @@
+---
+source: crates/whether-core/src/view/storms.rs
+expression: pretty(&vm)
+---
+{
+  "place": "New York",
+  "latitude": 40.7143,
+  "longitude": -74.00597,
+  "models": [
+    {
+      "model": "ecmwf_ifs025",
+      "label": "ECMWF IFS 0.25°",
+      "short": "ECMWF",
+      "role": "ecmwf",
+      "run": "12z"
+    },
+    {
+      "model": "gfs_seamless",
+      "label": "NOAA GFS seamless",
+      "short": "GFS",
+      "role": "gfs",
+      "run": "12z"
+    },
+    {
+      "model": "gem_seamless",
+      "label": "Canada GEM seamless",
+      "short": "GEM",
+      "role": "gem",
+      "run": "12z"
+    },
+    {
+      "model": "icon_seamless",
+      "label": "DWD ICON seamless",
+      "short": "ICON",
+      "role": "icon",
+      "run": "12z"
+    }
+  ],
+  "summary": "No storm in the next 10 days. Lowest pressure: 1017 hPa Sun night (ECMWF).",
+  "events": [],
+  "tracks": [],
+  "steps": [
+    {
+      "time": 1800036000,
+      "label": "Fri 13:00 · Now"
+    },
+    {
+      "time": 1800057600,
+      "label": "Fri 19:00 · +5 h"
+    },
+    {
+      "time": 1800079200,
+      "label": "Sat 01:00 · +11 h"
+    },
+    {
+      "time": 1800100800,
+      "label": "Sat 07:00 · +17 h"
+    },
+    {
+      "time": 1800122400,
+      "label": "Sat 13:00 · +23 h"
+    },
+    {
+      "time": 1800144000,
+      "label": "Sat 19:00 · +29 h"
+    },
+    {
+      "time": 1800165600,
+      "label": "Sun 01:00 · +35 h"
+    },
+    {
+      "time": 1800187200,
+      "label": "Sun 07:00 · +41 h"
+    },
+    {
+      "time": 1800208800,
+      "label": "Sun 13:00 · +47 h"
+    },
+    {
+      "time": 1800230400,
+      "label": "Sun 19:00 · +53 h"
+    },
+    {
+      "time": 1800252000,
+      "label": "Mon 01:00 · +59 h"
+    },
+    {
+      "time": 1800273600,
+      "label": "Mon 07:00 · +65 h"
+    },
+    {
+      "time": 1800295200,
+      "label": "Mon 13:00 · +71 h"
+    },
+    {
+      "time": 1800316800,
+      "label": "Mon 19:00 · +77 h"
+    },
+    {
+      "time": 1800338400,
+      "label": "Tue 01:00 · +83 h"
+    },
+    {
+      "time": 1800360000,
+      "label": "Tue 07:00 · +89 h"
+    },
+    {
+      "time": 1800381600,
+      "label": "Tue 13:00 · +95 h"
+    },
+    {
+      "time": 1800403200,
+      "label": "Tue 19:00 · +101 h"
+    },
+    {
+      "time": 1800424800,
+      "label": "Wed 01:00 · +107 h"
+    },
+    {
+      "time": 1800446400,
+      "label": "Wed 07:00 · +113 h"
+    },
+    {
+      "time": 1800468000,
+      "label": "Wed 13:00 · +119 h"
+    },
+    {
+      "time": 1800489600,
+      "label": "Wed 19:00 · +125 h"
+    },
+    {
+      "time": 1800511200,
+      "label": "Thu 01:00 · +131 h"
+    },
+    {
+      "time": 1800532800,
+      "label": "Thu 07:00 · +137 h"
+    },
+    {
+      "time": 1800554400,
+      "label": "Thu 13:00 · +143 h"
+    },
+    {
+      "time": 1800576000,
+      "label": "Thu 19:00 · +149 h"
+    },
+    {
+      "time": 1800597600,
+      "label": "Fri 01:00 · +155 h"
+    },
+    {
+      "time": 1800619200,
+      "label": "Fri 07:00 · +161 h"
+    },
+    {
+      "time": 1800640800,
+      "label": "Fri 13:00 · +167 h"
+    },
+    {
+      "time": 1800662400,
+      "label": "Fri 19:00 · +173 h"
+    },
+    {
+      "time": 1800684000,
+      "label": "Sat 01:00 · +179 h"
+    },
+    {
+      "time": 1800705600,
+      "label": "Sat 07:00 · +185 h"
+    },
+    {
+      "time": 1800727200,
+      "label": "Sat 13:00 · +191 h"
+    },
+    {
+      "time": 1800748800,
+      "label": "Sat 19:00 · +197 h"
+    },
+    {
+      "time": 1800770400,
+      "label": "Sun 01:00 · +203 h"
+    },
+    {
+      "time": 1800792000,
+      "label": "Sun 07:00 · +209 h"
+    },
+    {
+      "time": 1800813600,
+      "label": "Sun 13:00 · +215 h"
+    }
+  ],
+  "attribution": [
+    "Models: ECMWF (CC BY 4.0), NOAA GFS, ECCC GEM, DWD ICON via Open-Meteo.com (CC BY 4.0)"
+  ]
+}

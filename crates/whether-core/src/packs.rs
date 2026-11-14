@@ -287,6 +287,10 @@ const DE: Pack = &[
         Text::StormRainRange,
         "{wet} bringt {wet_amount} Regen, {dry} {dry_amount}.",
     ),
+    (
+        Text::StormMostMembers,
+        "Die meisten Läufe: {low}–{high} (Median {median})",
+    ),
 ];
 
 const ES: Pack = &[
@@ -560,6 +564,10 @@ const ES: Pack = &[
     (
         Text::StormRainRange,
         "{wet} deja {wet_amount} de lluvia; {dry}, {dry_amount}.",
+    ),
+    (
+        Text::StormMostMembers,
+        "La mayoría de los miembros: {low}–{high} (mediana {median})",
     ),
 ];
 
@@ -840,6 +848,10 @@ const FR: Pack = &[
     (
         Text::StormRainRange,
         "{wet} apporte {wet_amount} de pluie ; {dry}, {dry_amount}.",
+    ),
+    (
+        Text::StormMostMembers,
+        "La plupart des membres : {low}–{high} (médiane {median})",
     ),
 ];
 

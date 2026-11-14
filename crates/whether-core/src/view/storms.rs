@@ -13,7 +13,10 @@ use alloc::vec::Vec;
 use crate::models;
 use crate::presentation::PresentationConfig;
 use crate::scales::Level;
-use crate::storm::analysis::{self, AgreementResult, ModelEventStats, StormCenter, StormEvent};
+use crate::storm::analysis::{
+    self, AgreementResult, EnsembleEventStats, MemberSpread, ModelEventStats, Percentiles,
+    StormCenter, StormEvent,
+};
 use crate::storm::track::{self, Track};
 use crate::storm::{Agreement, ModelRole, ModelRun, PastRun, StormOutlook};
 use crate::strings::{Strings, Text, weekday_text};
@@ -148,7 +151,8 @@ pub struct EnsembleVm {
     pub role: ModelRole,
     /// How many members (the control included).
     pub members: u32,
-    /// The range in words, e.g. "Most members: 4–12 in".
+    /// The members' P10–P90 range and median in words, e.g. "Most members:
+    /// 4–12 in (median 7 in)".
     pub text: String,
     /// The 10th percentile of the members' totals.
     pub p10: Quantity,
@@ -170,7 +174,8 @@ pub struct PlumeVm {
     pub title: String,
     /// The values' unit symbol, e.g. "in".
     pub unit: &'static str,
-    /// The x positions, ascending (6 hours apart).
+    /// The x positions, ascending: the event's start, where every total is
+    /// zero, then the end of each 6-hour step, the last at the event's end.
     pub times: Vec<UnixTime>,
     /// Each member's running total, as `[member][time]`.
     pub members: Vec<Vec<Option<f32>>>,
@@ -234,7 +239,8 @@ pub struct RunToRunVm {
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct RunBarVm {
-    /// The run, e.g. "12z Fri".
+    /// The run's start in UTC with its day, e.g. "Fri 06z", or the missing
+    /// placeholder for a current run of unknown start.
     pub label: String,
     /// The run's initialisation time.
     pub init: UnixTime,
@@ -304,8 +310,6 @@ pub fn build_storms(
     now: UnixTime,
 ) -> StormsVm {
     let f = Formatter::new(presentation, strings);
-    // Earlier runs feed the run-to-run bars, which come with the events.
-    let _ = past;
     let events = analysis::find_events(outlook);
     let found: Vec<Vec<Track>> = outlook.grids.iter().map(track::track_lows).collect();
     StormsVm {
@@ -316,7 +320,7 @@ pub fn build_storms(
         summary: summary(outlook, &events, &f),
         events: events
             .iter()
-            .map(|e| event_vm(outlook, &found, e, &f))
+            .map(|e| event_vm(outlook, past, &found, e, &f))
             .collect(),
         tracks: tracks(outlook, &found, events.first(), &f),
         steps: steps(outlook, &f, now),
@@ -405,9 +409,11 @@ fn event_title(
         .fmt(Text::StormSpan, &[("start", &from), ("end", &to)])
 }
 
-/// One event: its span, each model's numbers and how well they agree.
+/// One event: its span, each model's numbers, how well they agree, the
+/// ensembles' spread and the totals of earlier runs.
 fn event_vm(
     outlook: &StormOutlook,
+    past: &[PastRun],
     found: &[Vec<Track>],
     event: &StormEvent,
     f: &Formatter<'_>,
@@ -420,9 +426,317 @@ fn event_vm(
         end: event.end,
         rows: event.models.iter().map(|m| row(outlook, m, f)).collect(),
         agreement: agreement_vm(outlook, event, &centers, f),
-        ensembles: Vec::new(),
-        run_to_run: Vec::new(),
+        ensembles: analysis::ensemble_stats(outlook, event)
+            .iter()
+            .map(|stats| ensemble_vm(outlook, event, stats, f))
+            .collect(),
+        run_to_run: run_to_run(outlook, past, event, f),
     }
+}
+
+/// An ensemble's short name: "ECMWF ENS", "GEFS".
+fn ensemble_short(model: &str) -> &str {
+    match ModelRole::of(model) {
+        ModelRole::Ecmwf => "ECMWF ENS",
+        ModelRole::Gfs => "GEFS",
+        _ => models::short_name(model),
+    }
+}
+
+/// `x` rounded to 2 decimals, for chart values.
+fn chart_value(x: f32) -> f32 {
+    let r = libm::roundf(x * 100.0) / 100.0;
+    if r == 0.0 { 0.0 } else { r }
+}
+
+/// What the event's amounts show: snow when it has snow, else
+/// precipitation.
+fn amount_title(f: &Formatter<'_>, snow: bool) -> String {
+    let text = if snow {
+        Text::PrecipSnow
+    } else {
+        Text::PrecipGeneric
+    };
+    f.strings.get(text).to_string()
+}
+
+/// One ensemble's spread over an event: snow when the event has snow, else
+/// precipitation.
+fn ensemble_vm(
+    outlook: &StormOutlook,
+    event: &StormEvent,
+    stats: &EnsembleEventStats,
+    f: &Formatter<'_>,
+) -> EnsembleVm {
+    let (spread, snow) = match &stats.snowfall {
+        Some(snowfall) => (snowfall, true),
+        None => (&stats.precipitation, false),
+    };
+    let unit = amount(f, snow, None).unit;
+    // Both conversions are linear from zero.
+    let factor = amount(f, snow, Some(1.0)).value.unwrap_or(1.0);
+    let quantile =
+        |pick: fn(&Percentiles) -> f32| amount(f, snow, spread.percentiles.as_ref().map(pick));
+    let text = spread.percentiles.map_or_else(
+        || f.presentation.missing.clone(),
+        |p| {
+            let (low, high, median) = (p.p10 * factor, p.p90 * factor, p.p50 * factor);
+            f.strings.fmt(
+                Text::StormMostMembers,
+                &[
+                    ("low", &rough_number(low, unit, snow)),
+                    (
+                        "high",
+                        &format!("{} {unit}", rough_number(high, unit, snow)),
+                    ),
+                    (
+                        "median",
+                        &format!("{} {unit}", rough_number(median, unit, snow)),
+                    ),
+                ],
+            )
+        },
+    );
+    EnsembleVm {
+        model: stats.model.clone(),
+        short: ensemble_short(&stats.model).to_string(),
+        role: ModelRole::of(&stats.model),
+        members: u32::try_from(stats.members).unwrap_or(u32::MAX),
+        text,
+        p10: quantile(|p| p.p10),
+        p50: quantile(|p| p.p50),
+        p90: quantile(|p| p.p90),
+        plume: plume_vm(outlook, event, stats, spread, snow, f),
+    }
+}
+
+/// The members' running totals as a chart from the event's start, where
+/// every total is zero, to its end.
+fn plume_vm(
+    outlook: &StormOutlook,
+    event: &StormEvent,
+    stats: &EnsembleEventStats,
+    spread: &MemberSpread,
+    snow: bool,
+    f: &Formatter<'_>,
+) -> PlumeVm {
+    let unit = amount(f, snow, None).unit;
+    let factor = amount(f, snow, Some(1.0)).value.unwrap_or(1.0);
+    let line = |values: &[Option<f32>]| -> Vec<Option<f32>> {
+        let start = values.iter().any(Option::is_some).then_some(0.0);
+        core::iter::once(start)
+            .chain(values.iter().map(|v| v.map(|v| chart_value(v * factor))))
+            .collect()
+    };
+    let members: Vec<Vec<Option<f32>>> = spread.plumes.iter().map(|m| line(m)).collect();
+    let top = members
+        .iter()
+        .flatten()
+        .flatten()
+        .fold(0.0_f32, |a, b| a.max(*b));
+    let (y_max, y_labels) = value_axis(top, unit);
+    let times: Vec<UnixTime> = core::iter::once(event.start)
+        .chain(stats.steps.iter().copied())
+        .collect();
+    let x_labels = match (times.first(), times.last()) {
+        (Some(from), Some(to)) => time_ticks(outlook, f, *from, *to),
+        _ => Vec::new(),
+    };
+    PlumeVm {
+        title: amount_title(f, snow),
+        unit,
+        times,
+        p10: line(&spread.plume_p10),
+        p50: line(&spread.plume_p50),
+        p90: line(&spread.plume_p90),
+        members,
+        y_max,
+        x_labels,
+        y_labels,
+    }
+}
+
+/// A round step for an axis from 0 to `max` with about 5 intervals: 1, 2,
+/// 2.5 or 5 times a power of ten (1 for an empty axis).
+fn nice_step(max: f32) -> f32 {
+    if !max.is_finite() || max <= 0.0 {
+        return 1.0;
+    }
+    let raw = max / 5.0;
+    let magnitude = libm::powf(10.0, libm::floorf(libm::log10f(raw)));
+    let norm = raw / magnitude;
+    let multiple = [1.0, 2.0, 2.5, 5.0]
+        .into_iter()
+        .find(|m| norm <= m * 1.000_1)
+        .unwrap_or(10.0);
+    multiple * magnitude
+}
+
+/// The decimals `step` needs: 0 for whole numbers, 1 for 2.5, 2 for 0.25.
+fn step_decimals(step: f32) -> u8 {
+    (0..3_u8)
+        .find(|d| {
+            let scaled = step * libm::powf(10.0, f32::from(*d));
+            libm::fabsf(scaled - libm::roundf(scaled)) < 1e-3
+        })
+        .unwrap_or(3)
+}
+
+/// A y axis from 0 past `max`: its top and its labelled ticks, in `unit`.
+fn value_axis(max: f32, unit: &'static str) -> (f32, Vec<ValueTickVm>) {
+    let step = nice_step(max);
+    let decimals = step_decimals(step);
+    let scale = libm::powf(10.0, f32::from(decimals));
+    let intervals = libm::ceilf(max / step - 1e-4).max(1.0) as u32;
+    let ticks = (0..=intervals)
+        .map(|i| {
+            let value = libm::roundf(step * i as f32 * scale) / scale;
+            ValueTickVm {
+                value,
+                text: format!("{} {unit}", number(value, decimals)),
+            }
+        })
+        .collect();
+    let top = libm::roundf(step * intervals as f32 * scale) / scale;
+    (top, ticks)
+}
+
+/// Whole local hours in `[from, to]` whose hour is a multiple of `every`.
+fn local_hours(outlook: &StormOutlook, from: UnixTime, to: UnixTime, every: u8) -> Vec<UnixTime> {
+    let offset = i64::from(outlook.offset_at(from).0);
+    let local = from.0 + offset;
+    let past = local.rem_euclid(HOUR);
+    let mut t = if past == 0 {
+        from.0
+    } else {
+        from.0 + HOUR - past
+    };
+    let mut out = Vec::new();
+    while t <= to.0 {
+        let time = UnixTime(t);
+        let at = time.to_local(outlook.offset_at(time));
+        if at.minute == 0 && at.hour.is_multiple_of(every) {
+            out.push(time);
+        }
+        t += HOUR;
+    }
+    out
+}
+
+/// Labels along a chart's time axis: the day at each local midnight, or
+/// with fewer than two midnights, the hour every 6 hours.
+fn time_ticks(
+    outlook: &StormOutlook,
+    f: &Formatter<'_>,
+    from: UnixTime,
+    to: UnixTime,
+) -> Vec<TimeTickVm> {
+    let midnights = local_hours(outlook, from, to, 24);
+    if midnights.len() >= 2 {
+        return midnights
+            .into_iter()
+            .map(|t| TimeTickVm {
+                time: t,
+                text: f
+                    .strings
+                    .get(weekday_text(t.to_local(outlook.offset_at(t)).weekday))
+                    .to_string(),
+            })
+            .collect();
+    }
+    local_hours(outlook, from, to, 6)
+        .into_iter()
+        .map(|t| TimeTickVm {
+            time: t,
+            text: f.hour_label(t, outlook.offset_at(t)),
+        })
+        .collect()
+}
+
+/// A run's start in UTC with its day: "Fri 06z".
+fn run_label(f: &Formatter<'_>, init: UnixTime) -> String {
+    let at = init.to_local(UtcOffset(0));
+    format!(
+        "{} {:02}z",
+        f.strings.get(weekday_text(at.weekday)),
+        at.hour
+    )
+}
+
+/// How each model's total for `event` changed over its earlier runs: the
+/// runs in `outlook.past_runs` and `past` whose window overlaps the event,
+/// oldest first, then the current run over the latest of those windows.
+fn run_to_run(
+    outlook: &StormOutlook,
+    past: &[PastRun],
+    event: &StormEvent,
+    f: &Formatter<'_>,
+) -> Vec<RunToRunVm> {
+    let snow = event.has_snow();
+    let unit = amount(f, snow, None).unit;
+    let mut out: Vec<RunToRunVm> = Vec::new();
+    for point in &outlook.points {
+        if out.iter().any(|r| r.model == point.model) {
+            continue;
+        }
+        let current = point.run.as_ref().map(|r| r.init);
+        let mut runs: Vec<&PastRun> = outlook
+            .past_runs
+            .iter()
+            .chain(past)
+            .filter(|r| {
+                r.model == point.model
+                    && r.window_start < event.end
+                    && r.window_end > event.start
+                    && current.is_none_or(|init| r.run.init < init)
+            })
+            .collect();
+        // A stable sort keeps the outlook's copy of a run first.
+        runs.sort_by_key(|r| r.run.init);
+        runs.dedup_by_key(|r| r.run.init);
+        let Some(latest) = runs.last() else {
+            continue;
+        };
+        let bar = |raw: Option<f32>, label: String, init: UnixTime, current: bool| {
+            let q = amount(f, snow, raw);
+            q.value.map(|value| RunBarVm {
+                label,
+                init,
+                value: chart_value(value),
+                text: q.text,
+                current,
+            })
+        };
+        let mut bars: Vec<RunBarVm> = runs
+            .iter()
+            .filter_map(|r| {
+                let raw = if snow {
+                    r.window_snow_cm
+                } else {
+                    r.window_total_mm
+                };
+                bar(raw, run_label(f, r.run.init), r.run.init, false)
+            })
+            .collect();
+        let (water, snowfall) =
+            analysis::window_totals(point, latest.window_start, latest.window_end);
+        let label = current.map_or_else(|| f.presentation.missing.clone(), |t| run_label(f, t));
+        let init = current.unwrap_or(outlook.fetched_at);
+        bars.extend(bar(if snow { snowfall } else { water }, label, init, true));
+        if bars.is_empty() {
+            continue;
+        }
+        let top = bars.iter().fold(0.0_f32, |a, b| a.max(b.value));
+        out.push(RunToRunVm {
+            model: point.model.clone(),
+            short: models::short_name(&point.model).to_string(),
+            role: ModelRole::of(&point.model),
+            title: amount_title(f, snow),
+            bars,
+            max: value_axis(top, unit).0,
+        });
+    }
+    out
 }
 
 /// One model's row: snow, precipitation, peak gust, the lowest pressure and
@@ -487,25 +801,29 @@ fn storm_centers(
         .collect()
 }
 
-/// How sentences round an amount already in display units: whole numbers
-/// from 1 up and one decimal below, with one more decimal for inches of
-/// rain.
-fn rough(value: f32, unit: &str, snow: bool) -> String {
+/// An event amount: snowfall from centimetres when `snow`, else
+/// precipitation from millimetres.
+fn amount(f: &Formatter<'_>, snow: bool, raw: Option<f32>) -> Quantity {
+    if snow {
+        f.snowfall(raw)
+    } else {
+        f.precipitation(raw.map(Mm))
+    }
+}
+
+/// How sentences round an amount in display units: whole numbers from 1
+/// up and one decimal below, with one more decimal for inches of rain.
+fn rough_number(value: f32, unit: &str, snow: bool) -> String {
     let extra = u8::from(!snow && unit == "in");
-    let decimals = u8::from(value < 1.0) + extra;
-    format!("{} {unit}", number(value, decimals))
+    number(value, u8::from(value < 1.0) + extra)
 }
 
-/// Snowfall in centimetres, rounded for a sentence: "14 in".
-fn rough_snow(f: &Formatter<'_>, cm: f32) -> String {
-    let q = f.snowfall(Some(cm));
-    rough(q.value.unwrap_or(0.0), q.unit, true)
-}
-
-/// Precipitation in millimetres, rounded for a sentence: "1.7 in", "44 mm".
-fn rough_precipitation(f: &Formatter<'_>, mm: f32) -> String {
-    let q = f.precipitation(Some(Mm(mm)));
-    rough(q.value.unwrap_or(0.0), q.unit, false)
+/// An amount rounded for a sentence: "14 in" of snow, "1.7 in" or "44 mm"
+/// of rain.
+fn rough_amount(f: &Formatter<'_>, snow: bool, raw: f32) -> String {
+    let q = amount(f, snow, Some(raw));
+    let value = q.value.unwrap_or(0.0);
+    format!("{} {}", rough_number(value, q.unit, snow), q.unit)
 }
 
 /// A distance in km, rounded for a sentence to the nearest 5 (or whole
@@ -579,13 +897,15 @@ fn agreement_sentence(
         };
         let (text, wet_amount, dry_amount) =
             match (event.has_snow(), snow_of(&wet.model), snow_of(&dry.model)) {
-                (true, Some(a), Some(b)) => {
-                    (Text::StormSnowRange, rough_snow(f, a), rough_snow(f, b))
-                }
+                (true, Some(a), Some(b)) => (
+                    Text::StormSnowRange,
+                    rough_amount(f, true, a),
+                    rough_amount(f, true, b),
+                ),
                 _ => (
                     Text::StormRainRange,
-                    rough_precipitation(f, wet.total_mm),
-                    rough_precipitation(f, dry.total_mm),
+                    rough_amount(f, false, wet.total_mm),
+                    rough_amount(f, false, dry.total_mm),
                 ),
             };
         return f.strings.fmt(
@@ -1061,6 +1381,208 @@ mod tests {
         assert_eq!(row.gust.unit, "km/h");
         // One model has nothing to agree with.
         assert_eq!(vm.events[0].agreement, None);
+    }
+
+    #[test]
+    fn ensembles_give_the_members_range_and_plume() {
+        let vm = build(&noreaster(), &imperial());
+        let ensembles = &vm.events[0].ensembles;
+        let summary: Vec<(&str, u32, &str)> = ensembles
+            .iter()
+            .map(|e| (e.short.as_str(), e.members, e.text.as_str()))
+            .collect();
+        assert_eq!(
+            summary,
+            [
+                ("ECMWF ENS", 51, "Most members: 6–18 in (median 12 in)"),
+                ("GEFS", 31, "Most members: 2–6 in (median 3 in)"),
+            ]
+        );
+        for e in ensembles {
+            let plume = &e.plume;
+            assert_eq!(plume.title, "Snow");
+            assert_eq!(plume.unit, "in");
+            assert_eq!(plume.members.len() as u32, e.members);
+            assert_eq!(plume.times[0], vm.events[0].start);
+            assert_eq!(plume.times.last().copied(), Some(vm.events[0].end));
+            for series in plume
+                .members
+                .iter()
+                .chain([&plume.p10, &plume.p50, &plume.p90])
+            {
+                assert_eq!(series.len(), plume.times.len());
+                assert_eq!(series[0], Some(0.0));
+                let values: Vec<f32> = series.iter().flatten().copied().collect();
+                assert!(values.windows(2).all(|w| w[0] <= w[1]), "{values:?}");
+                assert!(values.iter().all(|v| *v <= plume.y_max));
+            }
+            assert_eq!(
+                plume.p50.last().copied().flatten(),
+                e.p50.value.map(chart_value)
+            );
+            assert_eq!(plume.y_labels.last().map(|t| t.value), Some(plume.y_max));
+            let days: Vec<&str> = plume.x_labels.iter().map(|t| t.text.as_str()).collect();
+            assert_eq!(days, ["Sun", "Mon"]);
+        }
+        let ticks = |e: &EnsembleVm| -> Vec<String> {
+            e.plume.y_labels.iter().map(|t| t.text.clone()).collect()
+        };
+        assert_eq!(
+            ticks(&ensembles[0]),
+            ["0 in", "5 in", "10 in", "15 in", "20 in"]
+        );
+        assert_eq!(
+            ticks(&ensembles[1]),
+            ["0 in", "2 in", "4 in", "6 in", "8 in"]
+        );
+        assert_eq!(ensembles[0].p50.text, "12.0 in");
+    }
+
+    #[test]
+    fn run_to_run_bars_end_with_the_current_run() {
+        let vm = build(&noreaster(), &imperial());
+        let runs = &vm.events[0].run_to_run;
+        let models: Vec<&str> = runs.iter().map(|r| r.short.as_str()).collect();
+        assert_eq!(models, ["ECMWF", "GFS"]);
+        for r in runs {
+            assert_eq!(r.title, "Snow");
+            assert_eq!(r.bars.len(), 5);
+            assert!(r.bars.windows(2).all(|w| w[0].init < w[1].init));
+            assert_eq!(
+                r.bars.iter().map(|b| b.current).collect::<Vec<_>>(),
+                [false, false, false, false, true]
+            );
+            assert!(r.bars.iter().all(|b| b.value <= r.max));
+        }
+        let values = |r: &RunToRunVm| r.bars.iter().map(|b| b.value).collect::<Vec<_>>();
+        assert!(
+            values(&runs[0]).windows(2).all(|w| w[0] < w[1]),
+            "{:?}",
+            values(&runs[0])
+        );
+        assert!(
+            values(&runs[1]).windows(2).all(|w| w[0] > w[1]),
+            "{:?}",
+            values(&runs[1])
+        );
+        let labels: Vec<&str> = runs[0].bars.iter().map(|b| b.label.as_str()).collect();
+        assert_eq!(
+            labels,
+            ["Thu 12z", "Thu 18z", "Fri 00z", "Fri 06z", "Fri 12z"]
+        );
+        let texts: Vec<&str> = runs[0].bars.iter().map(|b| b.text.as_str()).collect();
+        assert_eq!(texts, ["5.5 in", "8.3 in", "11.0 in", "13.0 in", "13.9 in"]);
+        assert_eq!(runs[0].max, 15.0);
+    }
+
+    #[test]
+    fn run_to_run_merges_and_filters_earlier_runs() {
+        let mut outlook = noreaster();
+        let past = noreaster_past_runs();
+        // The outlook carries two of them already; `past` repeats them.
+        outlook.past_runs = past[..2].to_vec();
+        let vm = build(&outlook, &PresentationConfig::default());
+        assert_eq!(vm.events[0].run_to_run[0].bars.len(), 5);
+        // Runs for another window, or not before the current run, are left out.
+        let mut other = past.clone();
+        for run in &mut other {
+            run.window_start = UnixTime(run.window_start.0 + 7 * DAY);
+            run.window_end = UnixTime(run.window_end.0 + 7 * DAY);
+        }
+        let vm = build_storms(
+            &noreaster(),
+            &other,
+            &PresentationConfig::default(),
+            &Strings::default(),
+            STORM_NOW,
+        );
+        assert_eq!(vm.events[0].run_to_run, []);
+        let mut late = past;
+        for run in &mut late {
+            run.run.init = STORM_PEAK;
+        }
+        let vm = build_storms(
+            &noreaster(),
+            &late,
+            &PresentationConfig::default(),
+            &Strings::default(),
+            STORM_NOW,
+        );
+        assert_eq!(vm.events[0].run_to_run, []);
+    }
+
+    #[test]
+    fn axes_use_round_steps() {
+        let texts = |max: f32, unit| {
+            let (top, ticks) = value_axis(max, unit);
+            let labels: Vec<String> = ticks.into_iter().map(|t| t.text).collect();
+            (top, labels)
+        };
+        assert_eq!(
+            texts(17.3, "in"),
+            (
+                20.0,
+                ["0 in", "5 in", "10 in", "15 in", "20 in"]
+                    .map(String::from)
+                    .to_vec()
+            )
+        );
+        assert_eq!(texts(1.9, "in").0, 2.0);
+        assert_eq!(texts(1.9, "in").1[1], "0.5 in");
+        assert_eq!(texts(0.9, "in").1[1], "0.2 in");
+        assert_eq!(
+            texts(44.0, "mm").1.last().map(String::as_str),
+            Some("50 mm")
+        );
+        assert_eq!(
+            texts(0.0, "mm"),
+            (1.0, ["0 mm", "1 mm"].map(String::from).to_vec())
+        );
+        assert_eq!(nice_step(f32::NAN), 1.0);
+    }
+
+    #[test]
+    fn short_plumes_label_every_six_hours() {
+        let p = PresentationConfig::default();
+        let s = Strings::default();
+        let f = Formatter::new(&p, &s);
+        let outlook = noreaster();
+        let ticks = time_ticks(
+            &outlook,
+            &f,
+            UnixTime(STORM_PEAK.0),
+            UnixTime(STORM_PEAK.0 + 12 * HOUR),
+        );
+        let labels: Vec<&str> = ticks.iter().map(|t| t.text.as_str()).collect();
+        assert_eq!(labels, ["18:00", "00:00"]);
+    }
+
+    #[cfg(feature = "serde")]
+    fn pretty(vm: &StormsVm) -> String {
+        serde_json::to_string_pretty(vm).unwrap()
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn snapshot_noreaster_imperial() {
+        insta::assert_snapshot!(
+            "noreaster_imperial",
+            pretty(&build(&noreaster(), &imperial()))
+        );
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn snapshot_noreaster_metric() {
+        let vm = build(&noreaster(), &PresentationConfig::default());
+        insta::assert_snapshot!("noreaster_metric", pretty(&vm));
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn snapshot_dry_week() {
+        let vm = build(&dry_week(), &PresentationConfig::default());
+        insta::assert_snapshot!("dry_week", pretty(&vm));
     }
 
     #[test]
