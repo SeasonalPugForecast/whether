@@ -263,6 +263,14 @@ const DE: Pack = &[
     (Text::RadarHeavy, "Stark"),
     (Text::RadarVeryHeavy, "Sehr stark"),
     (Text::RadarExtreme, "Extrem"),
+    (Text::StormMorning, "{day} Vormittag"),
+    (Text::StormAfternoon, "{day} Nachmittag"),
+    (Text::StormNight, "{day} Nacht"),
+    (Text::StormNone, "Kein Sturmtief in den nächsten {n} Tagen."),
+    (
+        Text::StormLowest,
+        "Tiefster Luftdruck: {pressure} {when} ({model}).",
+    ),
 ];
 
 const ES: Pack = &[
@@ -513,6 +521,14 @@ const ES: Pack = &[
     (Text::RadarHeavy, "Fuerte"),
     (Text::RadarVeryHeavy, "Muy fuerte"),
     (Text::RadarExtreme, "Extrema"),
+    (Text::StormMorning, "{day} por la mañana"),
+    (Text::StormAfternoon, "{day} por la tarde"),
+    (Text::StormNight, "{day} por la noche"),
+    (Text::StormNone, "Sin temporales en los próximos {n} días."),
+    (
+        Text::StormLowest,
+        "Presión mínima: {pressure} {when} ({model}).",
+    ),
 ];
 
 const FR: Pack = &[
@@ -766,6 +782,17 @@ const FR: Pack = &[
     (Text::RadarHeavy, "Forte"),
     (Text::RadarVeryHeavy, "Très forte"),
     (Text::RadarExtreme, "Extrême"),
+    (Text::StormMorning, "{day} matin"),
+    (Text::StormAfternoon, "{day} après-midi"),
+    (Text::StormNight, "{day} soir"),
+    (
+        Text::StormNone,
+        "Pas de tempête dans les {n} prochains jours.",
+    ),
+    (
+        Text::StormLowest,
+        "Pression la plus basse : {pressure} {when} ({model}).",
+    ),
 ];
 
 #[cfg(test)]

@@ -13,10 +13,19 @@ use alloc::vec::Vec;
 use crate::models;
 use crate::presentation::PresentationConfig;
 use crate::scales::Level;
+use crate::storm::analysis::{self, StormEvent};
+use crate::storm::track::{self, Track};
 use crate::storm::{Agreement, ModelRole, ModelRun, PastRun, StormOutlook};
 use crate::strings::{Strings, Text, weekday_text};
-use crate::time::{UnixTime, UtcOffset};
+use crate::time::{UnixTime, UtcOffset, Weekday};
+use crate::units::Hpa;
 use crate::view::format::{Formatter, Quantity};
+
+const HOUR: i64 = 3_600;
+const DAY: i64 = 24 * HOUR;
+
+/// Besides the storm, the map shows at most this many other lows per model.
+pub const MAP_OTHER_TRACKS: usize = 2;
 
 /// Everything the storms screen shows.
 #[derive(Clone, Debug, PartialEq)]
@@ -278,6 +287,11 @@ pub struct StepVm {
 
 /// Builds the storms view of `outlook` at `now`. `past` adds earlier runs'
 /// totals to those the outlook carries, for the run-to-run bars.
+///
+/// The map shows, per pressure grid, the low that passes closest to the
+/// place during the first event (flagged [`TrackVm::is_storm`]) and up to
+/// [`MAP_OTHER_TRACKS`] other lows, deepest first. Without an event there is
+/// no storm, only the other lows, and `summary` says so.
 pub fn build_storms(
     outlook: &StormOutlook,
     past: &[PastRun],
@@ -288,17 +302,109 @@ pub fn build_storms(
     let f = Formatter::new(presentation, strings);
     // Earlier runs feed the run-to-run bars, which come with the events.
     let _ = past;
+    let events = analysis::find_events(outlook);
+    let found: Vec<Vec<Track>> = outlook.grids.iter().map(track::track_lows).collect();
     StormsVm {
         place: outlook.place.name.clone(),
         latitude: outlook.place.latitude,
         longitude: outlook.place.longitude,
         models: chips(outlook, presentation),
-        summary: None,
+        summary: summary(outlook, &events, &f),
         events: Vec::new(),
-        tracks: Vec::new(),
+        tracks: tracks(outlook, &found, events.first(), &f),
         steps: steps(outlook, &f, now),
         attribution: attribution(outlook),
     }
+}
+
+/// The place as `(latitude, longitude)`.
+fn place_of(outlook: &StormOutlook) -> (f64, f64) {
+    (outlook.place.latitude, outlook.place.longitude)
+}
+
+/// The day and the part of it a forecaster would name for `t`: morning
+/// (06–12), afternoon (12–18) or night (18–06, named after its evening).
+fn part_of_day(t: UnixTime, offset: UtcOffset) -> (Weekday, Text) {
+    let local = t.to_local(offset);
+    match local.hour {
+        0..=5 => (
+            UnixTime(t.0 - 6 * HOUR).to_local(offset).weekday,
+            Text::StormNight,
+        ),
+        6..=11 => (local.weekday, Text::StormMorning),
+        12..=17 => (local.weekday, Text::StormAfternoon),
+        _ => (local.weekday, Text::StormNight),
+    }
+}
+
+/// "Sun afternoon", "Tue night".
+fn day_part_label(f: &Formatter<'_>, t: UnixTime, offset: UtcOffset) -> String {
+    let (day, part) = part_of_day(t, offset);
+    f.strings
+        .fmt(part, &[("day", f.strings.get(weekday_text(day)))])
+}
+
+/// "No storm in the next 10 days. Lowest pressure: 1004 hPa Tue night
+/// (GFS).", when there is no event; `None` with events or without data.
+fn summary(outlook: &StormOutlook, events: &[StormEvent], f: &Formatter<'_>) -> Option<String> {
+    if !events.is_empty() {
+        return None;
+    }
+    let first = outlook
+        .points
+        .iter()
+        .filter_map(|p| p.times.first())
+        .min()?;
+    let last = outlook.points.iter().filter_map(|p| p.times.last()).max()?;
+    // Hourly amounts cover the hour before their time.
+    let days = ((last.0 - first.0 + HOUR + DAY / 2) / DAY).max(1);
+    let mut text = f.strings.fmt(Text::StormNone, &[("n", &days.to_string())]);
+    if let Some((model, hpa, at)) = analysis::deepest_low(outlook) {
+        text.push(' ');
+        text.push_str(&f.strings.fmt(
+            Text::StormLowest,
+            &[
+                ("pressure", &f.pressure(Some(Hpa(hpa))).text),
+                ("when", &day_part_label(f, at, outlook.offset_at(at))),
+                ("model", models::short_name(&model)),
+            ],
+        ));
+    }
+    Some(text)
+}
+
+/// The lows the map shows: per grid, in the outlook's order, the storm of
+/// `event` first, then the others (see [`track::keep_tracks`]).
+fn tracks(
+    outlook: &StormOutlook,
+    found: &[Vec<Track>],
+    event: Option<&StormEvent>,
+    f: &Formatter<'_>,
+) -> Vec<TrackVm> {
+    let place = place_of(outlook);
+    let mut out = Vec::new();
+    for (grid, lows) in outlook.grids.iter().zip(found) {
+        let storm = event.and_then(|e| track::storm_track(lows, place, (e.start, e.end)));
+        for (low, is_storm) in track::keep_tracks(lows, storm, MAP_OTHER_TRACKS) {
+            out.push(TrackVm {
+                model: grid.model.clone(),
+                short: models::short_name(&grid.model).to_string(),
+                role: ModelRole::of(&grid.model),
+                is_storm,
+                points: low
+                    .points
+                    .iter()
+                    .map(|p| TrackPointVm {
+                        latitude: p.latitude as f32,
+                        longitude: p.longitude as f32,
+                        time: p.time,
+                        pressure: f.pressure(Some(Hpa(p.pressure_hpa))),
+                    })
+                    .collect(),
+            });
+        }
+    }
+    out
 }
 
 /// The run's start in UTC, "12z".
@@ -427,8 +533,10 @@ mod tests {
     use super::*;
     use crate::presentation::TimeFormat;
     use crate::storm::testdata::{
-        GRID_STEP_SECS, STORM_NOW, dry_week, noreaster, noreaster_past_runs,
+        GRID_STEP_SECS, STORM_NOW, STORM_OFFSET, STORM_PEAK, dry_week, noreaster,
+        noreaster_past_runs,
     };
+    use crate::units::UnitPrefs;
 
     fn build(outlook: &StormOutlook, presentation: &PresentationConfig) -> StormsVm {
         build_storms(
@@ -468,8 +576,117 @@ mod tests {
             assert_eq!(vm.models[0].label, "ECMWF IFS 0.25°");
             assert_eq!(vm.place, "New York");
             assert!((vm.latitude - 40.7143).abs() < 1e-9);
-            assert!(vm.events.is_empty() && vm.tracks.is_empty());
         }
+    }
+
+    fn imperial() -> PresentationConfig {
+        PresentationConfig {
+            units: UnitPrefs::IMPERIAL,
+            time_format: TimeFormat::H12,
+            ..PresentationConfig::default()
+        }
+    }
+
+    #[test]
+    fn each_model_tracks_the_storm() {
+        let vm = build(&noreaster(), &imperial());
+        let storms: Vec<(&str, &str, bool)> = vm
+            .tracks
+            .iter()
+            .map(|t| (t.short.as_str(), t.role.key(), t.is_storm))
+            .collect();
+        assert_eq!(
+            storms,
+            [
+                ("ECMWF", "ecmwf", true),
+                ("GFS", "gfs", true),
+                ("GEM", "gem", true),
+                ("ICON", "icon", true),
+            ]
+        );
+        for track in &vm.tracks {
+            assert!(track.points.len() >= 3, "{}", track.model);
+            assert!(track.points.windows(2).all(|w| w[0].time < w[1].time));
+            // The lows travel northeast past the place.
+            let (first, last) = (&track.points[0], &track.points[track.points.len() - 1]);
+            assert!(last.latitude > first.latitude && last.longitude > first.longitude);
+        }
+        let deepest = |t: &TrackVm| {
+            t.points
+                .iter()
+                .filter_map(|p| p.pressure.value)
+                .fold(f32::INFINITY, f32::min)
+        };
+        // ECMWF's 978 hPa low is near 28.9 inHg; GFS's 990 hPa near 29.2.
+        assert!((deepest(&vm.tracks[0]) - 28.9).abs() < 0.1);
+        assert!((deepest(&vm.tracks[1]) - 29.25).abs() < 0.1);
+        assert!(vm.tracks[0].points[0].pressure.text.ends_with(" inHg"));
+        let metric = build(&noreaster(), &PresentationConfig::default());
+        assert!(metric.tracks[0].points[0].pressure.text.ends_with(" hPa"));
+        assert_eq!(vm.summary, None);
+    }
+
+    #[test]
+    fn other_lows_are_kept_without_an_event() {
+        let mut outlook = noreaster();
+        // The same lows, but no precipitation: no event, so no storm.
+        for point in &mut outlook.points {
+            point
+                .precipitation_mm
+                .iter_mut()
+                .for_each(|v| *v = Some(0.0));
+            point.snowfall_cm.iter_mut().for_each(|v| *v = Some(0.0));
+        }
+        let vm = build(&outlook, &PresentationConfig::default());
+        assert_eq!(vm.tracks.len(), 4);
+        assert!(vm.tracks.iter().all(|t| !t.is_storm));
+        let summary = vm.summary.unwrap_or_default();
+        assert!(
+            summary.starts_with("No storm in the next 10 days. Lowest pressure: 9"),
+            "{summary}"
+        );
+        assert!(summary.ends_with("Sun afternoon (ECMWF)."), "{summary}");
+    }
+
+    #[test]
+    fn a_dry_week_has_a_summary_and_no_storm() {
+        let vm = build(&dry_week(), &PresentationConfig::default());
+        assert_eq!(vm.events, []);
+        assert_eq!(vm.tracks, []);
+        let summary = vm.summary.unwrap_or_default();
+        assert!(
+            summary.starts_with("No storm in the next 10 days. Lowest pressure: 10"),
+            "{summary}"
+        );
+        assert!(summary.contains(" hPa "), "{summary}");
+        let vm = build(&dry_week(), &imperial());
+        assert!(vm.summary.is_some_and(|s| s.contains(" inHg ")));
+        let empty = build(&StormOutlook::default(), &PresentationConfig::default());
+        assert_eq!(empty.summary, None);
+    }
+
+    #[test]
+    fn parts_of_the_day_name_the_evening_for_the_night() {
+        let p = PresentationConfig::default();
+        let s = Strings::default();
+        let f = Formatter::new(&p, &s);
+        // STORM_PEAK is Sunday 1 PM EST.
+        let at =
+            |hours: i64| day_part_label(&f, UnixTime(STORM_PEAK.0 + hours * HOUR), STORM_OFFSET);
+        assert_eq!(at(0), "Sun afternoon");
+        assert_eq!(at(-2), "Sun morning");
+        assert_eq!(at(-8), "Sat night");
+        assert_eq!(at(-14), "Sat night");
+        assert_eq!(at(4), "Sun afternoon");
+        assert_eq!(at(5), "Sun night");
+        assert_eq!(at(16), "Sun night");
+        assert_eq!(at(17), "Mon morning");
+        let (de, _) = Strings::localized("de", &alloc::collections::BTreeMap::new());
+        let f = Formatter::new(&p, &de);
+        assert_eq!(
+            day_part_label(&f, STORM_PEAK, STORM_OFFSET),
+            "So Nachmittag"
+        );
     }
 
     #[test]

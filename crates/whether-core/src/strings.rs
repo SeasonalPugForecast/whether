@@ -245,6 +245,11 @@ texts! {
     RadarHeavy => "radar_heavy", "Heavy";
     RadarVeryHeavy => "radar_very_heavy", "Very heavy";
     RadarExtreme => "radar_extreme", "Extreme";
+    StormMorning => "storm_morning", "{day} morning";
+    StormAfternoon => "storm_afternoon", "{day} afternoon";
+    StormNight => "storm_night", "{day} night";
+    StormNone => "storm_none", "No storm in the next {n} days.";
+    StormLowest => "storm_lowest", "Lowest pressure: {pressure} {when} ({model}).";
 }
 
 impl Text {

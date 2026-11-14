@@ -29,7 +29,7 @@
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use crate::storm::{PressureGrid, wrap_longitude};
+use crate::storm::{PressureGrid, analysis, wrap_longitude};
 use crate::time::UnixTime;
 
 /// A low's centre must be under this sea-level pressure, in hPa.
@@ -44,7 +44,7 @@ pub const MIN_DEPTH_HPA: f32 = 1.0;
 pub const MAX_REFINE_CELLS: f64 = 0.5;
 
 /// The mean Earth radius used for distances, in km.
-pub const EARTH_RADIUS_KM: f64 = 6_371.0;
+pub const EARTH_RADIUS_KM: f64 = analysis::EARTH_RADIUS_KM;
 
 /// A low's centre at one time.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -60,15 +60,10 @@ pub struct TrackPoint {
 }
 
 /// The great-circle distance between two `(latitude, longitude)` points in
-/// degrees, in km (haversine on a sphere of [`EARTH_RADIUS_KM`]).
+/// degrees, in km (haversine on a sphere of [`EARTH_RADIUS_KM`]); the same
+/// as [`analysis::distance_km`].
 pub fn distance_km(a: (f64, f64), b: (f64, f64)) -> f64 {
-    let (lat1, lat2) = (a.0.to_radians(), b.0.to_radians());
-    let dlat = lat2 - lat1;
-    let dlon = (b.1 - a.1).to_radians();
-    let sin_dlat = libm::sin(dlat / 2.0);
-    let sin_dlon = libm::sin(dlon / 2.0);
-    let haversine = sin_dlat * sin_dlat + libm::cos(lat1) * libm::cos(lat2) * sin_dlon * sin_dlon;
-    2.0 * EARTH_RADIUS_KM * libm::asin(libm::sqrt(haversine.clamp(0.0, 1.0)))
+    analysis::distance_km(a.0, a.1, b.0, b.1)
 }
 
 /// The lows on `grid` at time index `step`, refined between grid points, in
@@ -446,6 +441,11 @@ mod tests {
         assert!((distance_km((60.0, 10.0), (60.0, 12.0)) - 111.195).abs() < 0.1);
         assert!(distance_km((40.7, -74.0), (40.7, -74.0)) < 1e-9);
         assert!((distance_km((-90.0, 0.0), (90.0, 0.0)) - 20_015.1).abs() < 0.1);
+        let (a, b) = ((40.7143, -74.006), (39.0, -71.0));
+        assert_eq!(
+            distance_km(a, b).to_bits(),
+            analysis::distance_km(a.0, a.1, b.0, b.1).to_bits()
+        );
     }
 
     #[test]
