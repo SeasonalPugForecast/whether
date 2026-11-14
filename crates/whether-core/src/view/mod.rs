@@ -8,6 +8,7 @@ pub mod format;
 mod history;
 mod outlook;
 mod radar;
+pub mod storms;
 mod summary;
 #[cfg(test)]
 mod tests;
@@ -19,6 +20,7 @@ pub use build::build_view;
 pub use format::{Formatter, Quantity};
 pub use history::plan_vm;
 pub use radar::radar_vm;
+pub use storms::{StormsVm, build_storms};
 
 use crate::condition::Condition;
 use crate::history::History;
