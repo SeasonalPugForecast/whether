@@ -5,7 +5,7 @@ import Foundation
 /// A tab the person using the app can hide and reorder. The Now tab is not one: it
 /// always shows, and first. The raw values are saved, so they never change.
 enum AppTabItem: String, ListedItem {
-    case hourly, days, radar, plan
+    case hourly, days, radar, plan, storms
 
     var title: String {
         switch self {
@@ -13,6 +13,7 @@ enum AppTabItem: String, ListedItem {
         case .days: "Days"
         case .radar: "Radar"
         case .plan: "Plan"
+        case .storms: "Storms"
         }
     }
 
@@ -22,10 +23,18 @@ enum AppTabItem: String, ListedItem {
         case .days: "calendar"
         case .radar: "globe.americas.fill"
         case .plan: "suitcase"
+        case .storms: "hurricane"
         }
     }
 
-    nonisolated var shownByDefault: Bool { true }
+    /// Storms starts hidden, on new installs and in tab lists saved before it existed,
+    /// so a tab bar doesn't change on its own; the tabs' editor shows it.
+    nonisolated var shownByDefault: Bool {
+        switch self {
+        case .storms: false
+        case .hourly, .days, .radar, .plan: true
+        }
+    }
 }
 
 typealias TabChoice = ItemChoice<AppTabItem>

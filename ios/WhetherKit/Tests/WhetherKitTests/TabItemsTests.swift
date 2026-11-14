@@ -9,10 +9,10 @@ final class TabItemsTests: XCTestCase {
         try JSONDecoder().decode(Preferences.self, from: Data(json.utf8))
     }
 
-    func testEveryTabAndCardShowsByDefault() {
+    func testEveryTabButStormsAndEveryCardShowsByDefault() {
         let prefs = Preferences()
-        XCTAssertEqual(prefs.tabs.map(\.item), [.hourly, .days, .radar, .plan])
-        XCTAssertTrue(prefs.tabs.allSatisfy(\.shown))
+        XCTAssertEqual(prefs.tabs.map(\.item), [.hourly, .days, .radar, .plan, .storms])
+        XCTAssertEqual(prefs.tabs.map(\.shown), [true, true, true, true, false], "a new install hides Storms")
         XCTAssertEqual(prefs.hourlyCards.map(\.item), [.graph, .hour, .sun])
         XCTAssertTrue(prefs.hourlyCards.allSatisfy(\.shown))
         XCTAssertEqual(prefs.daysCards.map(\.item), [.days, .history])
@@ -37,8 +37,8 @@ final class TabItemsTests: XCTestCase {
              "daysCards":[{"item":"history"}]}
             """#
         let prefs = try decode(json)
-        XCTAssertEqual(prefs.tabs.map(\.item), [.plan, .radar, .hourly, .days])
-        XCTAssertEqual(prefs.tabs.map(\.shown), [true, false, true, true], "a new tab shows")
+        XCTAssertEqual(prefs.tabs.map(\.item), [.plan, .radar, .hourly, .days, .storms])
+        XCTAssertEqual(prefs.tabs.map(\.shown), [true, false, true, true, false], "a new tab shows, Storms not")
         XCTAssertEqual(TabLayout.visible(prefs.tabs), [.plan, .hourly, .days])
         XCTAssertEqual(prefs.hourlyCards.map(\.item), [.sun, .graph, .hour])
         XCTAssertEqual(prefs.hourlyCards.map(\.shown), [false, true, true])
@@ -53,8 +53,26 @@ final class TabItemsTests: XCTestCase {
         prefs.daysCards.relocate(fromOffsets: IndexSet(integer: 1), toOffset: 0)
         let back = try decode(String(decoding: try JSONEncoder().encode(prefs), as: UTF8.self))
         XCTAssertEqual(back, prefs)
-        XCTAssertEqual(back.tabs.map(\.item), [.plan, .hourly, .days, .radar])
+        XCTAssertEqual(back.tabs.map(\.item), [.plan, .hourly, .days, .radar, .storms])
         XCTAssertFalse(back.tabs.isShown(.radar))
+    }
+
+    /// A tab list saved before Storms existed gains it at the end, hidden, and keeps
+    /// everything it had; switched on, it stays on.
+    func testStormsComesHiddenIntoAnOldTabList() throws {
+        let json = #"""
+            {"tabs":[{"item":"hourly","shown":true},{"item":"days","shown":false},
+                     {"item":"radar","shown":true},{"item":"plan","shown":true}]}
+            """#
+        var prefs = try decode(json)
+        XCTAssertEqual(prefs.tabs.map(\.item), [.hourly, .days, .radar, .plan, .storms])
+        XCTAssertEqual(prefs.tabs.map(\.shown), [true, false, true, true, false])
+        XCTAssertEqual(TabLayout.visible(prefs.tabs), [.hourly, .radar, .plan])
+        prefs.tabs.set(.storms, shown: true)
+        let back = try decode(String(decoding: try JSONEncoder().encode(prefs), as: UTF8.self))
+        XCTAssertEqual(TabLayout.visible(back.tabs), [.hourly, .radar, .plan, .storms])
+        XCTAssertEqual(AppTabItem.storms.title, "Storms")
+        XCTAssertEqual(AppTabItem.storms.symbol, "hurricane")
     }
 
     func testAHiddenTabFallsBackToNow() {
@@ -75,7 +93,8 @@ final class TabItemsTests: XCTestCase {
         let cards = HourlyCardChoice.arranged(by: ["sun", "bogus", "graph", "sun"])
         XCTAssertEqual(cards.map(\.item), [.sun, .graph, .hour])
         XCTAssertEqual(cards.map(\.shown), [true, true, false])
-        XCTAssertEqual(TabChoice.arranged(by: []).map(\.shown), [false, false, false, false])
+        XCTAssertEqual(TabChoice.arranged(by: []).map(\.shown), [false, false, false, false, false])
+        XCTAssertEqual(TabChoice.arranged(by: ["storms"]).shownItems() as [AppTabItem], [.storms])
         XCTAssertEqual(
             TabChoice.arranged(by: ["plan", "days"]).shownItems() as [AppTabItem], [.plan, .days])
     }

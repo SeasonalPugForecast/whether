@@ -14,7 +14,7 @@ struct ForecastView: View {
     @State private var editingSections = false
 
     enum AppTab: Hashable {
-        case now, hourly, days, radar, plan
+        case now, hourly, days, radar, plan, storms
 
         init(_ item: AppTabItem) {
             self =
@@ -23,6 +23,7 @@ struct ForecastView: View {
                 case .days: .days
                 case .radar: .radar
                 case .plan: .plan
+                case .storms: .storms
                 }
         }
 
@@ -34,6 +35,7 @@ struct ForecastView: View {
             case .days: .days
             case .radar: .radar
             case .plan: .plan
+            case .storms: .storms
             }
         }
     }
@@ -460,6 +462,9 @@ struct ForecastView: View {
                 .modifier(TopBar { header })
         case .plan:
             PlanTab(store: store)
+        case .storms:
+            StormsTab(store: store)
+                .modifier(TopBar { header })
         }
     }
 

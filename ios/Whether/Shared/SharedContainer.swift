@@ -20,6 +20,18 @@ enum SharedContainer {
         return dir
     }
 
+    /// The directory for data that can be fetched again (the storm outlooks): the App
+    /// Group's caches, else the app's own, which the system may empty.
+    static var cachesDirectory: URL {
+        let group = groupID.flatMap {
+            FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: $0)
+        }
+        let base = group?.appending(path: "Library/Caches", directoryHint: .isDirectory) ?? URL.cachesDirectory
+        let dir = base.appending(path: "whether", directoryHint: .isDirectory)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
     /// Whether the App Group is available (signed builds with the entitlement).
     static var isShared: Bool {
         groupID.flatMap {

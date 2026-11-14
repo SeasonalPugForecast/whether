@@ -22,6 +22,10 @@ public func userMessage(_ error: Error) -> (title: String, detail: String?) {
             return (
                 isOffline(message) ? "No connection" : "Couldn't find that place", message
             )
+        case .NoStorms(let summary):
+            return (
+                isOffline(summary) ? "No connection" : "The storm models didn't answer", summary
+            )
         case .Trip(let message):
             return (message, nil)
         case .Config(let message):
