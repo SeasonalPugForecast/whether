@@ -332,6 +332,12 @@ struct PlanEditor: View {
             return
         }
         let daysBack = max(c.dateComponents([.day], from: c.startOfDay(for: p.from), to: today).day ?? 0, 0)
+        // The days shown belong to the place and dates before: they go while these load,
+        // and stay gone if these can't be had (rows match by date alone).
+        forecast = [:]
+        observed = [:]
+        forecastCredit = nil
+        observedCredit = nil
         // A newer look-up took over while this one ran (the dates or the place moved).
         guard let view = await store.planForecast(at: p.place, daysBack: daysBack), !Task.isCancelled
         else { return }
