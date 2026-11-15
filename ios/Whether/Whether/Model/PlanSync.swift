@@ -281,6 +281,9 @@ struct PlanChange: Equatable {
     /// Whether the kept answer was for something else (it is cleared): the dates, the place
     /// or the years moved. A rename alone leaves it.
     var clearsAnswer: Bool { movedDates || movedPlace || changedYears }
+    /// Whether the others are told: the dates or the place moved. A new name or other years
+    /// alone sync quietly.
+    var isNews: Bool { movedDates || movedPlace }
 }
 
 /// The kind of sentence that announces a `PlanChange`, with the parts it is made of.
@@ -288,14 +291,11 @@ struct PlanChange: Equatable {
 /// the dates text the plan list already writes (`planDates`); this is the decision of
 /// which sentence, and what goes in it.
 enum PlanChangeKind: Equatable {
-    /// Only the dates moved: "Robin moved Summer at the shore to Jul 12–Jul 19, 2027".
+    /// The dates moved, not the place: "Robin moved Summer at the shore to Jul 12–Jul 19, 2027".
     case movedDates(from: PlanDay, to: PlanDay)
-    /// Only the place moved: "Robin moved Summer at the shore to Cape May".
+    /// The place moved, not the dates: "Robin moved Summer at the shore to Cape May".
     case movedPlace(to: String)
-    /// Only the name changed (the plan's old name): "Robin renamed Summer to Beach week".
-    case renamed(from: String)
-    /// Only the years looked back over changed, or more than one thing did: "Robin changed
-    /// Summer at the shore".
+    /// Both the dates and the place moved: "Robin changed Summer at the shore".
     case changed
 }
 
@@ -312,15 +312,15 @@ struct PlanChangeNotice: Equatable, Identifiable {
 }
 
 extension PlanChange {
-    /// Which sentence announces this change: one thing moved says what (dates, place, name);
-    /// the years alone, or several things at once, just say the plan changed.
+    /// Which sentence announces this change: the new dates, or the new place, when only one
+    /// of them moved; both at once just say the plan changed. A new name or other years with
+    /// them don't change the sentence (it names the plan as it is now).
     var kind: PlanChangeKind {
-        let things = [renamed, movedDates, movedPlace, changedYears].filter { $0 }.count
-        guard things == 1 else { return .changed }
-        if movedDates { return .movedDates(from: newFrom, to: newTo) }
-        if movedPlace { return .movedPlace(to: newPlace.name) }
-        if renamed { return .renamed(from: oldName) }
-        return .changed
+        switch (movedDates, movedPlace) {
+        case (true, false): .movedDates(from: newFrom, to: newTo)
+        case (false, true): .movedPlace(to: newPlace.name)
+        default: .changed
+        }
     }
 
     /// The name to announce: `nil` for "Someone" or no name.
@@ -329,23 +329,36 @@ extension PlanChange {
         return name.isEmpty || name == SharedPlan.someone ? nil : name
     }
 
-    /// The announcement for this change, or `nil` when `myName` made it (a change this person
-    /// made themselves, which came back from iCloud with another device's merge, is not news).
+    /// Whether `myName` made this change (one this person made themselves, which came back
+    /// from iCloud with another device's merge).
+    func isBy(_ myName: String?) -> Bool {
+        guard let myName, !myName.isEmpty else { return false }
+        return speaker == myName
+    }
+
+    /// The announcement for this change, or `nil` when it isn't news (only the name or the
+    /// years changed) or `myName` made it.
     func notice(ignoring myName: String?) -> PlanChangeNotice? {
-        if let myName, !myName.isEmpty, speaker == myName { return nil }
+        guard isNews, !isBy(myName) else { return nil }
         return PlanChangeNotice(planID: planID, who: speaker, planName: newName, kind: kind)
     }
 
     /// The announcements for what a sync changed, one per plan (a plan changed twice in one
-    /// sync is announced as its last change), in the order the plans first appear, leaving out
-    /// what `myName` changed.
+    /// sync is announced as its last change of dates or place), in the order the plans first
+    /// appear, leaving out what `myName` changed and what isn't news.
     static func notices(for changes: [PlanChange], ignoring myName: String?) -> [PlanChangeNotice] {
         var order: [UUID] = []
         var latest: [UUID: PlanChangeNotice] = [:]
         for change in changes {
-            guard let notice = change.notice(ignoring: myName) else {
+            if change.isBy(myName) {
                 // The latest change of the plan is this person's: nothing to say about it.
                 latest[change.planID] = nil
+                continue
+            }
+            guard let notice = change.notice(ignoring: myName) else {
+                // Someone renamed it, or changed the years, after moving it: the move is still
+                // the news, under the plan's new name.
+                latest[change.planID]?.planName = change.newName
                 continue
             }
             if latest[change.planID] == nil && !order.contains(change.planID) {

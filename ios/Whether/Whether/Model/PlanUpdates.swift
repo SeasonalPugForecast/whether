@@ -10,8 +10,8 @@ import UserNotifications
 
 extension PlanChangeNotice {
     /// "Robin moved Summer at the shore to Jul 12–Jul 19, 2027", "… to Cape May", "Robin
-    /// renamed Summer to Beach week", "Robin changed Summer at the shore". "Someone" when
-    /// iCloud gave no name. Dates are written as the plan list writes them (`planDates`).
+    /// changed Summer at the shore". "Someone" when iCloud gave no name. Dates are written as
+    /// the plan list writes them (`planDates`).
     var sentence: String {
         let who = who ?? SharedPlan.someone
         switch kind {
@@ -19,8 +19,6 @@ extension PlanChangeNotice {
             return "\(who) moved \(planName) to \(planDates(from: from, to: to))"
         case .movedPlace(let place):
             return "\(who) moved \(planName) to \(place)"
-        case .renamed(let old):
-            return "\(who) renamed \(old) to \(planName)"
         case .changed:
             return "\(who) changed \(planName)"
         }

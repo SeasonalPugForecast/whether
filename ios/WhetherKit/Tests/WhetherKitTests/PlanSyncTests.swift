@@ -413,32 +413,49 @@ final class PlanSyncTests: XCTestCase {
         XCTAssertEqual(try notice(plan(place: cape))?.kind, .movedPlace(to: "Cape May"))
     }
 
-    func testARenameKeepsTheOldNameAndAnnouncesTheNewOne() throws {
-        let result = try XCTUnwrap(notice(plan(name: "Beach week")))
-        XCTAssertEqual(result.kind, .renamed(from: "Summer at the shore"))
-        XCTAssertEqual(result.planName, "Beach week")
+    func testARenameOrOtherYearsAloneAreNotAnnounced() throws {
+        XCTAssertNil(try notice(plan(name: "Beach week")))
+        XCTAssertNil(try notice(plan(years: 10)))
+        XCTAssertNil(try notice(plan(name: "Beach week", years: 10)))
+        // They still sync, and the years still clear the kept answer.
+        let years = try XCTUnwrap(PlanChange(from: plan(), to: plan(years: 10), by: "Robin"))
+        XCTAssertFalse(years.isNews)
+        XCTAssertTrue(years.clearsAnswer)
     }
 
-    func testOnlyTheYearsOrSeveralThingsAreJustChanged() throws {
-        XCTAssertEqual(try notice(plan(years: 10))?.kind, .changed)
-        XCTAssertEqual(try notice(plan(from: july14, to: july21, years: 10))?.kind, .changed)
+    func testTheDatesOrThePlaceSayWhatMovedWhateverElseChanged() throws {
+        XCTAssertEqual(
+            try notice(plan(from: july14, to: july21, years: 10))?.kind,
+            .movedDates(from: july14, to: july21))
+        let renamed = try XCTUnwrap(notice(plan(name: "Beach week", from: july14, to: july21)))
+        XCTAssertEqual(renamed.kind, .movedDates(from: july14, to: july21))
+        XCTAssertEqual(renamed.planName, "Beach week", "the plan as it is called now")
+        XCTAssertEqual(try notice(plan(name: "Beach week", place: cape))?.kind, .movedPlace(to: "Cape May"))
+        XCTAssertEqual(try notice(plan(place: cape, years: 10))?.kind, .movedPlace(to: "Cape May"))
+    }
+
+    func testTheDatesAndThePlaceTogetherAreJustChanged() throws {
         XCTAssertEqual(try notice(plan(place: cape, from: july14, to: july21))?.kind, .changed)
-        XCTAssertEqual(try notice(plan(name: "Beach week", place: cape))?.kind, .changed)
+        XCTAssertEqual(
+            try notice(plan(name: "Beach week", place: cape, from: july14, to: july21, years: 10))?.kind,
+            .changed)
     }
 
     func testNoNameOrSomeoneIsAnonymous() throws {
-        XCTAssertNil(try notice(plan(years: 10), by: "Someone")?.who)
-        XCTAssertNil(try notice(plan(years: 10), by: "")?.who)
-        XCTAssertNil(try notice(plan(years: 10), by: "  ")?.who)
-        XCTAssertEqual(try notice(plan(years: 10), by: " Robin ")?.who, "Robin")
+        let moved = plan(place: cape)
+        XCTAssertNil(try notice(moved, by: "Someone")?.who)
+        XCTAssertNil(try notice(moved, by: "")?.who)
+        XCTAssertNil(try notice(moved, by: "  ")?.who)
+        XCTAssertEqual(try notice(moved, by: " Robin ")?.who, "Robin")
     }
 
     func testWhatThisPersonChangedIsNotAnnounced() throws {
-        XCTAssertNil(try notice(plan(years: 10), by: "Sam", me: "Sam"))
-        XCTAssertNotNil(try notice(plan(years: 10), by: "Robin", me: "Sam"))
+        let moved = plan(place: cape)
+        XCTAssertNil(try notice(moved, by: "Sam", me: "Sam"))
+        XCTAssertNotNil(try notice(moved, by: "Robin", me: "Sam"))
         // Without a name of their own, nobody is "me": "Someone" is announced.
-        XCTAssertNotNil(try notice(plan(years: 10), by: "Someone", me: nil))
-        XCTAssertNotNil(try notice(plan(years: 10), by: "Someone", me: ""))
+        XCTAssertNotNil(try notice(moved, by: "Someone", me: nil))
+        XCTAssertNotNil(try notice(moved, by: "Someone", me: ""))
     }
 
     func testOneNoticePerPlanInOrderLeavingOutMyOwn() throws {
@@ -452,7 +469,7 @@ final class PlanSyncTests: XCTestCase {
         }
         let changes = [
             try change(planID, plan(place: cape), by: "Robin"),
-            try change(other, plan(years: 5), by: "Alex"),
+            try change(other, plan(place: cape), by: "Alex"),
             try change(planID, plan(from: july14, to: july21), by: "Robin"),
         ]
         let notices = PlanChange.notices(for: changes, ignoring: nil)
@@ -462,6 +479,18 @@ final class PlanSyncTests: XCTestCase {
         let mine = PlanChange.notices(for: changes, ignoring: "Alex")
         XCTAssertEqual(mine.map(\.planID), [planID])
         XCTAssertTrue(PlanChange.notices(for: [], ignoring: nil).isEmpty)
+    }
+
+    func testAQuietChangeAfterAMoveKeepsTheMoveUnderTheNewName() throws {
+        let moved = try XCTUnwrap(PlanChange(from: plan(), to: plan(place: cape), by: "Robin"))
+        let renamed = try XCTUnwrap(
+            PlanChange(from: plan(place: cape), to: plan(name: "Beach week", place: cape), by: "Robin"))
+        let notices = PlanChange.notices(for: [moved, renamed], ignoring: nil)
+        XCTAssertEqual(notices.map(\.kind), [.movedPlace(to: "Cape May")])
+        XCTAssertEqual(notices.first?.planName, "Beach week")
+        // A rename alone, or other years alone, says nothing.
+        let years = try XCTUnwrap(PlanChange(from: plan(), to: plan(years: 5), by: "Robin"))
+        XCTAssertTrue(PlanChange.notices(for: [renamed, years], ignoring: nil).isEmpty)
     }
 
     func testPreferencesWithoutThePlanChangeSwitchTurnItOn() throws {
@@ -577,12 +606,12 @@ final class PlanSyncTests: XCTestCase {
     func testTheChangeMergedDuringASendIsAttributedToWhoMadeIt() throws {
         let sharing = participant(canEdit: true)
         let sent = plan(name: "Mine", sharing: sharing)
-        let theirs = shared(plan(years: 10, sharing: sharing), by: "Robin", at: later)
+        let theirs = shared(plan(from: july14, to: july21, sharing: sharing), by: "Robin", at: later)
         let kept = stored(base: plan(sharing: sharing), sent: sent, theirs: theirs)
         let outcome = sent.afterSend(of: sent, stored: kept, mergedWith: theirs)
         let change = try XCTUnwrap(outcome.change)
         XCTAssertEqual(change.who, "Robin")
-        XCTAssertTrue(change.changedYears)
+        XCTAssertTrue(change.movedDates)
         XCTAssertFalse(outcome.resend, "nothing of this device is left to send")
         XCTAssertEqual(
             PlanChange.notices(for: [change], ignoring: "Me").map(\.who), ["Robin"],
