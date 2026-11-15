@@ -84,4 +84,7 @@ struct WeatherWidgetIntent: WidgetConfigurationIntent {
             Summary("\(\.$place)")
         }
     }
+
+    /// The choices, as the widget's data reads them.
+    var setup: WidgetSetup { WidgetSetup(placeID: place?.id, content: show.content) }
 }

@@ -85,6 +85,16 @@ enum WidgetContent: String, CaseIterable, Sendable {
         case .today: 0
         }
     }
+
+    /// Days the large widget lists: five, after today for `today` (which shows
+    /// today above them); none for the hours.
+    var days: Int {
+        switch self {
+        case .overview: 5
+        case .today: 6
+        case .nextHour, .nextHours: 0
+        }
+    }
 }
 
 /// One entry of the widget's place picker.

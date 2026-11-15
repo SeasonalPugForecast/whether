@@ -2,9 +2,11 @@ import SwiftUI
 import WidgetKit
 import WhetherKit
 
-/// Refreshes every half hour; WidgetKit may stretch that. A widget placed before
-/// it was configurable has no stored choices: it gets the intent's defaults ("The
-/// app's", the overview), which is what it always showed.
+/// A timeline is an entry for now and one for each of the next hours, all from
+/// the same forecast, so the hours move on without a reload; it asks for a new
+/// one when the forecast turns old (`WidgetData.reloadDate`), and the app reloads
+/// it after each refresh. A widget placed before a choice existed gets the
+/// intent's default for it, which is what it always showed.
 struct WeatherProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> WeatherWidgetEntry {
         WeatherWidgetEntry(date: .now, view: nil)
@@ -13,20 +15,14 @@ struct WeatherProvider: AppIntentTimelineProvider {
     func snapshot(for configuration: WeatherWidgetIntent, in context: Context) async
         -> WeatherWidgetEntry
     {
-        await entry(for: configuration)
+        await WidgetData.entry(setup: configuration.setup)
     }
 
     func timeline(for configuration: WeatherWidgetIntent, in context: Context) async
         -> Timeline<WeatherWidgetEntry>
     {
-        Timeline(
-            entries: [await entry(for: configuration)],
-            policy: .after(.now.addingTimeInterval(30 * 60)))
-    }
-
-    private func entry(for configuration: WeatherWidgetIntent) async -> WeatherWidgetEntry {
-        await WidgetData.entry(
-            configuredPlaceID: configuration.place?.id, content: configuration.show.content)
+        let (entries, reload) = await WidgetData.timeline(setup: configuration.setup)
+        return Timeline(entries: entries, policy: .after(reload))
     }
 }
 
