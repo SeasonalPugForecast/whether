@@ -22,8 +22,29 @@ public struct StormsView: Decodable, Sendable, Hashable {
     public var tracks: [Track]
     /// The time scrubber's steps, oldest first.
     public var steps: [Step]
+    /// Active tropical cyclones from NHC, in the core's order; empty when there are none
+    /// (the core leaves the key out then, and earlier views lack it).
+    public var hurricanes: [Hurricane]
     /// The data credits: always shown.
     public var attribution: [String]
+
+    private enum CodingKeys: String, CodingKey {
+        case place, latitude, longitude, models, summary, events, tracks, steps, hurricanes, attribution
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        place = try c.decode(String.self, forKey: .place)
+        latitude = try c.decode(Double.self, forKey: .latitude)
+        longitude = try c.decode(Double.self, forKey: .longitude)
+        models = try c.decode([ModelChip].self, forKey: .models)
+        summary = try c.decodeIfPresent(String.self, forKey: .summary)
+        events = try c.decode([Event].self, forKey: .events)
+        tracks = try c.decode([Track].self, forKey: .tracks)
+        steps = try c.decode([Step].self, forKey: .steps)
+        hurricanes = try c.decodeIfPresent([Hurricane].self, forKey: .hurricanes) ?? []
+        attribution = try c.decode([String].self, forKey: .attribution)
+    }
 
     /// Decodes the core's JSON.
     public static func decode(_ json: String) throws -> StormsView {
@@ -199,6 +220,86 @@ extension StormsView {
         public var time: Int64
         public var label: String
     }
+
+    /// An active tropical cyclone from NHC: its advisory, NHC's official forecast
+    /// track, the guidance models' tracks, the observed track and the forecast cone.
+    public struct Hurricane: Decodable, Sendable, Hashable, Identifiable {
+        /// NHC's id: `al102026`.
+        public var id: String
+        /// "Josephine".
+        public var name: String
+        /// "Subtropical Storm Josephine", "Hurricane Sample · Category 2".
+        public var title: String
+        /// NHC's classification code: `HU`, `TS`, `STS`, `PTC`, …
+        public var classification: String
+        /// The Saffir–Simpson category of a hurricane (1–5).
+        public var category: Int?
+        /// The core's `Level`, to color it.
+        public var level: String
+        /// `atlantic`, `east_pacific` or `central_pacific`.
+        public var basin: String
+        /// The centre now.
+        public var latitude: Double
+        public var longitude: Double
+        /// The maximum sustained wind: "65 mph".
+        public var wind: Quantity
+        /// The central pressure: "29.18 inHg".
+        public var pressure: Quantity
+        /// "NE at 13 mph".
+        public var movement: String
+        /// "Advisory Thu 5:00 PM".
+        public var advisory: String
+        /// When the advisory was issued, Unix seconds.
+        public var advisoryTime: Int64
+        /// NHC's advisory page.
+        public var advisoryUrl: String?
+        /// "The forecast cone reaches New York Sun", when it does.
+        public var reaches: String?
+        /// NHC's official forecast track, oldest first.
+        public var official: [ForecastPoint]
+        /// The guidance models' tracks, in display order.
+        public var aids: [Aid]
+        /// The observed track, oldest first.
+        public var past: [MapPoint]
+        /// The forecast cone: a counter-clockwise ring, not closed.
+        public var cone: [Coordinate]
+    }
+
+    /// A point of NHC's official forecast track.
+    public struct ForecastPoint: Decodable, Sendable, Hashable {
+        public var latitude: Double
+        public var longitude: Double
+        public var time: Int64
+        /// The marker's label: "Thu 2 PM".
+        public var label: String
+        /// The forecast maximum wind: "75 mph".
+        public var wind: Quantity
+    }
+
+    /// One guidance model's track for a cyclone.
+    public struct Aid: Decodable, Sendable, Hashable, Identifiable {
+        /// The ATCF aid code: `AVNI`.
+        public var aid: String
+        /// "GFS", "UKMET", "Consensus".
+        public var short: String
+        /// `gfs`, `gem`, `ecmwf`, `ukmet`, `hafs`, `consensus` or `other`: its color and dash.
+        public var role: String
+        public var points: [MapPoint]
+        public var id: String { aid }
+    }
+
+    /// A track position at a time.
+    public struct MapPoint: Decodable, Sendable, Hashable {
+        public var latitude: Double
+        public var longitude: Double
+        public var time: Int64
+    }
+
+    /// A position on the map.
+    public struct Coordinate: Decodable, Sendable, Hashable {
+        public var latitude: Double
+        public var longitude: Double
+    }
 }
 
 /// The Now tab's "Storm ahead" card from the Rust core (`whether_core::view::StormAheadVm`),
@@ -217,13 +318,21 @@ public struct StormAhead: Decodable, Sendable, Hashable {
     public var start: Int64
     public var end: Int64
 
-    public init(title: String, line: String, level: String, agreement: String?, start: Int64, end: Int64) {
+    /// The NHC id of the hurricane the card warns of (`al102026`); `nil` for a storm
+    /// from the models (the core leaves it out then, and earlier cards lack it).
+    public var hurricane: String?
+
+    public init(
+        title: String, line: String, level: String, agreement: String?, start: Int64, end: Int64,
+        hurricane: String? = nil
+    ) {
         self.title = title
         self.line = line
         self.level = level
         self.agreement = agreement
         self.start = start
         self.end = end
+        self.hurricane = hurricane
     }
 
     /// Decodes the core's JSON.

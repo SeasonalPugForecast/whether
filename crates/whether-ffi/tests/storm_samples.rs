@@ -12,6 +12,8 @@ const APP: &str = "../../ios/Whether/Whether/Debug";
 const SWIFT_TESTS: &str = "../../ios/WhetherKit/Tests/WhetherKitTests/Resources";
 /// The core's insta snapshots of the storms view.
 const SNAPSHOTS: &str = "../whether-core/src/view/snapshots";
+/// The providers' insta snapshots of the storms view of NHC's recordings.
+const NHC_SNAPSHOTS: &str = "../whether-providers/tests/snapshots";
 
 fn path(dir: &str, file: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join(dir).join(file)
@@ -44,15 +46,19 @@ fn the_app_storm_samples_are_current() {
     check(&path(APP, "storms-dry-week.json"), &compact(&dry_week()));
 }
 
-/// The JSON of the core's insta snapshot `name` of the storms view.
-fn snapshot_body(name: &str) -> String {
-    let snapshot = std::fs::read_to_string(path(
-        SNAPSHOTS,
-        &format!("whether_core__view__storms__tests__{name}.snap"),
-    ))
-    .unwrap();
+/// The JSON of the insta snapshot `file` in `dir`.
+fn body(dir: &str, file: &str) -> String {
+    let snapshot = std::fs::read_to_string(path(dir, file)).unwrap();
     // `---`, the header, `---`, then the JSON.
     snapshot.splitn(3, "---\n").nth(2).unwrap().to_string()
+}
+
+/// The JSON of the core's insta snapshot `name` of the storms view.
+fn snapshot_body(name: &str) -> String {
+    body(
+        SNAPSHOTS,
+        &format!("whether_core__view__storms__tests__{name}.snap"),
+    )
 }
 
 #[test]
@@ -71,4 +77,26 @@ fn the_swift_storms_views_are_the_core_snapshots() {
         &path(SWIFT_TESTS, "storm-ahead-noreaster-imperial.json"),
         &snapshot_body("storm_ahead_noreaster_imperial"),
     );
+    // A hurricane's card.
+    check(
+        &path(SWIFT_TESTS, "storm-ahead-hurricane.json"),
+        &snapshot_body("storm_ahead_hurricane"),
+    );
+}
+
+#[test]
+fn the_swift_hurricane_views_are_the_nhc_snapshots() {
+    for name in [
+        "josephine_imperial",
+        "josephine_metric",
+        "josephine_storm_ahead",
+    ] {
+        check(
+            &path(
+                SWIFT_TESTS,
+                &format!("storms-{}.json", name.replace('_', "-")),
+            ),
+            &body(NHC_SNAPSHOTS, &format!("nhc__view__{name}.snap")),
+        );
+    }
 }

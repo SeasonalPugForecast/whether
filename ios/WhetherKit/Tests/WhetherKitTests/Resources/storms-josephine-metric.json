@@ -1,0 +1,629 @@
+{
+  "place": "New York",
+  "latitude": 40.7143,
+  "longitude": -74.00597,
+  "models": [],
+  "summary": null,
+  "events": [],
+  "tracks": [],
+  "hurricanes": [
+    {
+      "id": "al102026",
+      "name": "Josephine",
+      "title": "Subtropical Storm Josephine",
+      "classification": "STS",
+      "category": null,
+      "level": "poor",
+      "basin": "atlantic",
+      "latitude": 39.5,
+      "longitude": -66.8,
+      "wind": {
+        "value": 100.0,
+        "text": "100 km/h",
+        "unit": "km/h"
+      },
+      "pressure": {
+        "value": 988.0,
+        "text": "988 hPa",
+        "unit": "hPa"
+      },
+      "movement": "NE at 21 km/h",
+      "advisory": "Advisory Thu 17:00",
+      "advisory_time": 1792702800,
+      "advisory_url": "https://www.nhc.noaa.gov/text/MIATCPAT1.shtml",
+      "reaches": null,
+      "official": [
+        {
+          "latitude": 39.5,
+          "longitude": -66.8,
+          "time": 1792692000,
+          "label": "Thu 14:00",
+          "wind": {
+            "value": 100.0,
+            "text": "100 km/h",
+            "unit": "km/h"
+          }
+        },
+        {
+          "latitude": 40.0,
+          "longitude": -65.8,
+          "time": 1792702800,
+          "label": "Thu 17:00",
+          "wind": {
+            "value": 100.0,
+            "text": "100 km/h",
+            "unit": "km/h"
+          }
+        },
+        {
+          "latitude": 41.3,
+          "longitude": -62.7,
+          "time": 1792735200,
+          "label": "Fri 02:00",
+          "wind": {
+            "value": 120.0,
+            "text": "120 km/h",
+            "unit": "km/h"
+          }
+        },
+        {
+          "latitude": 42.9,
+          "longitude": -58.6,
+          "time": 1792778400,
+          "label": "Fri 14:00",
+          "wind": {
+            "value": 110.0,
+            "text": "110 km/h",
+            "unit": "km/h"
+          }
+        },
+        {
+          "latitude": 43.5,
+          "longitude": -55.9,
+          "time": 1792821600,
+          "label": "Sat 02:00",
+          "wind": {
+            "value": 100.0,
+            "text": "100 km/h",
+            "unit": "km/h"
+          }
+        },
+        {
+          "latitude": 43.8,
+          "longitude": -52.6,
+          "time": 1792864800,
+          "label": "Sat 14:00",
+          "wind": {
+            "value": 95.0,
+            "text": "95 km/h",
+            "unit": "km/h"
+          }
+        },
+        {
+          "latitude": 43.6,
+          "longitude": -48.0,
+          "time": 1792908000,
+          "label": "Sun 02:00",
+          "wind": {
+            "value": 85.0,
+            "text": "85 km/h",
+            "unit": "km/h"
+          }
+        }
+      ],
+      "aids": [
+        {
+          "aid": "AVNI",
+          "short": "GFS",
+          "role": "gfs",
+          "points": [
+            {
+              "latitude": 39.5,
+              "longitude": -66.8,
+              "time": 1792692000
+            },
+            {
+              "latitude": 41.0,
+              "longitude": -62.8,
+              "time": 1792735200
+            },
+            {
+              "latitude": 42.5,
+              "longitude": -59.1,
+              "time": 1792778400
+            },
+            {
+              "latitude": 43.1,
+              "longitude": -56.9,
+              "time": 1792821600
+            },
+            {
+              "latitude": 43.4,
+              "longitude": -54.3,
+              "time": 1792864800
+            },
+            {
+              "latitude": 43.1,
+              "longitude": -49.4,
+              "time": 1792908000
+            },
+            {
+              "latitude": 41.6,
+              "longitude": -41.5,
+              "time": 1792951200
+            },
+            {
+              "latitude": 41.1,
+              "longitude": -30.5,
+              "time": 1792994400
+            },
+            {
+              "latitude": 40.5,
+              "longitude": -19.6,
+              "time": 1793037600
+            }
+          ]
+        },
+        {
+          "aid": "CMCI",
+          "short": "GEM",
+          "role": "gem",
+          "points": [
+            {
+              "latitude": 39.5,
+              "longitude": -66.8,
+              "time": 1792692000
+            },
+            {
+              "latitude": 41.2,
+              "longitude": -62.6,
+              "time": 1792735200
+            },
+            {
+              "latitude": 42.8,
+              "longitude": -58.6,
+              "time": 1792778400
+            },
+            {
+              "latitude": 43.3,
+              "longitude": -56.1,
+              "time": 1792821600
+            },
+            {
+              "latitude": 43.4,
+              "longitude": -52.7,
+              "time": 1792864800
+            },
+            {
+              "latitude": 43.4,
+              "longitude": -46.7,
+              "time": 1792908000
+            },
+            {
+              "latitude": 42.7,
+              "longitude": -37.7,
+              "time": 1792951200
+            },
+            {
+              "latitude": 44.7,
+              "longitude": -26.2,
+              "time": 1792994400
+            },
+            {
+              "latitude": 51.2,
+              "longitude": -14.0,
+              "time": 1793037600
+            },
+            {
+              "latitude": 58.4,
+              "longitude": -0.1,
+              "time": 1793080800
+            },
+            {
+              "latitude": 65.5,
+              "longitude": 13.8,
+              "time": 1793124000
+            }
+          ]
+        },
+        {
+          "aid": "UKXI",
+          "short": "UKMET",
+          "role": "ukmet",
+          "points": [
+            {
+              "latitude": 39.5,
+              "longitude": -66.8,
+              "time": 1792692000
+            },
+            {
+              "latitude": 41.2,
+              "longitude": -62.7,
+              "time": 1792735200
+            },
+            {
+              "latitude": 42.8,
+              "longitude": -58.9,
+              "time": 1792778400
+            },
+            {
+              "latitude": 43.3,
+              "longitude": -56.7,
+              "time": 1792821600
+            },
+            {
+              "latitude": 43.3,
+              "longitude": -53.7,
+              "time": 1792864800
+            },
+            {
+              "latitude": 42.9,
+              "longitude": -48.6,
+              "time": 1792908000
+            },
+            {
+              "latitude": 40.9,
+              "longitude": -41.9,
+              "time": 1792951200
+            },
+            {
+              "latitude": 37.7,
+              "longitude": -35.2,
+              "time": 1792994400
+            },
+            {
+              "latitude": 35.6,
+              "longitude": -27.8,
+              "time": 1793037600
+            },
+            {
+              "latitude": 33.5,
+              "longitude": -20.5,
+              "time": 1793080800
+            }
+          ]
+        },
+        {
+          "aid": "HFAI",
+          "short": "HAFS",
+          "role": "hafs",
+          "points": [
+            {
+              "latitude": 39.5,
+              "longitude": -66.8,
+              "time": 1792692000
+            },
+            {
+              "latitude": 41.3,
+              "longitude": -62.4,
+              "time": 1792735200
+            },
+            {
+              "latitude": 43.0,
+              "longitude": -58.0,
+              "time": 1792778400
+            },
+            {
+              "latitude": 43.4,
+              "longitude": -55.2,
+              "time": 1792821600
+            },
+            {
+              "latitude": 43.9,
+              "longitude": -52.2,
+              "time": 1792864800
+            },
+            {
+              "latitude": 44.1,
+              "longitude": -47.0,
+              "time": 1792908000
+            },
+            {
+              "latitude": 44.2,
+              "longitude": -38.3,
+              "time": 1792951200
+            },
+            {
+              "latitude": 47.2,
+              "longitude": -28.5,
+              "time": 1792994400
+            },
+            {
+              "latitude": 52.8,
+              "longitude": -21.0,
+              "time": 1793037600
+            },
+            {
+              "latitude": 55.1,
+              "longitude": -13.3,
+              "time": 1793080800
+            },
+            {
+              "latitude": 57.3,
+              "longitude": -5.6,
+              "time": 1793124000
+            }
+          ]
+        },
+        {
+          "aid": "TVCN",
+          "short": "Consensus",
+          "role": "consensus",
+          "points": [
+            {
+              "latitude": 39.5,
+              "longitude": -66.8,
+              "time": 1792692000
+            },
+            {
+              "latitude": 41.3,
+              "longitude": -62.6,
+              "time": 1792735200
+            },
+            {
+              "latitude": 42.9,
+              "longitude": -58.7,
+              "time": 1792778400
+            },
+            {
+              "latitude": 43.4,
+              "longitude": -56.6,
+              "time": 1792821600
+            },
+            {
+              "latitude": 43.5,
+              "longitude": -54.1,
+              "time": 1792864800
+            },
+            {
+              "latitude": 43.3,
+              "longitude": -49.2,
+              "time": 1792908000
+            },
+            {
+              "latitude": 42.3,
+              "longitude": -41.6,
+              "time": 1792951200
+            },
+            {
+              "latitude": 42.8,
+              "longitude": -32.9,
+              "time": 1792994400
+            },
+            {
+              "latitude": 46.4,
+              "longitude": -21.9,
+              "time": 1793037600
+            }
+          ]
+        }
+      ],
+      "past": [
+        {
+          "latitude": 31.0,
+          "longitude": -71.4,
+          "time": 1792346400
+        },
+        {
+          "latitude": 31.8,
+          "longitude": -71.0,
+          "time": 1792368000
+        },
+        {
+          "latitude": 32.4,
+          "longitude": -70.9,
+          "time": 1792389600
+        },
+        {
+          "latitude": 32.9,
+          "longitude": -70.8,
+          "time": 1792411200
+        },
+        {
+          "latitude": 33.8,
+          "longitude": -70.6,
+          "time": 1792432800
+        },
+        {
+          "latitude": 35.3,
+          "longitude": -70.9,
+          "time": 1792454400
+        },
+        {
+          "latitude": 35.3,
+          "longitude": -70.5,
+          "time": 1792476000
+        },
+        {
+          "latitude": 35.6,
+          "longitude": -70.2,
+          "time": 1792497600
+        },
+        {
+          "latitude": 36.3,
+          "longitude": -69.4,
+          "time": 1792519200
+        },
+        {
+          "latitude": 36.6,
+          "longitude": -69.4,
+          "time": 1792540800
+        },
+        {
+          "latitude": 36.8,
+          "longitude": -69.4,
+          "time": 1792562400
+        },
+        {
+          "latitude": 36.9,
+          "longitude": -69.5,
+          "time": 1792584000
+        },
+        {
+          "latitude": 37.1,
+          "longitude": -69.6,
+          "time": 1792605600
+        },
+        {
+          "latitude": 37.5,
+          "longitude": -69.5,
+          "time": 1792627200
+        },
+        {
+          "latitude": 38.3,
+          "longitude": -68.9,
+          "time": 1792648800
+        },
+        {
+          "latitude": 38.9,
+          "longitude": -68.0,
+          "time": 1792670400
+        },
+        {
+          "latitude": 39.5,
+          "longitude": -66.8,
+          "time": 1792692000
+        }
+      ],
+      "cone": [
+        {
+          "latitude": 39.356,
+          "longitude": -66.694
+        },
+        {
+          "latitude": 39.794,
+          "longitude": -65.669
+        },
+        {
+          "latitude": 40.911,
+          "longitude": -62.503
+        },
+        {
+          "latitude": 42.257,
+          "longitude": -58.403
+        },
+        {
+          "latitude": 42.672,
+          "longitude": -55.869
+        },
+        {
+          "latitude": 42.763,
+          "longitude": -52.614
+        },
+        {
+          "latitude": 42.337,
+          "longitude": -48.281
+        },
+        {
+          "latitude": 42.321,
+          "longitude": -48.001
+        },
+        {
+          "latitude": 42.338,
+          "longitude": -47.716
+        },
+        {
+          "latitude": 42.392,
+          "longitude": -47.425
+        },
+        {
+          "latitude": 42.508,
+          "longitude": -47.089
+        },
+        {
+          "latitude": 42.688,
+          "longitude": -46.77
+        },
+        {
+          "latitude": 42.876,
+          "longitude": -46.55
+        },
+        {
+          "latitude": 43.07,
+          "longitude": -46.396
+        },
+        {
+          "latitude": 43.269,
+          "longitude": -46.295
+        },
+        {
+          "latitude": 43.575,
+          "longitude": -46.23
+        },
+        {
+          "latitude": 43.786,
+          "longitude": -46.245
+        },
+        {
+          "latitude": 44.001,
+          "longitude": -46.312
+        },
+        {
+          "latitude": 44.221,
+          "longitude": -46.444
+        },
+        {
+          "latitude": 44.53,
+          "longitude": -46.774
+        },
+        {
+          "latitude": 44.736,
+          "longitude": -47.178
+        },
+        {
+          "latitude": 44.819,
+          "longitude": -47.458
+        },
+        {
+          "latitude": 44.866,
+          "longitude": -47.744
+        },
+        {
+          "latitude": 44.827,
+          "longitude": -52.741
+        },
+        {
+          "latitude": 44.273,
+          "longitude": -56.263
+        },
+        {
+          "latitude": 43.482,
+          "longitude": -58.995
+        },
+        {
+          "latitude": 41.66,
+          "longitude": -62.98
+        },
+        {
+          "latitude": 40.177,
+          "longitude": -65.989
+        },
+        {
+          "latitude": 39.664,
+          "longitude": -66.876
+        },
+        {
+          "latitude": 39.567,
+          "longitude": -66.993
+        },
+        {
+          "latitude": 39.445,
+          "longitude": -67.004
+        },
+        {
+          "latitude": 39.408,
+          "longitude": -66.971
+        },
+        {
+          "latitude": 39.335,
+          "longitude": -66.826
+        }
+      ]
+    }
+  ],
+  "steps": [],
+  "attribution": [
+    "Model data via Open-Meteo.com (CC BY 4.0)",
+    "Hurricanes: NOAA National Hurricane Center"
+  ]
+}

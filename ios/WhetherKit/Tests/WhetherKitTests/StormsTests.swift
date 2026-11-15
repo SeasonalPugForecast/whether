@@ -4,8 +4,9 @@ import XCTest
 
 /// The storms view as the core writes it, and when the Storms tab fetches. The JSON
 /// resources are the core's snapshots of its synthetic New York outlooks (a
-/// nor'easter the models disagree on, in both unit systems, and a dry week), copied
-/// byte for byte; the Rust test `storm_samples.rs` keeps them current.
+/// nor'easter the models disagree on, in both unit systems, and a dry week) and of
+/// Josephine from NHC's recordings, copied byte for byte; the Rust test
+/// `storm_samples.rs` keeps them current.
 final class StormsTests: XCTestCase {
     private func resource(_ name: String) throws -> String {
         let url = try XCTUnwrap(
@@ -73,6 +74,71 @@ final class StormsTests: XCTestCase {
         XCTAssertTrue(view.summary?.hasPrefix("No storm in the next 10 days.") == true)
         XCTAssertFalse(view.steps.isEmpty)
         XCTAssertFalse(view.attribution.isEmpty)
+        XCTAssertEqual(view.hurricanes, [], "no hurricanes key: none")
+    }
+
+    // MARK: Hurricanes
+
+    /// Josephine (AL10 2026) from NHC's recorded decks, seen from New York: the core's
+    /// snapshots, copied byte for byte.
+    func testJosephineDecodes() throws {
+        let view = try StormsView.decode(resource("storms-josephine-imperial"))
+        XCTAssertEqual(view.events, [])
+        XCTAssertEqual(view.tracks, [])
+        XCTAssertEqual(view.steps, [])
+        let h = try XCTUnwrap(view.hurricanes.first)
+        XCTAssertEqual(view.hurricanes.count, 1)
+        XCTAssertEqual(h.id, "al102026")
+        XCTAssertEqual(h.name, "Josephine")
+        XCTAssertEqual(h.title, "Subtropical Storm Josephine")
+        XCTAssertEqual(h.classification, "STS")
+        XCTAssertNil(h.category)
+        XCTAssertEqual(h.level, "poor")
+        XCTAssertEqual(h.basin, "atlantic")
+        XCTAssertEqual(h.latitude, 39.5, accuracy: 0.001)
+        XCTAssertEqual(h.longitude, -66.8, accuracy: 0.001)
+        XCTAssertEqual(h.wind.text, "65 mph")
+        XCTAssertEqual(h.pressure.text, "29.18 inHg")
+        XCTAssertEqual(h.movement, "NE at 13 mph")
+        XCTAssertEqual(h.advisory, "Advisory Thu 5:00 PM")
+        XCTAssertEqual(h.advisoryTime, 1_792_702_800)
+        XCTAssertEqual(h.advisoryUrl, "https://www.nhc.noaa.gov/text/MIATCPAT1.shtml")
+        XCTAssertNil(h.reaches, "New York is far behind her")
+        XCTAssertEqual(
+            h.official.map(\.label), ["Thu 2 PM", "Thu 5 PM", "Fri 2 AM", "Fri 2 PM", "Sat 2 AM", "Sat 2 PM", "Sun 2 AM"])
+        XCTAssertEqual(h.official[2].wind.text, "75 mph")
+        XCTAssertEqual(h.aids.map(\.short), ["GFS", "GEM", "UKMET", "HAFS", "Consensus"])
+        XCTAssertEqual(h.aids.map(\.role), ["gfs", "gem", "ukmet", "hafs", "consensus"])
+        XCTAssertEqual(h.aids.map(\.id), ["AVNI", "CMCI", "UKXI", "HFAI", "TVCN"])
+        for aid in h.aids {
+            XCTAssertTrue(zip(aid.points, aid.points.dropFirst()).allSatisfy { $0.time < $1.time }, aid.short)
+        }
+        XCTAssertEqual(h.past.count, 17)
+        XCTAssertEqual(h.past.last?.latitude ?? 0, 39.5, accuracy: 0.001)
+        XCTAssertEqual(h.cone.count, 33)
+        XCTAssertEqual(view.attribution.last, "Hurricanes: NOAA National Hurricane Center")
+    }
+
+    func testJosephineInMetric() throws {
+        let h = try XCTUnwrap(StormsView.decode(resource("storms-josephine-metric")).hurricanes.first)
+        XCTAssertEqual(h.wind.text, "100 km/h")
+        XCTAssertEqual(h.wind.unit, "km/h")
+        XCTAssertEqual(h.pressure.text, "988 hPa")
+    }
+
+    func testAHurricanesCardNamesIt() throws {
+        let card = try StormAhead.decode(resource("storms-josephine-storm-ahead"))
+        XCTAssertEqual(card.title, "Subtropical Storm Josephine")
+        XCTAssertEqual(card.line, "The forecast cone reaches Test Point Fri")
+        XCTAssertEqual(card.level, "poor")
+        XCTAssertNil(card.agreement)
+        XCTAssertEqual(card.hurricane, "al102026")
+        let sample = try StormAhead.decode(resource("storm-ahead-hurricane"))
+        XCTAssertEqual(sample.title, "Hurricane Sample")
+        XCTAssertEqual(sample.line, "The forecast cone reaches New York Sun")
+        XCTAssertEqual(sample.level, "very_poor")
+        XCTAssertEqual(sample.hurricane, "al992027")
+        XCTAssertNil(try StormAhead.decode(resource("storm-ahead-noreaster-imperial")).hurricane, "a storm from the models")
     }
 
     // MARK: Refresh rules
