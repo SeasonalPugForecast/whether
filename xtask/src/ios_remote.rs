@@ -649,6 +649,23 @@ const SHOTS: &[(&str, &str)] = &[
         "plan-unsent",
         "-seed -tab plan -trip 2027-07-12:2027-07-19:30 -sharedPlan owner -unsentPlan",
     ),
+    // The Storms tab with a built-in outlook at its own time (no request): the
+    // nor'easter on the sky, its plumes and run-to-run bars, then on the plain
+    // background dark and light, and the dry week.
+    ("storms", "-seed -storms -show storms"),
+    (
+        "storms-charts",
+        "-seed -storms -show storms -scrollTo storms-plumes",
+    ),
+    (
+        "storms-dark",
+        "-seed -storms -show storms -plain -appearance dark",
+    ),
+    (
+        "storms-light",
+        "-seed -storms -show storms -plain -appearance light",
+    ),
+    ("storms-dry", "-seed -storms dry -show storms"),
     ("places", "-seed -show places -search Brooklyn"),
     ("settings", "-seed -show settings"),
     // Customize: every editor in one place; the question before "Restore all
@@ -1817,6 +1834,26 @@ mod tests {
         let count = names.len();
         names.dedup();
         assert_eq!(names.len(), count);
+    }
+
+    #[test]
+    fn storms_shots_open_the_tab_with_a_built_in_outlook() {
+        let launch = |name: &str| SHOTS.iter().find(|(n, _)| *n == name).map(|(_, l)| *l);
+        for name in [
+            "storms",
+            "storms-charts",
+            "storms-dark",
+            "storms-light",
+            "storms-dry",
+        ] {
+            let line = launch(name).unwrap_or_default();
+            assert!(
+                line.contains("-storms") && line.contains("-show storms"),
+                "{name}: {line}"
+            );
+        }
+        assert!(launch("storms-dark").is_some_and(|l| l.contains("-appearance dark")));
+        assert!(launch("storms-dry").is_some_and(|l| l.contains("-storms dry")));
     }
 
     #[test]
