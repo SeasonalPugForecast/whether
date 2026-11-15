@@ -119,7 +119,7 @@ struct Preferences: Codable, Equatable {
 
     /// A section of the Now tab.
     enum OverviewSection: String, Codable, CaseIterable, Identifiable {
-        case now, precipitation, alerts, hours, days, radar, details, sun, history
+        case now, precipitation, alerts, storm, hours, days, radar, details, sun, history
         var id: Self { self }
 
         /// Its symbol, for the editing tiles.
@@ -128,6 +128,7 @@ struct Preferences: Codable, Equatable {
             case .now: "thermometer.sun"
             case .precipitation: "cloud.rain"
             case .alerts: "exclamationmark.triangle"
+            case .storm: "hurricane"
             case .hours: "clock"
             case .days: "calendar"
             case .radar: "globe.americas"
@@ -142,6 +143,7 @@ struct Preferences: Codable, Equatable {
             case .now: "Current conditions"
             case .precipitation: "Precipitation"
             case .alerts: "Alerts"
+            case .storm: "Storm ahead"
             case .hours: "Next 24 hours"
             case .days: "Next days"
             case .radar: "Radar"

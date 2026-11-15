@@ -12,6 +12,8 @@ struct ForecastView: View {
     @State private var tab = AppTab.now
     /// The Now tab as tiles to reorder, hide and add back.
     @State private var editingSections = false
+    /// The Storms screen full screen (the Storm ahead card, with the tab hidden).
+    @State private var showStorms = false
 
     enum AppTab: Hashable {
         case now, hourly, days, radar, plan, storms
@@ -386,6 +388,16 @@ struct ForecastView: View {
         tab = .plan
     }
 
+    /// The Storms screen, from the Storm ahead card: its tab when the tab bar has it,
+    /// else full screen.
+    private func openStorms() {
+        if StormAheadRules.opensTab(visible: visibleTabs) {
+            tab = .storms
+        } else {
+            showStorms = true
+        }
+    }
+
     /// Back to Now when the tab shown is hidden (in Settings, or by a launch argument).
     private func keepTabVisible() {
         if tab.item != nil, TabLayout.keeping(tab.item, among: visibleTabs) == nil {
@@ -409,6 +421,9 @@ struct ForecastView: View {
         }
         .onChange(of: visibleTabs) { keepTabVisible() }
         .onChange(of: tab) { keepTabVisible() }
+        .fullScreenCover(isPresented: $showStorms) {
+            StormsTab(store: store, close: { showStorms = false })
+        }
         // White controls on the skies (the accent blue vanishes on them).
         .tint(store.preferences.background == .sky ? .white : nil)
         // Someone changed a shared plan: a line at the top for a few seconds.
@@ -697,6 +712,12 @@ struct ForecastView: View {
                 AlertsSection(
                     alerts: view.alerts, read: store.readAlerts, markRead: { store.markRead($0) },
                     toOpen: store.alertToOpen, opened: { store.alertToOpen = nil })
+            }
+        case .storm:
+            if let card = store.stormAheadCard(for: place) {
+                StormAheadCard(card: card, cards: cards) { openStorms() }
+                    .cardContextMenu()
+                    .id("storm")
             }
         case .hours:
             if let hourly = view.hourly {

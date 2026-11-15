@@ -676,6 +676,8 @@ const SHOTS: &[(&str, &str)] = &[
         "-seed -storms -show storms -stormstep 8 -vision red_green",
     ),
     ("storms-dry", "-seed -storms dry -show storms"),
+    // The Now tab's Storm ahead card, built from the nor'easter (no request).
+    ("now-storm-ahead", "-seed -stormahead -scrollTo storm"),
     ("places", "-seed -show places -search Brooklyn"),
     ("settings", "-seed -show settings"),
     // Customize: every editor in one place; the question before "Restore all
@@ -1870,6 +1872,7 @@ mod tests {
         assert!(launch("storms-sheet").is_some_and(|l| l.contains("-stormsheet large")));
         assert!(launch("storms-map-step").is_some_and(|l| l.contains("-stormstep ")));
         assert!(launch("storms-deutan").is_some_and(|l| l.contains("-vision red_green")));
+        assert!(launch("now-storm-ahead").is_some_and(|l| l.contains("-stormahead")));
     }
 
     #[test]

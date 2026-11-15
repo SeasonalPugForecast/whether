@@ -256,6 +256,33 @@ final class AppLogicTests: XCTestCase {
         XCTAssertTrue(Preferences.hideable(.radar))
     }
 
+    func testStormAheadShowsUnderTheAlertsOnNewInstalls() {
+        let fresh = Preferences()
+        let shown = fresh.sections.filter(\.shown).map(\.section)
+        XCTAssertEqual(Array(shown.prefix(4)), [.now, .precipitation, .alerts, .storm])
+        XCTAssertTrue(Preferences.hideable(.storm))
+        XCTAssertEqual(Preferences.OverviewSection.storm.title, "Storm ahead")
+    }
+
+    func testStormAheadJoinsListsSavedBeforeItShown() throws {
+        // A list saved before the card existed, history hidden: the card is added, shown,
+        // after the saved ones, as the sections added before it were (history, radar).
+        let old = try decode(
+            #"{"sections":[{"section":"now","shown":true},{"section":"alerts","shown":true},"#
+                + #"{"section":"hours","shown":true},{"section":"days","shown":true},"#
+                + #"{"section":"details","shown":true},{"section":"history","shown":false}]}"#)
+        let storm = try XCTUnwrap(old.sections.first { $0.section == .storm })
+        XCTAssertTrue(storm.shown)
+        XCTAssertEqual(old.sections.filter { $0.section == .storm }.count, 1)
+        XCTAssertEqual(Array(old.sections.prefix(6).map(\.section)), [.now, .alerts, .hours, .days, .details, .history])
+        XCTAssertFalse(old.sections.first { $0.section == .history }?.shown ?? true, "a saved choice stays")
+        // Hidden once, it stays hidden.
+        var prefs = old
+        prefs.hide(.storm)
+        let back = try JSONDecoder().decode(Preferences.self, from: JSONEncoder().encode(prefs))
+        XCTAssertFalse(back.sections.first { $0.section == .storm }?.shown ?? true)
+    }
+
     private func shownBeforeHidden(_ sections: [Preferences.SectionChoice]) -> Bool {
         let flags = sections.map(\.shown)
         return flags == flags.sorted { $0 && !$1 }
