@@ -32,9 +32,28 @@ enum StormAheadRules {
         shown(json.flatMap { try? StormAhead.decode($0) }, now: now)
     }
 
-    /// Whether a refresh of `placeID` checks for a storm ahead: only the place shown.
-    static func checks(_ placeID: String, shown: String?) -> Bool {
-        placeID == shown
+    /// Whether a refresh of `placeID` checks for a storm ahead: only the place shown, and
+    /// only while the Now tab shows the card (`visible`: its shown sections). A hidden
+    /// card keeps its last answer, which nothing draws.
+    static func checks(
+        _ placeID: String, shown: String?, visible: [Preferences.OverviewSection]
+    ) -> Bool {
+        placeID == shown && visible.contains(.storm)
+    }
+
+    /// The outlook a check starts from: whichever of the Storms tab's full outlook and
+    /// the check's own was fetched later (the full one on a tie), so a fresh full outlook
+    /// saves the check its request. `nil` when neither reads.
+    static func cachedOutlook(full: String?, ahead: String?) -> String? {
+        func fetchedAt(_ json: String?) -> Int64? {
+            json.flatMap { try? StormOutlookRuns.decode($0).fetchedAt }
+        }
+        switch (fetchedAt(full), fetchedAt(ahead)) {
+        case let (f?, a?): return a > f ? ahead : full
+        case (.some, nil): return full
+        case (nil, .some): return ahead
+        case (nil, nil): return nil
+        }
     }
 
     /// The SF Symbol beside the card's level color, so the level never rests on color

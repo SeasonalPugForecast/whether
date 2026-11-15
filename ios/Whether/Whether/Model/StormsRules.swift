@@ -109,10 +109,16 @@ enum StormsRules {
         SharedContainer.cachesDirectory.appending(path: "storms", directoryHint: .isDirectory)
     }
 
-    /// The file `placeID`'s outlook is kept in, under `directory`. The Storms tab and the
-    /// check for a storm ahead share it: whichever fetched last, the other starts from it.
+    /// The file the Storms tab keeps `placeID`'s full outlook in, under `directory`. The
+    /// check for a storm ahead reads it but never writes it.
     static func outlookURL(_ placeID: String, in directory: URL = StormsRules.directory) -> URL {
         directory.appending(path: fileName(placeID, prefix: "outlook"))
+    }
+
+    /// The file the check for a storm ahead keeps what it fetched for `placeID` in (the
+    /// models' hours at the place only), beside the full outlook.
+    static func aheadURL(_ placeID: String, in directory: URL = StormsRules.directory) -> URL {
+        directory.appending(path: fileName(placeID, prefix: "ahead"))
     }
 
     /// A file name for `key`: letters, digits, `_` and `-`, everything else `_`.

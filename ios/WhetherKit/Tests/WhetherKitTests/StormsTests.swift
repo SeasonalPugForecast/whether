@@ -261,9 +261,21 @@ final class StormsTests: XCTestCase {
     }
 
     func testOnlyThePlaceShownIsChecked() {
-        XCTAssertTrue(StormAheadRules.checks("name:New York", shown: "name:New York"))
-        XCTAssertFalse(StormAheadRules.checks("name:Brooklyn", shown: "name:New York"))
-        XCTAssertFalse(StormAheadRules.checks("name:New York", shown: nil))
+        let visible: [Preferences.OverviewSection] = [.now, .alerts, .storm]
+        XCTAssertTrue(StormAheadRules.checks("name:New York", shown: "name:New York", visible: visible))
+        XCTAssertFalse(StormAheadRules.checks("name:Brooklyn", shown: "name:New York", visible: visible))
+        XCTAssertFalse(StormAheadRules.checks("name:New York", shown: nil, visible: visible))
+    }
+
+    func testAHiddenCardIsNotChecked() {
+        var prefs = Preferences()
+        let visible = { prefs.sections.filter(\.shown).map(\.section) }
+        XCTAssertTrue(StormAheadRules.checks("name:New York", shown: "name:New York", visible: visible()))
+        prefs.hide(.storm)
+        XCTAssertFalse(StormAheadRules.checks("name:New York", shown: "name:New York", visible: visible()))
+        prefs.show(.storm)
+        XCTAssertTrue(StormAheadRules.checks("name:New York", shown: "name:New York", visible: visible()))
+        XCTAssertFalse(StormAheadRules.checks("name:New York", shown: "name:New York", visible: [.now, .alerts]))
     }
 
     func testTheCardOpensTheTabWhenShownElseTheScreen() {
@@ -277,10 +289,36 @@ final class StormsTests: XCTestCase {
         XCTAssertEqual(StormAheadRules.symbol("dire"), "hurricane")
     }
 
-    func testTheOutlookFileIsSharedByPlace() {
+    func testTheCheckKeepsItsOwnFileBesideTheOutlook() {
         let dir = URL(fileURLWithPath: "/tmp/storms", isDirectory: true)
-        XCTAssertEqual(StormsRules.outlookURL("name:New York", in: dir).lastPathComponent, "outlook-name_New_York.json")
-        XCTAssertEqual(StormsRules.outlookURL("name:New York", in: dir), StormsRules.outlookURL("name:New York", in: dir))
+        let outlook = StormsRules.outlookURL("name:New York", in: dir)
+        let ahead = StormsRules.aheadURL("name:New York", in: dir)
+        XCTAssertEqual(outlook.lastPathComponent, "outlook-name_New_York.json")
+        XCTAssertEqual(ahead.lastPathComponent, "ahead-name_New_York.json")
+        XCTAssertEqual(ahead.deletingLastPathComponent(), outlook.deletingLastPathComponent())
+        XCTAssertNotEqual(ahead, outlook)
+    }
+
+    private func outlook(fetchedAt: Int64, grids: String = "[]") -> String {
+        #"{"place":{"name":"New York"},"points":[{"model":"ecmwf_ifs025","run":null,"times":[]}],"#
+            + #""ensembles":[],"grids":\#(grids),"past_runs":[],"fetched_at":\#(fetchedAt)}"#
+    }
+
+    func testTheCheckStartsFromTheNewerOutlook() {
+        let full = outlook(fetchedAt: 1_800_039_600, grids: #"[{"model":"ecmwf_ifs025"}]"#)
+        let older = outlook(fetchedAt: 1_800_039_600 - 3_600)
+        let newer = outlook(fetchedAt: 1_800_039_600 + 3_600)
+        // A fresh full outlook from the Storms tab saves the check its request.
+        XCTAssertEqual(StormAheadRules.cachedOutlook(full: full, ahead: older), full)
+        XCTAssertEqual(StormAheadRules.cachedOutlook(full: full, ahead: newer), newer)
+        XCTAssertEqual(StormAheadRules.cachedOutlook(full: full, ahead: outlook(fetchedAt: 1_800_039_600)), full, "a tie")
+        // Only one kept, or one that doesn't read.
+        XCTAssertEqual(StormAheadRules.cachedOutlook(full: nil, ahead: older), older)
+        XCTAssertEqual(StormAheadRules.cachedOutlook(full: full, ahead: nil), full)
+        XCTAssertEqual(StormAheadRules.cachedOutlook(full: "{", ahead: older), older)
+        XCTAssertEqual(StormAheadRules.cachedOutlook(full: full, ahead: "not json"), full)
+        XCTAssertNil(StormAheadRules.cachedOutlook(full: nil, ahead: nil))
+        XCTAssertNil(StormAheadRules.cachedOutlook(full: "{", ahead: "["))
     }
 
     func testFileNamesAreSafe() {
