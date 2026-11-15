@@ -114,14 +114,8 @@ extension WidgetData {
             appSnapshot: cache?["snapshotJson"] as? String,
             appAt: (cache?["lastSuccess"] as? NSNumber)?.int64Value, widget: own, place: place)
         if let newest, isFresh(newest.at, now: now, content: content) { return newest }
-        guard let fetched = await WidgetFetches.shared.fetch(place, settings: settings, now: now) else {
-            return newest
-        }
-        if let data = try? JSONEncoder().encode(fetched) {
-            try? FileManager.default.createDirectory(
-                at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try? data.write(to: url, options: .atomic)
-        }
+        guard let fetched = await WidgetFetches.shared.fetch(place, settings: settings, now: now, keepingAt: url)
+        else { return newest }
         removeOrphans(in: url.deletingLastPathComponent(), keeping: places, dir: dir)
         return (fetched.snapshotJson, fetched.fetchedAt)
     }
@@ -137,34 +131,50 @@ extension WidgetData {
 }
 
 /// The widget's own fetches: one per place at a time, however many widgets ask
-/// for it at once (WidgetKit asks for every widget's timeline together). On the
-/// main actor, as the places it fetches for are in the app.
+/// for it at once (WidgetKit asks for every widget's timeline together), each
+/// kept in its file before the next may start. The bookkeeping is on the main
+/// actor, as the places it fetches for are in the app; the requests and the
+/// core's parsing run off it, so places fetch side by side.
 @MainActor final class WidgetFetches {
     static let shared = WidgetFetches()
     private var running: [String: Task<WidgetForecast?, Never>] = [:]
 
-    func fetch(_ place: AppPlace, settings: Settings, now: Date) async -> WidgetForecast? {
+    /// The forecast fetched now for `place`, or the one being fetched for it, kept at `url`.
+    func fetch(_ place: AppPlace, settings: Settings, now: Date, keepingAt url: URL) async -> WidgetForecast? {
         if let task = running[place.id] { return await task.value }
-        let task = Task { await Self.fetchNow(place, settings: settings, now: now) }
+        var settings = settings
+        // Never metered: the widget does not touch the app's One Call budget.
+        settings.oneCall = false
+        let request = (place: place.corePlace(now: now), settings: settings.forBackground())
+        let task = Task { () -> WidgetForecast? in
+            guard let json = await Self.fetchNow(request.place, settings: request.settings, now: now)
+            else { return nil }
+            let fetched = WidgetForecast(
+                snapshotJson: json, fetchedAt: Int64(now.timeIntervalSince1970),
+                latitude: place.latitude, longitude: place.longitude)
+            if let data = try? JSONEncoder().encode(fetched) {
+                try? FileManager.default.createDirectory(
+                    at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try? data.write(to: url, options: .atomic)
+            }
+            return fetched
+        }
         running[place.id] = task
         let result = await task.value
+        // Written by now: a widget asking from here on reads the file.
         running[place.id] = nil
         return result
     }
 
-    private static func fetchNow(_ place: AppPlace, settings: Settings, now: Date) async -> WidgetForecast? {
-        var settings = settings
-        // Never metered: the widget does not touch the app's One Call budget.
-        settings.oneCall = false
-        let ledger = FileManager.default.temporaryDirectory.appending(path: "widget-ledger.json")
-        guard
-            let outcome = try? await WhetherKit.fetch(
-                place: place.corePlace(now: now), settings: settings.forBackground(),
+    /// The core's snapshot JSON for `place`, fetched off the main actor.
+    private nonisolated static func fetchNow(_ place: Place, settings: Settings, now: Date) async -> String? {
+        await Task.detached {
+            let ledger = FileManager.default.temporaryDirectory.appending(path: "widget-ledger.json")
+            return try? await WhetherKit.fetch(
+                place: place, settings: settings,
                 cached: Cached(snapshotJson: nil, lastModified: nil, usageJson: nil),
-                now: Int64(now.timeIntervalSince1970), host: URLSessionHost(ledgerURL: ledger))
-        else { return nil }
-        return WidgetForecast(
-            snapshotJson: outcome.snapshotJson, fetchedAt: Int64(now.timeIntervalSince1970),
-            latitude: place.latitude, longitude: place.longitude)
+                now: Int64(now.timeIntervalSince1970), host: URLSessionHost(ledgerURL: ledger)
+            ).snapshotJson
+        }.value
     }
 }
