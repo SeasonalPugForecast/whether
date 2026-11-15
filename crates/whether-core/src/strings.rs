@@ -278,6 +278,7 @@ texts! {
     StormMovement => "storm_movement", "{direction} at {speed}";
     StormStationary => "storm_stationary", "Stationary";
     StormAdvisory => "storm_advisory", "Advisory {time}";
+    StormStrength => "storm_strength", "Winds {wind} · {pressure} · {movement}";
     StormConeReaches => "storm_cone_reaches", "The forecast cone reaches {place} {when}";
     StormConeCovers => "storm_cone_covers", "{place} is in the forecast cone";
     StormConsensus => "storm_consensus", "Consensus";

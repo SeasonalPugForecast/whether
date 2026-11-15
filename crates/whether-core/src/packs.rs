@@ -317,6 +317,7 @@ const DE: Pack = &[
     (Text::StormMovement, "{direction} mit {speed}"),
     (Text::StormStationary, "Ortsfest"),
     (Text::StormAdvisory, "Bulletin {time}"),
+    (Text::StormStrength, "Wind {wind} · {pressure} · {movement}"),
     (
         Text::StormConeReaches,
         "Der Vorhersagekegel erreicht {place} {when}",
@@ -627,6 +628,10 @@ const ES: Pack = &[
     (Text::StormMovement, "{direction} a {speed}"),
     (Text::StormStationary, "Estacionario"),
     (Text::StormAdvisory, "Aviso {time}"),
+    (
+        Text::StormStrength,
+        "Vientos {wind} · {pressure} · {movement}",
+    ),
     (
         Text::StormConeReaches,
         "El cono de pronóstico llega a {place} el {when}",
@@ -946,6 +951,10 @@ const FR: Pack = &[
     (Text::StormMovement, "{direction} à {speed}"),
     (Text::StormStationary, "Stationnaire"),
     (Text::StormAdvisory, "Bulletin {time}"),
+    (
+        Text::StormStrength,
+        "Vents {wind} · {pressure} · {movement}",
+    ),
     (
         Text::StormConeReaches,
         "Le cône de prévision atteint {place} {when}",

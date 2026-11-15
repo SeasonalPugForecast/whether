@@ -28,6 +28,7 @@
         "unit": "hPa"
       },
       "movement": "NE at 21 km/h",
+      "strength": "Winds 100 km/h · 988 hPa · NE at 21 km/h",
       "advisory": "Advisory Thu 17:00",
       "advisory_time": 1792702800,
       "advisory_url": "https://www.nhc.noaa.gov/text/MIATCPAT1.shtml",

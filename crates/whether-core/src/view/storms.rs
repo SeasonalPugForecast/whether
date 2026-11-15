@@ -330,6 +330,9 @@ pub struct HurricaneVm {
     /// Where and how fast it moves, e.g. "NE at 13 mph", "Stationary", or
     /// the missing placeholder.
     pub movement: String,
+    /// The wind, pressure and movement in one line, e.g. "Winds 65 mph ·
+    /// 29.18 inHg · NE at 13 mph".
+    pub strength: String,
     /// When the advisory was issued, e.g. "Advisory Thu 5:00 PM".
     pub advisory: String,
     /// The advisory's issuance time.
@@ -1452,6 +1455,9 @@ fn hurricane_vm(
         None => name,
     };
     let advisory_offset = outlook.offset_at(h.advisory_time);
+    let wind = advisory_knots(f, h.wind_kt);
+    let pressure = f.pressure(h.pressure_hpa.map(Hpa));
+    let movement = movement(f, h);
     HurricaneVm {
         id: h.id.clone(),
         name: h.name.clone(),
@@ -1462,9 +1468,17 @@ fn hurricane_vm(
         basin: h.basin,
         latitude: coordinate(h.latitude),
         longitude: coordinate(h.longitude),
-        wind: advisory_knots(f, h.wind_kt),
-        pressure: f.pressure(h.pressure_hpa.map(Hpa)),
-        movement: movement(f, h),
+        strength: f.strings.fmt(
+            Text::StormStrength,
+            &[
+                ("wind", &wind.text),
+                ("pressure", &pressure.text),
+                ("movement", &movement),
+            ],
+        ),
+        wind,
+        pressure,
+        movement,
         advisory: f.strings.fmt(
             Text::StormAdvisory,
             &[("time", &day_clock(f, h.advisory_time, advisory_offset))],
@@ -2485,6 +2499,20 @@ mod tests {
         assert_eq!(metric.pressure.text, "965 hPa");
         assert_eq!(metric.movement, "N at 15 km/h");
         assert_eq!(metric.advisory, "Advisory Fri 16:00");
+        assert_eq!(vm.strength, "Winds 105 mph · 28.50 inHg · N at 9 mph");
+        assert_eq!(metric.strength, "Winds 165 km/h · 965 hPa · N at 15 km/h");
+        let (fr, _) = Strings::localized("fr", &alloc::collections::BTreeMap::new());
+        let french = build_storms(
+            &with_hurricane(noreaster()),
+            &[],
+            &PresentationConfig::default(),
+            &fr,
+            STORM_NOW,
+        );
+        assert_eq!(
+            french.hurricanes[0].strength,
+            "Vents 165 km/h · 965 hPa · N à 15 km/h"
+        );
         let mut h = crate::storm::testdata::hurricane();
         let p = PresentationConfig::default();
         let s = Strings::default();
