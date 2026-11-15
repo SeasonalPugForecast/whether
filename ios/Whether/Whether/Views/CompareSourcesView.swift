@@ -49,7 +49,7 @@ struct CompareSourcesView: View {
     private var available: [(id: String, name: String)] {
         switch kind {
         case .sources:
-            let facts = store.preferences.sourceFacts()
+            let facts = store.preferences.sourceFacts(keys: store.savedKeys)
             return Sources.catalog.filter { info in
                 Sources.serves(Preferences.SourceRow(provider: info.id), facts)
             }
@@ -91,7 +91,7 @@ struct CompareSourcesView: View {
             switch kind {
             case .sources:
                 // Your order's first sources that serve, and Open-Meteo to compare with.
-                let facts = store.preferences.sourceFacts()
+                let facts = store.preferences.sourceFacts(keys: store.savedKeys)
                 let serving = store.preferences.sources.filter { Sources.serves($0, facts) }.map(\.provider)
                 start = Array(serving.prefix(2))
                 if !start.contains(Sources.openMeteo) { start.append(Sources.openMeteo) }

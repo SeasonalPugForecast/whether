@@ -222,11 +222,13 @@ extension Preferences {
         set { set(Sources.metNorway, enabled: newValue) }
     }
 
-    /// What the status lines and the summary depend on, as things stand (reads the
-    /// Keychain for each keyed provider).
-    func sourceFacts(callsToday: UInt32 = 0) -> Sources.Facts {
+    /// What the status lines and the summary depend on, as things stand, with
+    /// `keys` as the saved keys (else read from the Keychain for each keyed provider).
+    func sourceFacts(callsToday: UInt32 = 0, keys: [String: String]? = nil) -> Sources.Facts {
         var facts = Sources.Facts()
-        for provider in Sources.keyedProviders { facts.hasKey[provider] = Keychain.key(for: provider) != nil }
+        for provider in Sources.keyedProviders {
+            facts.hasKey[provider] = keys.map { $0[provider] != nil } ?? (Keychain.key(for: provider) != nil)
+        }
         facts.oneCall = oneCall
         facts.callsToday = callsToday
         facts.dailyCalls = dailyCalls

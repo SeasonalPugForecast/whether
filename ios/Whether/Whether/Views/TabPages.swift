@@ -84,7 +84,7 @@ struct RadarTab: View {
     var body: some View {
         if let place {
             // Outside the US: OpenWeather's layer with a key, else the globe and a note.
-            let settings = store.preferences.settings()
+            let settings = store.screenSettings()
             RadarScreen(
                 place: place, loop: loop, closable: false, source: settings.radarSource(for: place)
             )

@@ -9,7 +9,7 @@ struct SourcesView: View {
 
     /// What the status lines say: the keys, One Call's count and Pirate Weather's month.
     private var sourceFacts: Sources.Facts {
-        var facts = store.preferences.sourceFacts(callsToday: store.oneCallCallsToday())
+        var facts = store.preferences.sourceFacts(callsToday: store.oneCallCallsToday(), keys: store.savedKeys)
         facts.monthUsage[Sources.pirateWeather] = store.pirateWeatherUsage()
         return facts
     }
@@ -241,6 +241,7 @@ struct SourceDetail: View {
     /// The key was saved (or cleared): without one OpenWeather's One Call switches
     /// off, and a first key turns the source on.
     private func keySaved(_ saved: Bool) {
+        store.keysChanged()
         let first = saved && !hasKey
         hasKey = saved
         if !saved && provider == Sources.openWeather { store.preferences.oneCall = false }

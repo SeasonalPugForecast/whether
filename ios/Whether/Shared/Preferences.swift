@@ -587,6 +587,12 @@ struct Preferences: Codable, Equatable {
     /// The core's settings: these choices over the phone's region, with the key
     /// from the Keychain (`withKey: false` skips reading it, to compare).
     func settings(locale: Locale = .current, withKey: Bool = true) -> Settings {
+        settings(locale: locale, keys: withKey ? Keychain.keys(for: Sources.keyedProviders) : [:])
+    }
+
+    /// The core's settings with `keys` (by provider) as the saved keys: the
+    /// Keychain is not read.
+    func settings(locale: Locale = .current, keys: [String: String]) -> Settings {
         var s = Settings.phone(locale: locale)
         switch units {
         case .automatic: break
@@ -609,7 +615,7 @@ struct Preferences: Codable, Equatable {
         s.refreshMinutes = UInt32(clamping: refreshMinutes)
         // The keys come from the Keychain, one per keyed provider; the legacy
         // `openweatherKey` carries the same OpenWeather key.
-        s.keys = withKey ? Keychain.keys(for: Sources.keyedProviders) : [:]
+        s.keys = keys
         s.openweatherKey = s.keys[Sources.openWeather]
         s.oneCall = oneCall
         s.dailyCallLimit = UInt32(clamping: dailyCalls)

@@ -143,7 +143,7 @@ struct SettingsView: View {
                         Text("Sources").id("sources")
                     } footer: {
                         Text(
-                            "Tried in this order: \(Sources.summary(store.preferences.sources, store.preferences.sourceFacts())). Open-Meteo is always the fallback, and fills what a source lacks."
+                            "Tried in this order: \(Sources.summary(store.preferences.sources, store.preferences.sourceFacts(keys: store.savedKeys))). Open-Meteo is always the fallback, and fills what a source lacks."
                         )
                     }
                     Section {

@@ -728,7 +728,7 @@ struct ForecastView: View {
                 DailySection(daily: daily).glassCard(cards).id("days")
             }
         case .radar:
-            let settings = store.preferences.settings()
+            let settings = store.screenSettings()
             if settings.radarSource(for: place) != .none {
                 RadarSection(place: place, settings: settings)
                     .glassCard(cards)

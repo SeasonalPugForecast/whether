@@ -31,6 +31,22 @@ final class SourcesTests: XCTestCase {
         XCTAssertEqual(Sources.foregroundOnly, ["met-norway"])
     }
 
+    // MARK: Keys held by the app (no Keychain read)
+
+    func testKeysGivenReachTheSettingsAndTheFacts() {
+        let p = Preferences()
+        let keys = [Sources.openWeather: "KEY"]
+        let settings = p.settings(locale: Locale(identifier: "en_US"), keys: keys)
+        XCTAssertEqual(settings.keys, keys)
+        XCTAssertEqual(settings.openweatherKey, "KEY", "the key One Call and the radar read")
+        XCTAssertEqual(
+            p.settings(locale: Locale(identifier: "en_US"), keys: [:]),
+            p.settings(locale: Locale(identifier: "en_US"), withKey: false))
+        let facts = p.sourceFacts(keys: keys)
+        XCTAssertEqual(facts.hasKey[Sources.openWeather], true)
+        XCTAssertEqual(facts.hasKey[Sources.pirateWeather], false)
+    }
+
     // MARK: Preferences saved before the list
 
     func testANewInstallStartsWithTheCoresDefaultOrder() {

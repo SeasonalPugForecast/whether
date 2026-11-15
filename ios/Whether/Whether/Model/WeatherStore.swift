@@ -107,6 +107,21 @@ final class WeatherStore {
             }
         }
     }
+    /// The keys saved in the Keychain, by provider: read at launch and when one is
+    /// saved (`keysChanged`), so screens never read the Keychain.
+    private(set) var savedKeys = Keychain.keys(for: Sources.keyedProviders)
+
+    /// A key was saved or removed in the Keychain.
+    func keysChanged() {
+        savedKeys = Keychain.keys(for: Sources.keyedProviders)
+    }
+
+    /// The settings with the saved keys, for screens (the radar outside the US
+    /// needs the OpenWeather key): the Keychain is not read.
+    func screenSettings() -> Settings {
+        preferences.settings(keys: savedKeys)
+    }
+
     /// The settings the views were last built with (keyless).
     @ObservationIgnored private var viewSettings: Settings?
     /// A settings change waiting to be saved.
