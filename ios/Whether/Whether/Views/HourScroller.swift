@@ -20,8 +20,9 @@ struct HourScroller<Marker: View, Strip: View>: View {
     @ViewBuilder var strip: () -> Strip
 
     @State private var position = ScrollPosition(idType: Int.self)
-    /// The scroll offset now.
-    @State private var offset: CGFloat = 0
+    /// The scroll offset now. Only the needle reads it while drawing, so a scroll
+    /// redraws the needle, not the strip; the handlers below read it as they run.
+    @State private var scrolled = ScrollOffset()
     /// The hour width when a pinch began; the needle's hour stays put meanwhile.
     @State private var pinchBase: CGFloat?
     /// The hour a tap or a choice from outside is scrolling to: chosen at once,
@@ -43,12 +44,10 @@ struct HourScroller<Marker: View, Strip: View>: View {
             .scrollPosition($position)
             .scrollTargetBehavior(HourSnap(step: step, count: count))
             .background(alignment: .leading) {
-                marker()
-                    .frame(width: step)
-                    .offset(x: track.needle(atOffset: offset) - step / 2)
+                Needle(track: track, scrolled: scrolled) { marker() }
             }
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.x } action: { _, x in
-                offset = x
+                scrolled.x = x
                 // While pinching the widths change under the needle; its hour
                 // stays. On the way to a tapped hour it is already chosen.
                 guard placed, pinchBase == nil, target == nil else { return }
@@ -56,7 +55,7 @@ struct HourScroller<Marker: View, Strip: View>: View {
                 if hour != selected { selected = hour }
             }
             .onTapGesture { location in
-                scroll(to: track.hour(atTap: location.x, offset: offset), in: track, animated: true)
+                scroll(to: track.hour(atTap: location.x, offset: scrolled.x), in: track, animated: true)
             }
             .simultaneousGesture(
                 MagnifyGesture()
@@ -78,7 +77,7 @@ struct HourScroller<Marker: View, Strip: View>: View {
                 case .idle:
                     // At rest: the hour under the needle is the chosen one.
                     target = nil
-                    let hour = track.hour(atOffset: offset)
+                    let hour = track.hour(atOffset: scrolled.x)
                     if placed, pinchBase == nil, hour != selected { selected = hour }
                 default:
                     break
@@ -86,7 +85,7 @@ struct HourScroller<Marker: View, Strip: View>: View {
             }
             .onChange(of: selected) { _, hour in
                 // Chosen from outside: bring the needle to it.
-                guard hour != target, track.hour(atOffset: offset) != hour else { return }
+                guard hour != target, track.hour(atOffset: scrolled.x) != hour else { return }
                 scroll(to: hour, in: track, animated: true)
             }
             .onChange(of: track) { scroll(to: selected, in: track, animated: false) }
@@ -107,6 +106,26 @@ struct HourScroller<Marker: View, Strip: View>: View {
         } else {
             position.scrollTo(x: x)
         }
+    }
+}
+
+/// Where a strip is scrolled to, apart from the views that draw it: setting it
+/// redraws only what reads it.
+@Observable
+final class ScrollOffset {
+    var x: CGFloat = 0
+}
+
+/// The marker, one hour wide, under the needle wherever the strip is scrolled to.
+private struct Needle<Marker: View>: View {
+    let track: HourTrack
+    let scrolled: ScrollOffset
+    @ViewBuilder var marker: () -> Marker
+
+    var body: some View {
+        marker()
+            .frame(width: track.step)
+            .offset(x: track.needle(atOffset: scrolled.x) - track.step / 2)
     }
 }
 
