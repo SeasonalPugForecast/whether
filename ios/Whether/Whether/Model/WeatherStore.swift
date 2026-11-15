@@ -104,6 +104,9 @@ final class WeatherStore {
         }
     }
     private var caches: [String: PlaceCache] = [:]
+    /// The other places' caches being read at launch (`nil` once they are in):
+    /// fetches wait for it.
+    @ObservationIgnored private var cachesRead: Task<Void, Never>?
     private let directory: URL
     /// What has been notified about which alert.
     private var notifier = AlertNotifier()
@@ -295,9 +298,10 @@ final class WeatherStore {
                 preferences.dates = dates
             }
         #endif
-        for place in places {
-            caches[place.id] = load(place)
-        }
+        // Before the first frame, only the place shown: its cache and its view. The
+        // others' caches are read off the main actor, and then every view is built.
+        let shown = self.places.indices.contains(opening) ? self.places[opening] : self.places.first
+        if let shown { caches[shown.id] = withDebugAlert(load(shown), for: shown) }
         plans = (try? Data(contentsOf: directory.appending(path: "plans.json")))
             .flatMap { try? JSONDecoder().decode([SavedPlan].self, from: $0) } ?? []
         if let data = try? Data(contentsOf: directory.appending(path: "notified.json")),
@@ -305,22 +309,44 @@ final class WeatherStore {
         {
             notifier = AlertNotifier(notified: notified)
         }
-        #if DEBUG
-            // `-fakeAppleAlert`: the fake alert at once, in memory only.
-            let now = Int64(Date.now.timeIntervalSince1970)
-            if let fake = Self.fakeAppleAlert(at: now) {
-                for place in self.places {
-                    guard var cache = caches[place.id] else { continue }
-                    applyAlerts([fake], asked: true, at: now, for: place, to: &cache)
-                    caches[place.id] = cache
-                }
-            }
-        #endif
-        // Every view at once, before the first frame.
+        // The other places' views, without their data yet, are off screen.
         alignViews()
+        let others = self.places.filter { $0.id != shown?.id }
+        if !others.isEmpty {
+            cachesRead = Task { await self.readCaches(of: others) }
+        }
         #if DEBUG
             if args.contains("-stormahead") { Task { await seedStormAhead() } }
         #endif
+    }
+
+    /// Reads the caches of `places` off the main actor, keeps those still wanted (a
+    /// place removed, or reset by a move, meanwhile is not given its old cache), and
+    /// rebuilds every view.
+    private func readCaches(of places: [AppPlace]) async {
+        let files = places.map { (id: $0.id, url: $0.cacheURL(in: directory), legacy: $0.legacyCacheURL(in: directory)) }
+        let read = await Task.detached(priority: .userInitiated) {
+            files.map { ($0.id, Self.readCache(at: $0.url, legacy: $0.legacy)) }
+        }.value
+        for (id, cache) in read where caches[id] == nil {
+            guard let place = self.places.first(where: { $0.id == id }) else { continue }
+            caches[id] = withDebugAlert(cache, for: place)
+        }
+        cachesRead = nil
+        rebuild()
+    }
+
+    /// `cache` with `-fakeAppleAlert`'s alert in DEBUG builds, in memory only.
+    private func withDebugAlert(_ cache: PlaceCache, for place: AppPlace) -> PlaceCache {
+        #if DEBUG
+            let now = Int64(Date.now.timeIntervalSince1970)
+            if let fake = Self.fakeAppleAlert(at: now) {
+                var cache = cache
+                applyAlerts([fake], asked: true, at: now, for: place, to: &cache)
+                return cache
+            }
+        #endif
+        return cache
     }
 
     /// Moves files from Application Support into the App Group the first time it
@@ -546,9 +572,16 @@ final class WeatherStore {
 
     /// `place`'s cache, moving a legacy one (named after the place) to the id's name.
     private func load(_ place: AppPlace) -> PlaceCache {
-        let url = place.cacheURL(in: directory)
-        if let found = place.existingCacheURL(in: directory), found != url {
-            try? FileManager.default.moveItem(at: found, to: url)
+        Self.readCache(at: place.cacheURL(in: directory), legacy: place.legacyCacheURL(in: directory))
+    }
+
+    /// The cache at `url`, moving one at `legacy` there first; on any thread.
+    nonisolated private static func readCache(at url: URL, legacy: URL) -> PlaceCache {
+        let files = FileManager.default
+        if !files.fileExists(atPath: url.path(percentEncoded: false)),
+            files.fileExists(atPath: legacy.path(percentEncoded: false))
+        {
+            try? files.moveItem(at: legacy, to: url)
         }
         guard let data = try? Data(contentsOf: url) else { return PlaceCache() }
         return (try? JSONDecoder().decode(PlaceCache.self, from: data)) ?? PlaceCache()
@@ -722,6 +755,8 @@ final class WeatherStore {
     /// become notifications; in the foreground they are only remembered (they
     /// are on screen).
     func refresh(inBackground: Bool = false, only: Set<String>? = nil) async {
+        // A fetch starts from the place's cache (its validators, minutes and history).
+        await cachesRead?.value
         guard !refreshing else {
             // Joins the running refresh, which fetches these before it ends.
             queue?.request(only)
@@ -2069,6 +2104,7 @@ final class WeatherStore {
     /// After settings that change what is fetched (key, providers, days): fetch
     /// again without the conditional request.
     func refetch() async {
+        await cachesRead?.value
         for place in places {
             caches[place.id]?.lastModified = nil
         }
