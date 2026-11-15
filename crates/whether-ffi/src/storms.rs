@@ -6,18 +6,33 @@
 //! ensemble and the grid requested. Requests go out one after another, like
 //! every other fetch here.
 //!
+//! Every refresh also reads the National Hurricane Center's list of active
+//! cyclones (one small file, the same for every place). For each cyclone
+//! that comes within [`HURRICANE_RANGE_KM`] of the place, its guidance and
+//! official tracks (the a-deck) and its observed track (the b-deck) are
+//! read, once per advisory: a cyclone whose advisory is already in the
+//! cached outlook keeps its tracks.
+//!
 //! The "Storm ahead" check is lighter: it asks only for the models' hours at
-//! the place, and not again while its outlook is younger than three hours.
+//! the place, plus the active cyclones and the a-deck of each near one, and
+//! not again while its outlook is younger than three hours.
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use whether_core::model::{ProviderId, ResolvedLocation};
-use whether_core::storm::analysis::window_totals;
-use whether_core::storm::{DETERMINISTIC_MODELS, ENSEMBLE_MODELS, ModelRun, PastRun, StormOutlook};
+use whether_core::storm::analysis::{distance_km, window_totals};
+use whether_core::storm::hurricane::DRAWN_AIDS;
+use whether_core::storm::{
+    DETERMINISTIC_MODELS, ENSEMBLE_MODELS, Hurricane, ModelRun, PastRun, StormOutlook, TrackFix,
+};
 use whether_core::strings::Strings;
 use whether_core::time::{UnixTime, UtcOffset};
 use whether_core::view::build_storms;
+use whether_providers::nhc::{
+    ActiveStorm, AidTracks, adeck_request, bdeck_request, current_storms_request, parse_adeck,
+    parse_bdeck, parse_current_storms,
+};
 use whether_providers::open_meteo::storm::{
     FORECAST_DAYS, ensemble_domain, ensemble_request, grid_request, meta_request, parse_ensembles,
     parse_grids, parse_points, parse_run_meta, parse_single_run, parse_update_interval,
@@ -40,6 +55,14 @@ const MAX_PAST_RUNS: u32 = 6;
 /// The distance in degrees beyond which a cached outlook is for another place.
 const SAME_PLACE_DEG: f64 = 0.01;
 
+/// How far from the place a cyclone is followed, in km: its position or a
+/// point of its official forecast must be this close for its tracks to be
+/// read and drawn.
+pub(crate) const HURRICANE_RANGE_KM: f64 = 3_000.0;
+
+/// The provider the hurricane requests are recorded under.
+const NHC: &str = "nhc";
+
 /// A storm outlook, fetched or rebuilt from the cache.
 #[derive(Clone, Debug, PartialEq, uniffi::Record)]
 pub struct StormsOutcome {
@@ -48,10 +71,12 @@ pub struct StormsOutcome {
     pub outlook_json: String,
     /// The storms view (`StormsVm`) as JSON, built at `now`.
     pub view_json: String,
-    /// The data was fetched now; `false` when the cached outlook was current
-    /// and only the run times were read.
+    /// The models' data was fetched now; `false` when the cached outlook was
+    /// current and only the run times were read. The hurricanes are read on
+    /// every refresh, so `outlook_json` can change either way.
     pub refreshed: bool,
-    /// Every request's outcome: the run times, then the data.
+    /// Every request's outcome: the run times, then the data, then the
+    /// active storms and each near cyclone's decks.
     pub attempts: Vec<AttemptInfo>,
 }
 
@@ -70,8 +95,8 @@ fn domains() -> Vec<&'static str> {
     domains
 }
 
-/// Sends `request`, checks its status and parses its body with `parse`,
-/// recording the outcome under `endpoint`.
+/// Sends an Open-Meteo `request`, checks its status and parses its body
+/// with `parse`, recording the outcome under `endpoint`.
 async fn exchange<T>(
     host: &Arc<dyn FetchHost>,
     request: &HttpRequest,
@@ -79,18 +104,145 @@ async fn exchange<T>(
     attempts: &mut Vec<AttemptInfo>,
     parse: impl FnOnce(&[u8]) -> Result<T, ProviderError>,
 ) -> Option<T> {
-    let result = match host.send(host_request(request)).await {
-        Ok(resp) => check_status(&HttpResponse::new(resp.status, &resp.body))
-            .and_then(|()| parse(&resp.body))
-            .map_err(|e| e.to_string()),
+    let provider = name(&ProviderId::OpenMeteo);
+    exchange_with(
+        host,
+        Ok(request.clone()),
+        &provider,
+        endpoint,
+        attempts,
+        parse,
+    )
+    .await
+}
+
+/// Like [`exchange`], for `provider`'s `request`, which may have failed to
+/// build (and is then recorded as failed without being sent).
+async fn exchange_with<T>(
+    host: &Arc<dyn FetchHost>,
+    request: Result<HttpRequest, ProviderError>,
+    provider: &str,
+    endpoint: &str,
+    attempts: &mut Vec<AttemptInfo>,
+    parse: impl FnOnce(&[u8]) -> Result<T, ProviderError>,
+) -> Option<T> {
+    let result = match request {
+        Ok(request) => match host.send(host_request(&request)).await {
+            Ok(resp) => check_status(&HttpResponse::new(resp.status, &resp.body))
+                .and_then(|()| parse(&resp.body))
+                .map_err(|e| e.to_string()),
+            Err(e) => Err(e.to_string()),
+        },
         Err(e) => Err(e.to_string()),
     };
     attempts.push(AttemptInfo {
-        provider: name(&ProviderId::OpenMeteo),
+        provider: provider.to_string(),
         endpoint: endpoint.to_string(),
         error: result.as_ref().err().cloned(),
     });
     result.ok()
+}
+
+/// Whether `position` (`(latitude, longitude)`) is within
+/// [`HURRICANE_RANGE_KM`] of `place`.
+fn within_range(place: &Place, (latitude, longitude): (f64, f64)) -> bool {
+    distance_km(place.latitude, place.longitude, latitude, longitude) <= HURRICANE_RANGE_KM
+}
+
+/// Whether a cyclone at `position` with the official forecast `official`
+/// comes within [`HURRICANE_RANGE_KM`] of `place`, now or on the forecast.
+fn comes_near(place: &Place, position: (f64, f64), official: &[TrackFix]) -> bool {
+    within_range(place, position) || official.iter().any(|f| within_range(place, f.position()))
+}
+
+/// The active cyclones near `place`, with their tracks.
+///
+/// Reads NHC's active storms. A cyclone is near when its position, or a
+/// point of its official forecast in `known` (the cached cyclones, from
+/// any advisory), is within [`HURRICANE_RANGE_KM`]; only near ones get
+/// their decks read, and only near ones (by the fresh forecast) are kept.
+/// A cyclone whose advisory is in `known` keeps its tracks from there; a
+/// track missing there (its deck failed or was not read) is read again.
+/// A deck that fails leaves its tracks out, so a cyclone without its
+/// a-deck has no cone. When the active storms can't be read, the near
+/// cyclones in `known` are kept. Cyclones no longer active are dropped.
+async fn hurricanes(
+    host: &Arc<dyn FetchHost>,
+    place: &Place,
+    known: &[Hurricane],
+    attempts: &mut Vec<AttemptInfo>,
+) -> Vec<Hurricane> {
+    let Some(active) = exchange_with(
+        host,
+        Ok(current_storms_request()),
+        NHC,
+        "current storms",
+        attempts,
+        parse_current_storms,
+    )
+    .await
+    else {
+        return known
+            .iter()
+            .filter(|h| comes_near(place, (h.latitude, h.longitude), &h.official))
+            .cloned()
+            .collect();
+    };
+    let mut near = Vec::new();
+    for storm in &active {
+        if let Some(h) = hurricane(host, place, storm, known, attempts).await {
+            near.push(h);
+        }
+    }
+    near
+}
+
+/// `storm` with its tracks when it comes near `place`, else `None`; see
+/// [`hurricanes`].
+async fn hurricane(
+    host: &Arc<dyn FetchHost>,
+    place: &Place,
+    storm: &ActiveStorm,
+    known: &[Hurricane],
+    attempts: &mut Vec<AttemptInfo>,
+) -> Option<Hurricane> {
+    let earlier = known.iter().find(|h| h.id == storm.id);
+    let known_track = earlier.map_or(&[][..], |h| h.official.as_slice());
+    if !comes_near(place, (storm.latitude, storm.longitude), known_track) {
+        return None;
+    }
+    let advisory_time = storm
+        .hurricane(Vec::new(), AidTracks::new(), Vec::new())
+        .advisory_time;
+    let same = earlier.filter(|h| h.advisory_time == advisory_time);
+    let (official, aids) = match same.filter(|h| !h.official.is_empty()) {
+        Some(h) => (h.official.clone(), h.aids.clone()),
+        None => exchange_with(
+            host,
+            adeck_request(&storm.id),
+            NHC,
+            &format!("adeck {}", storm.id),
+            attempts,
+            |b| parse_adeck(b, &DRAWN_AIDS),
+        )
+        .await
+        .unwrap_or_default(),
+    };
+    let past = match same.filter(|h| !h.past.is_empty()) {
+        Some(h) => h.past.clone(),
+        None => exchange_with(
+            host,
+            bdeck_request(&storm.id),
+            NHC,
+            &format!("bdeck {}", storm.id),
+            attempts,
+            parse_bdeck,
+        )
+        .await
+        .unwrap_or_default(),
+    };
+    let h = storm.hurricane(official, aids, past);
+    comes_near(place, (h.latitude, h.longitude), &h.official).then_some(h)
 }
 
 /// The latest run of every domain whose `meta.json` answered.
@@ -249,6 +401,13 @@ fn failed(attempts: &[AttemptInfo]) -> WhetherError {
 /// fails leaves its part out (and shows in `attempts`), and only when all
 /// three fail is it an error. If the run times can't be read, a cached
 /// outlook younger than six hours is used, else the data is fetched.
+///
+/// Either way NHC's active storms are read, then the decks of each cyclone
+/// that comes near and whose advisory is not in the cache yet. With
+/// nothing active that is one small request; a current cache with known
+/// advisories gets only its hurricanes replaced, never the models' data.
+/// The hurricane requests never fail the outlook: without the active
+/// storms the cached hurricanes are kept.
 #[uniffi::export]
 #[allow(clippy::needless_pass_by_value)] // UniFFI passes arguments by value
 pub async fn fetch_storms(
@@ -261,19 +420,32 @@ pub async fn fetch_storms(
     let mut attempts = Vec::new();
     let runs = latest_runs(&host, &mut attempts).await;
     // A cache that doesn't read is no cache: the outlook is fetched again.
-    let cached = cached_json
-        .as_deref()
-        .and_then(|json| from_json::<StormOutlook>("cached storm outlook", json).ok());
-    if let (Some(json), Some(outlook)) = (cached_json, cached)
-        && is_current(&outlook, &place, &runs, now)
-    {
-        return Ok(StormsOutcome {
-            view_json: view(outlook, &[], &place, &settings, now)?,
-            outlook_json: json,
-            refreshed: false,
-            attempts,
-        });
-    }
+    let cached = cached_json.and_then(|json| {
+        let outlook = from_json::<StormOutlook>("cached storm outlook", &json).ok()?;
+        Some((json, outlook))
+    });
+    let known = match cached {
+        Some((json, outlook)) if is_current(&outlook, &place, &runs, now) => {
+            let hurricanes = hurricanes(&host, &place, &outlook.hurricanes, &mut attempts).await;
+            let (outlook_json, outlook) = if hurricanes == outlook.hurricanes {
+                (json, outlook)
+            } else {
+                let outlook = StormOutlook {
+                    hurricanes,
+                    ..outlook
+                };
+                (to_json("storm outlook", &outlook)?, outlook)
+            };
+            return Ok(StormsOutcome {
+                view_json: view(outlook, &[], &place, &settings, now)?,
+                outlook_json,
+                refreshed: false,
+                attempts,
+            });
+        }
+        Some((_, outlook)) => outlook.hurricanes,
+        None => Vec::new(),
+    };
 
     let loc = outgoing(&place);
     let point = exchange(
@@ -317,6 +489,7 @@ pub async fn fetch_storms(
     for g in &mut grids {
         g.run = run_of(run_domain(&g.model));
     }
+    let hurricanes = hurricanes(&host, &place, &known, &mut attempts).await;
     let outlook = StormOutlook {
         place: location(&place, resolved.as_ref()),
         // The zone's changes as the app computed them for the place, like the
@@ -326,7 +499,7 @@ pub async fn fetch_storms(
         ensembles,
         grids,
         past_runs: Vec::new(),
-        hurricanes: Vec::new(),
+        hurricanes,
         fetched_at: UnixTime(now),
     };
     Ok(StormsOutcome {
@@ -579,6 +752,14 @@ mod tests {
     const ERROR: &[u8] = include_bytes!(
         "../../whether-providers/tests/fixtures/open_meteo/storm_error.synthetic.json"
     );
+    const NO_STORMS: &[u8] =
+        include_bytes!("../../whether-providers/tests/fixtures/nhc/current_storms.json");
+    const JOSEPHINE: &str = include_str!(
+        "../../whether-providers/tests/fixtures/nhc/current_storms_josephine.synthetic.json"
+    );
+    const ADECK: &[u8] =
+        include_bytes!("../../whether-providers/tests/fixtures/nhc/aal102026.dat.gz");
+    const BDECK: &[u8] = include_bytes!("../../whether-providers/tests/fixtures/nhc/bal102026.dat");
     const METAS: [(&str, &[u8]); 6] = [
         (
             "ecmwf_ifs025",
@@ -634,6 +815,8 @@ mod tests {
         down: Vec<&'static str>,
         /// `run=` values answered with an Open-Meteo error body.
         rejected: Vec<&'static str>,
+        /// NHC's active storms; none when `None`, as in the live file.
+        storms: Option<String>,
     }
 
     impl Recorded {
@@ -642,6 +825,17 @@ mod tests {
         }
 
         fn body(&self, url: &str) -> Option<Vec<u8>> {
+            let nhc: Option<&[u8]> = match url {
+                "https://www.nhc.noaa.gov/CurrentStorms.json" => {
+                    Some(self.storms.as_ref().map_or(NO_STORMS, |s| s.as_bytes()))
+                }
+                "https://ftp.nhc.noaa.gov/atcf/aid_public/aal102026.dat.gz" => Some(ADECK),
+                "https://ftp.nhc.noaa.gov/atcf/btk/bal102026.dat" => Some(BDECK),
+                _ => None,
+            };
+            if let Some(body) = nhc {
+                return Some(body.to_vec());
+            }
             if let Some(rest) = url.strip_prefix("https://api.open-meteo.com/data/") {
                 let domain = rest.strip_suffix("/static/meta.json")?;
                 if let Some((_, body)) = self.meta.iter().find(|(d, _)| *d == domain) {
@@ -747,6 +941,8 @@ mod tests {
             .collect()
     }
 
+    const CURRENT_STORMS: &str = "www.nhc.noaa.gov/CurrentStorms.json";
+
     fn outlook(outcome: &StormsOutcome) -> StormOutlook {
         serde_json::from_str(&outcome.outlook_json).unwrap()
     }
@@ -763,16 +959,25 @@ mod tests {
             "api.open-meteo.com/v1/forecast".to_string(),
             "ensemble-api.open-meteo.com/v1/ensemble".to_string(),
             "api.open-meteo.com/v1/forecast".to_string(),
+            CURRENT_STORMS.to_string(),
         ]);
         assert_eq!(paths, expected);
         assert!(asked[6].contains("latitude=40.71&longitude=-74.01&models="));
         assert!(asked[7].contains("latitude=40.71&longitude=-74.01&models="));
         assert!(asked[7].contains("&forecast_days=10&"));
         assert!(asked[8].contains("&temporal_resolution=hourly_6&"));
-        assert_eq!(outcome.attempts.len(), 9);
+        assert_eq!(outcome.attempts.len(), 10);
         assert!(outcome.attempts.iter().all(|a| a.error.is_none()));
         assert_eq!(outcome.attempts[0].endpoint, "meta ecmwf_ifs025");
         assert_eq!(outcome.attempts[0].provider, "open-meteo");
+        // Nothing is active: one small request, and no hurricanes.
+        assert_eq!(
+            (
+                outcome.attempts[9].provider.as_str(),
+                outcome.attempts[9].endpoint.as_str()
+            ),
+            ("nhc", "current storms")
+        );
 
         let o = outlook(&outcome);
         assert_eq!(
@@ -794,6 +999,7 @@ mod tests {
         assert_eq!(o.place.utc_offset, UtcOffset(-18_000));
         assert_eq!(o.place.tz_name.as_deref(), Some("America/New_York"));
         assert_eq!(o.offset_changes, place().core_offset_changes());
+        assert_eq!(o.hurricanes, []);
 
         let vm: serde_json::Value = serde_json::from_str(&outcome.view_json).unwrap();
         assert_eq!(vm["place"], "New York");
@@ -809,9 +1015,11 @@ mod tests {
         assert!(!again.refreshed);
         let asked = net.asked();
         let paths: Vec<&str> = asked.iter().map(|u| host_path(u)).collect();
-        assert_eq!(paths, meta_paths());
+        let mut expected = meta_paths();
+        expected.push(CURRENT_STORMS.to_string());
+        assert_eq!(paths, expected);
         assert_eq!(again.outlook_json, first.outlook_json);
-        assert_eq!(again.attempts.len(), 6);
+        assert_eq!(again.attempts.len(), 7);
         assert_eq!(
             again.view_json,
             storms_view(place(), first.outlook_json, None, default_settings(), later).unwrap()
@@ -832,7 +1040,7 @@ mod tests {
         });
         let again = fetch(&net, Some(first.outlook_json), NOW).unwrap();
         assert!(again.refreshed);
-        assert_eq!(net.asked().len(), 9);
+        assert_eq!(net.asked().len(), 10);
         let o = outlook(&again);
         assert_eq!(
             o.ensembles[1].run.as_ref().unwrap().init,
@@ -867,7 +1075,11 @@ mod tests {
             (o.points.len(), o.ensembles.len(), o.grids.len()),
             (4, 2, 0)
         );
-        let grid = outcome.attempts.last().unwrap();
+        let grid = outcome
+            .attempts
+            .iter()
+            .find(|a| a.endpoint == "grid")
+            .unwrap();
         assert_eq!(grid.endpoint, "grid");
         assert_eq!(grid.error.as_deref(), Some("HTTP 503"));
         // An outlook without its grid is fetched again next time.
@@ -877,7 +1089,7 @@ mod tests {
                 .unwrap()
                 .refreshed
         );
-        assert_eq!(net.asked().len(), 9);
+        assert_eq!(net.asked().len(), 10);
     }
 
     /// GEM's latest run in the recordings became available at this time.
@@ -898,12 +1110,13 @@ mod tests {
         assert!(!again.refreshed);
         let asked = net.asked();
         let paths: Vec<&str> = asked.iter().map(|u| host_path(u)).collect();
-        assert_eq!(paths, meta_paths());
+        assert_eq!(paths[..6], meta_paths());
+        assert_eq!(paths[6..], [CURRENT_STORMS]);
         // Fetched before it: the new run may bring the grid.
         let net = Arc::new(Recorded::default());
         let before = without_gem_grid(GEM_AVAILABLE - 1);
         assert!(fetch(&net, Some(before), NOW + HOUR).unwrap().refreshed);
-        assert_eq!(net.asked().len(), 9);
+        assert_eq!(net.asked().len(), 10);
         // Without GEM's run time, a missing grid stays stale.
         let net = Arc::new(Recorded {
             down: vec!["cmc_gem_gdps_15km/static/meta.json"],
@@ -919,7 +1132,7 @@ mod tests {
                 .unwrap()
                 .refreshed
         );
-        assert_eq!(net.asked().len(), 9);
+        assert_eq!(net.asked().len(), 10);
     }
 
     #[test]
@@ -952,13 +1165,14 @@ mod tests {
         let net = blind();
         let soon = fetch(&net, Some(first.outlook_json.clone()), NOW + 5 * HOUR).unwrap();
         assert!(!soon.refreshed);
-        assert_eq!(net.asked().len(), 6);
-        assert!(soon.attempts.iter().all(|a| a.error.is_some()));
+        assert_eq!(net.asked().len(), 7);
+        let runs = soon.attempts.iter().filter(|a| a.provider == "open-meteo");
+        assert!(runs.clone().count() == 6 && runs.clone().all(|a| a.error.is_some()));
         // Older than one update interval: the data is fetched, without runs.
         let net = blind();
         let late = fetch(&net, Some(first.outlook_json), NOW + 6 * HOUR).unwrap();
         assert!(late.refreshed);
-        assert_eq!(net.asked().len(), 9);
+        assert_eq!(net.asked().len(), 10);
         let o = outlook(&late);
         assert!(o.points.iter().all(|p| p.run.is_none()));
         // Once the run times read again, that outlook is out of date.
@@ -1148,6 +1362,234 @@ mod tests {
         ));
     }
 
+    /// Josephine's advisory 5: 2026-10-22 21:00 UTC.
+    const ADVISORY: i64 = 1_792_702_800;
+    /// Her next advisory, six hours later.
+    const NEXT_ADVISORY: i64 = ADVISORY + 6 * HOUR;
+    const ADECK_PATH: &str = "ftp.nhc.noaa.gov/atcf/aid_public/aal102026.dat.gz";
+    const BDECK_PATH: &str = "ftp.nhc.noaa.gov/atcf/btk/bal102026.dat";
+
+    /// A made-up place on Josephine's official track, at its 36-hour
+    /// position, over 900 km from her.
+    fn on_the_track() -> Place {
+        Place {
+            name: "Test Point".into(),
+            latitude: 43.5,
+            longitude: -55.9,
+            units: None,
+            utc_offset_seconds: Some(-3 * 3_600),
+            offset_changes: Vec::new(),
+        }
+    }
+
+    /// The hand-made summary with Josephine, as served.
+    fn josephine() -> String {
+        JOSEPHINE.to_string()
+    }
+
+    /// The summary at her next advisory.
+    fn josephine_next() -> String {
+        JOSEPHINE.replace("2026-10-22T21:00:00.000Z", "2026-10-23T03:00:00.000Z")
+    }
+
+    /// `summary` with Josephine moved to the eastern Atlantic (15° N,
+    /// 35° W), over 4,700 km from New York.
+    fn far_away(summary: &str) -> String {
+        summary
+            .replace(r#""latitude": "39.5N""#, r#""latitude": "15.0N""#)
+            .replace(r#""longitude": "66.8W""#, r#""longitude": "35.0W""#)
+            .replace(r#""latitudeNumeric": 39.5"#, r#""latitudeNumeric": 15.0"#)
+            .replace(
+                r#""longitudeNumeric": -66.8"#,
+                r#""longitudeNumeric": -35.0"#,
+            )
+    }
+
+    fn with_storms(summary: String) -> Arc<Recorded> {
+        Arc::new(Recorded {
+            storms: Some(summary),
+            ..Recorded::default()
+        })
+    }
+
+    fn fetch_at(
+        host: &Arc<Recorded>,
+        place: Place,
+        cached: Option<String>,
+        now: i64,
+    ) -> StormsOutcome {
+        let shared: Arc<dyn FetchHost> = host.clone();
+        pollster::block_on(fetch_storms(place, default_settings(), cached, now, shared)).unwrap()
+    }
+
+    /// The paths asked for after the run times.
+    fn after_runs(net: &Recorded) -> Vec<String> {
+        let asked = net.asked();
+        let runs: Vec<String> = asked[..6]
+            .iter()
+            .map(|u| host_path(u).to_string())
+            .collect();
+        assert_eq!(runs, meta_paths());
+        asked[6..]
+            .iter()
+            .map(|u| host_path(u).to_string())
+            .collect()
+    }
+
+    fn nhc_attempts(outcome: &StormsOutcome) -> Vec<(&str, Option<&str>)> {
+        outcome
+            .attempts
+            .iter()
+            .filter(|a| a.provider == "nhc")
+            .map(|a| (a.endpoint.as_str(), a.error.as_deref()))
+            .collect()
+    }
+
+    #[test]
+    fn a_near_hurricane_brings_its_tracks() {
+        let net = with_storms(josephine());
+        let outcome = fetch_at(&net, on_the_track(), None, NOW);
+        assert!(outcome.refreshed);
+        assert_eq!(
+            after_runs(&net),
+            [
+                "api.open-meteo.com/v1/forecast",
+                "ensemble-api.open-meteo.com/v1/ensemble",
+                "api.open-meteo.com/v1/forecast",
+                CURRENT_STORMS,
+                ADECK_PATH,
+                BDECK_PATH
+            ]
+        );
+        assert_eq!(
+            nhc_attempts(&outcome),
+            [
+                ("current storms", None),
+                ("adeck al102026", None),
+                ("bdeck al102026", None)
+            ]
+        );
+        let o = outlook(&outcome);
+        assert_eq!(o.hurricanes.len(), 1);
+        let h = &o.hurricanes[0];
+        assert_eq!((h.id.as_str(), h.name.as_str()), ("al102026", "Josephine"));
+        assert_eq!(h.advisory_time, UnixTime(ADVISORY));
+        assert!(!h.official.is_empty() && !h.aids.is_empty() && !h.past.is_empty());
+        let vm: serde_json::Value = serde_json::from_str(&outcome.view_json).unwrap();
+        assert_eq!(vm["hurricanes"][0]["id"], "al102026");
+        assert_ne!(vm["hurricanes"][0]["cone"], serde_json::json!([]));
+    }
+
+    #[test]
+    fn a_known_advisory_reads_no_decks() {
+        let first = fetch_at(&with_storms(josephine()), on_the_track(), None, NOW);
+        let net = with_storms(josephine());
+        let cached = Some(first.outlook_json.clone());
+        let again = fetch_at(&net, on_the_track(), cached, NOW + HOUR);
+        assert!(!again.refreshed);
+        assert_eq!(after_runs(&net), [CURRENT_STORMS]);
+        assert_eq!(again.outlook_json, first.outlook_json);
+    }
+
+    #[test]
+    fn a_new_advisory_reads_the_decks_and_keeps_the_models() {
+        let first = fetch_at(&with_storms(josephine()), on_the_track(), None, NOW);
+        let net = with_storms(josephine_next());
+        let cached = Some(first.outlook_json.clone());
+        let again = fetch_at(&net, on_the_track(), cached, NOW + HOUR);
+        // The models' runs are current: none of their data is asked for.
+        assert!(!again.refreshed);
+        assert_eq!(after_runs(&net), [CURRENT_STORMS, ADECK_PATH, BDECK_PATH]);
+        let (before, after) = (outlook(&first), outlook(&again));
+        assert_eq!(after.hurricanes[0].advisory_time, UnixTime(NEXT_ADVISORY));
+        assert_eq!(
+            StormOutlook {
+                hurricanes: before.hurricanes.clone(),
+                ..after
+            },
+            before
+        );
+        assert_ne!(again.outlook_json, first.outlook_json);
+    }
+
+    #[test]
+    fn a_failed_adeck_leaves_the_hurricane_without_a_cone() {
+        let net = Arc::new(Recorded {
+            storms: Some(josephine()),
+            down: vec!["aid_public"],
+            ..Recorded::default()
+        });
+        let outcome = fetch_at(&net, on_the_track(), None, NOW);
+        assert_eq!(
+            nhc_attempts(&outcome),
+            [
+                ("current storms", None),
+                ("adeck al102026", Some("HTTP 503")),
+                ("bdeck al102026", None)
+            ]
+        );
+        let o = outlook(&outcome);
+        let h = &o.hurricanes[0];
+        assert!(h.official.is_empty() && h.aids.is_empty() && !h.past.is_empty());
+        let vm: serde_json::Value = serde_json::from_str(&outcome.view_json).unwrap();
+        assert_eq!(vm["hurricanes"][0]["cone"], serde_json::json!([]));
+        // The missing a-deck is read again for the same advisory; the
+        // b-deck is not.
+        let net = with_storms(josephine());
+        let again = fetch_at(&net, on_the_track(), Some(outcome.outlook_json), NOW + HOUR);
+        assert_eq!(after_runs(&net), [CURRENT_STORMS, ADECK_PATH]);
+        assert_eq!(outlook(&again).hurricanes[0].official.len(), 7);
+    }
+
+    #[test]
+    fn only_near_hurricanes_are_read() {
+        // Far from New York, with nothing known of her track: no decks.
+        let net = with_storms(far_away(&josephine()));
+        let outcome = fetch_at(&net, place(), None, NOW);
+        assert_eq!(after_runs(&net)[3..], [CURRENT_STORMS]);
+        assert_eq!(outlook(&outcome).hurricanes, []);
+        // Where she really was, about 630 km out, she is near.
+        let net = with_storms(josephine());
+        let near = fetch_at(&net, place(), None, NOW);
+        assert_eq!(
+            after_runs(&net)[3..],
+            [CURRENT_STORMS, ADECK_PATH, BDECK_PATH]
+        );
+        // A known forecast that comes near counts too, before the new
+        // advisory's track is read.
+        let net = with_storms(far_away(&josephine_next()));
+        let again = fetch_at(&net, place(), Some(near.outlook_json), NOW + HOUR);
+        assert_eq!(after_runs(&net), [CURRENT_STORMS, ADECK_PATH, BDECK_PATH]);
+        let h = &outlook(&again).hurricanes[0];
+        assert_eq!(
+            (h.latitude, h.advisory_time),
+            (15.0, UnixTime(NEXT_ADVISORY))
+        );
+    }
+
+    #[test]
+    fn without_the_active_storms_the_known_hurricanes_stay() {
+        let first = fetch_at(&with_storms(josephine()), on_the_track(), None, NOW);
+        let net = Arc::new(Recorded {
+            down: vec!["CurrentStorms"],
+            ..Recorded::default()
+        });
+        let cached = Some(first.outlook_json.clone());
+        let again = fetch_at(&net, on_the_track(), cached, NOW + HOUR);
+        assert_eq!(after_runs(&net), [CURRENT_STORMS]);
+        assert_eq!(nhc_attempts(&again), [("current storms", Some("HTTP 503"))]);
+        assert_eq!(again.outlook_json, first.outlook_json);
+        // Once she is no longer active, she is gone; the models stay.
+        let net = Arc::new(Recorded::default());
+        let cached = Some(first.outlook_json.clone());
+        let gone = fetch_at(&net, on_the_track(), cached, NOW + HOUR);
+        assert!(!gone.refreshed);
+        assert_eq!(after_runs(&net), [CURRENT_STORMS]);
+        let o = outlook(&gone);
+        assert_eq!(o.hurricanes, []);
+        assert_eq!(o.points, outlook(&first).points);
+    }
+
     fn check(
         host: &Arc<Recorded>,
         cached: Option<String>,
@@ -1279,7 +1721,7 @@ mod tests {
             });
             let full = fetch(&net, Some(light.outlook_json.clone()), NOW + HOUR).unwrap();
             assert!(full.refreshed);
-            assert_eq!(net.asked().len(), 9);
+            assert_eq!(net.asked().len(), 10);
             let o = outlook(&full);
             assert_eq!((o.ensembles.len(), o.grids.len()), (2, 4));
         }
