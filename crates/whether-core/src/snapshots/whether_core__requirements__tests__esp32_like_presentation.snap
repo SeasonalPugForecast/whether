@@ -13,7 +13,7 @@ DataRequirements {
     hourly_hours: 12,
     past_hours: 0,
     daily: DailyFields(
-        WEATHER_CODE | TEMP_MAX | TEMP_MIN | PRECIP_SUM | PRECIP_PROBABILITY_MAX | UV_INDEX_MAX,
+        WEATHER_CODE | TEMP_MAX | TEMP_MIN | PRECIP_SUM | PRECIP_PROBABILITY_MAX | UV_INDEX_MAX | APPARENT_MAX | APPARENT_MIN,
     ),
     daily_days: 5,
     minutely_hours: 0,

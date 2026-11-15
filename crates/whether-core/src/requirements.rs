@@ -258,6 +258,14 @@ impl DataRequirements {
         if !r.daily.is_empty() {
             r.daily_days = r.daily_days.max(1);
         }
+        // A day's "feels like" high and low beside its high and low whatever
+        // leads, so a display can lead with either from the same forecast (the
+        // hours give them only when they cover most of the day).
+        if r.daily
+            .intersects(DailyFields::TEMP_MAX | DailyFields::TEMP_MIN)
+        {
+            r.daily |= DailyFields::APPARENT_MAX | DailyFields::APPARENT_MIN;
+        }
         if p.temperature_basis == TemperatureBasis::FeelsLike {
             // The "feels like" values beside each temperature asked for.
             if r.current.contains(CurrentFields::TEMPERATURE) {
@@ -265,11 +273,6 @@ impl DataRequirements {
             }
             if r.hourly.contains(HourlyFields::TEMPERATURE) {
                 r.hourly |= HourlyFields::APPARENT;
-            }
-            if r.daily
-                .intersects(DailyFields::TEMP_MAX | DailyFields::TEMP_MIN)
-            {
-                r.daily |= DailyFields::APPARENT_MAX | DailyFields::APPARENT_MIN;
             }
         }
         r
@@ -431,9 +434,36 @@ mod tests {
                 | CurrentFields::TEMPERATURE
                 | CurrentFields::APPARENT
         );
-        assert_eq!(r.daily, DailyFields::TEMP_MAX | DailyFields::TEMP_MIN);
+        assert_eq!(
+            r.daily,
+            DailyFields::TEMP_MAX
+                | DailyFields::TEMP_MIN
+                | DailyFields::APPARENT_MAX
+                | DailyFields::APPARENT_MIN
+        );
         assert_eq!((r.hourly_hours, r.daily_days), (0, 1));
         assert!(r.hourly.is_empty() && !r.air_quality && r.minutely_hours == 0);
+    }
+
+    #[test]
+    fn days_feels_like_comes_with_their_high_and_low_whatever_leads() {
+        let feels_like = DailyFields::APPARENT_MAX | DailyFields::APPARENT_MIN;
+        for basis in [TemperatureBasis::Actual, TemperatureBasis::FeelsLike] {
+            let p = PresentationConfig {
+                widgets: vec![WidgetKind::Daily],
+                temperature_basis: basis,
+                ..Default::default()
+            };
+            let r = DataRequirements::from_presentation(&p);
+            assert!(r.daily.contains(feels_like), "{basis:?}");
+        }
+        // No high or low, no "feels like" either.
+        let p = PresentationConfig {
+            widgets: vec![WidgetKind::Sun],
+            ..Default::default()
+        };
+        let r = DataRequirements::from_presentation(&p);
+        assert!(!r.daily.intersects(feels_like));
     }
 
     #[test]
