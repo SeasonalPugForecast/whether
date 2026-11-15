@@ -12,6 +12,16 @@ struct AcknowledgementsView: View {
     private static let ccBy = URL(string: "https://creativecommons.org/licenses/by/4.0/")
     /// Environment and Climate Change Canada's licence for its open data, GEM included.
     private static let ecccLicence = URL(string: "https://eccc-msc.github.io/open-data/licence/readme_en/")
+    /// The disclaimer the National Hurricane Center's pages link to (the National Weather
+    /// Service's): its information is in the public domain unless noted otherwise.
+    private static let nhcDisclaimer = URL(string: "https://www.weather.gov/disclaimer")
+
+    /// A credit's link, by what it points to.
+    private static func linkTitle(_ url: URL) -> String {
+        if url == ccBy { return "CC BY 4.0 license" }
+        if url == nhcDisclaimer { return "Disclaimer" }
+        return "End-use licence"
+    }
 
     private static let credits: [(source: String, terms: String, license: URL?)] = [
         ("Open-Meteo.com", "Weather data under CC BY 4.0. Converted to your units and combined.", ccBy),
@@ -30,6 +40,11 @@ struct AcknowledgementsView: View {
             "DWD ICON (Storms)",
             "Forecasts via Open-Meteo. Based on data from Deutscher Wetterdienst, under CC BY 4.0.",
             ccBy
+        ),
+        (
+            "NOAA National Hurricane Center (Storms: hurricanes)",
+            "Advisories, forecast tracks, guidance models and the forecast cone's radii: US government, public domain",
+            nhcDisclaimer
         ),
         (
             "ERA5 (history, normals)",
@@ -64,10 +79,8 @@ struct AcknowledgementsView: View {
                         Text(credit.source)
                         Text(credit.terms).font(.caption).foregroundStyle(.secondary)
                         if let license = credit.license {
-                            Link(
-                                license == Self.ccBy ? "CC BY 4.0 license" : "End-use licence", destination: license
-                            )
-                            .font(.caption)
+                            Link(Self.linkTitle(license), destination: license)
+                                .font(.caption)
                         }
                     }
                 }

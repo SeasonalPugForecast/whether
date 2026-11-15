@@ -2,9 +2,10 @@ import Charts
 import SwiftUI
 import WhetherKit
 
-/// The storms at one place, in the Storms drawer: for the storm picked its agreement,
-/// each model's numbers, the ensembles' plumes and the run-to-run bars, and the data
-/// credits. Every text is the core's.
+/// The storms at one place, in the Storms drawer: the active hurricanes with NHC's
+/// advisories, then for the storm picked its agreement, each model's numbers, the
+/// ensembles' plumes and the run-to-run bars, and the data credits. Every text is the
+/// core's.
 struct StormsContent: View {
     let view: StormsView
     let stale: Bool
@@ -36,12 +37,17 @@ struct StormsContent: View {
             if let failure {
                 Note(symbol: "exclamationmark.triangle", text: failure)
             }
+            // Hurricanes lead: the first one's card is what the small drawer shows.
+            let peekStorms: (CGFloat) -> Void = view.hurricanes.isEmpty ? peek : { _ in }
+            if !view.hurricanes.isEmpty {
+                HurricanesSection(hurricanes: view.hurricanes, peek: peek)
+            }
             if view.events.isEmpty {
                 if let summary = view.summary {
                     Text(summary)
                         .font(.callout)
                         .glassCard()
-                        .modifier(PeekMark(peek: peek))
+                        .modifier(PeekMark(peek: peekStorms))
                 }
             } else {
                 if view.events.count > 1 { picker }
@@ -49,7 +55,7 @@ struct StormsContent: View {
                 EventDetail(
                     event: event,
                     ensembles: StormMapRules.shown(event.ensembles, hidden: hidden, chips: view.models),
-                    peek: peek
+                    peek: peekStorms
                 )
                 .task(id: PastRunsID(start: event.start, end: event.end, runs: view.models.map(\.run))) {
                     await loadPastRuns(event)
@@ -61,7 +67,9 @@ struct StormsContent: View {
                 }
             }
             .font(.caption2)
-            .foregroundStyle(.secondary)
+            // The primary style dimmed: the secondary one all but vanishes on the drawer's
+            // material, and the credits must always read.
+            .opacity(0.75)
             .frame(maxWidth: .infinity, alignment: .leading)
             .id("storms-credits")
         }
@@ -439,5 +447,82 @@ private struct RunBars: View {
             .accessibilityLabel("\(runs.short), \(runs.title), run to run")
             .accessibilityValue(runs.bars.map { "\($0.label) \($0.text)" }.joined(separator: ", "))
         }
+    }
+}
+
+/// The active hurricanes, above the storms: each with its advisory and NHC's link.
+private struct HurricanesSection: View {
+    let hurricanes: [StormsView.Hurricane]
+    /// Marks the first card's bottom as the drawer's small height (when it leads the drawer).
+    let peek: ((CGFloat) -> Void)?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // As the storms' titles: the secondary style fades out on the drawer's material.
+            Text("Hurricanes")
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+            ForEach(Array(hurricanes.enumerated()), id: \.element.id) { index, hurricane in
+                if index == 0, let peek {
+                    HurricaneCard(hurricane: hurricane).modifier(PeekMark(peek: peek))
+                } else {
+                    HurricaneCard(hurricane: hurricane)
+                }
+            }
+        }
+        .id("storms-hurricanes")
+    }
+}
+
+/// A hurricane's advisory: its name and kind, wind, pressure and movement, when the
+/// advisory was issued, whether its cone reaches the place, and NHC's advisory. The
+/// edge is in its level's color, with the level's symbol beside the name.
+private struct HurricaneCard: View {
+    let hurricane: StormsView.Hurricane
+    @Environment(\.colorTheme) private var colors
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        let color = colors.level(hurricane.level)
+        HStack(alignment: .top, spacing: 12) {
+            Capsule()
+                .fill(color)
+                .frame(width: 5)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Image(systemName: StormAheadRules.symbol(hurricane.level))
+                        .foregroundStyle(color)
+                    Text(hurricane.title)
+                        .font(.headline)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Text("Winds \(hurricane.wind.text) · \(hurricane.pressure.text) · \(hurricane.movement)")
+                    .font(.callout)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let reaches = hurricane.reaches {
+                    Text(reaches)
+                        .font(.callout.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Text(hurricane.advisory)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                if let url = hurricane.advisoryUrl.flatMap(URL.init(string:)) {
+                    Button {
+                        openURL(url)
+                    } label: {
+                        Label("NHC advisory", systemImage: "arrow.up.right.square")
+                            .font(.footnote.weight(.semibold))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .padding(.top, 4)
+                    .accessibilityHint("Opens the National Hurricane Center's advisory")
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .glassCard()
     }
 }

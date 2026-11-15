@@ -14,6 +14,8 @@ struct ForecastView: View {
     @State private var editingSections = false
     /// The Storms screen full screen (the Storm ahead card, with the tab hidden).
     @State private var showStorms = false
+    /// The hurricane the Storm ahead card warns of, framed on the Storms map (NHC id).
+    @State private var stormFocus: String?
 
     enum AppTab: Hashable {
         case now, hourly, days, radar, plan, storms
@@ -389,8 +391,9 @@ struct ForecastView: View {
     }
 
     /// The Storms screen, from the Storm ahead card: its tab when the tab bar has it,
-    /// else full screen.
-    private func openStorms() {
+    /// else full screen, framed on `hurricane` when the card warns of one.
+    private func openStorms(hurricane: String?) {
+        stormFocus = hurricane
         if StormAheadRules.opensTab(visible: visibleTabs) {
             tab = .storms
         } else {
@@ -422,7 +425,7 @@ struct ForecastView: View {
         .onChange(of: visibleTabs) { keepTabVisible() }
         .onChange(of: tab) { keepTabVisible() }
         .fullScreenCover(isPresented: $showStorms) {
-            StormsTab(store: store, close: { showStorms = false })
+            StormsTab(store: store, close: { showStorms = false }, focus: stormFocus)
         }
         // White controls on the skies (the accent blue vanishes on them).
         .tint(store.preferences.background == .sky ? .white : nil)
@@ -488,7 +491,7 @@ struct ForecastView: View {
         case .plan:
             PlanTab(store: store)
         case .storms:
-            StormsTab(store: store)
+            StormsTab(store: store, focus: stormFocus)
                 .modifier(TopBar { header })
         }
     }
@@ -715,7 +718,7 @@ struct ForecastView: View {
             }
         case .storm:
             if let card = store.stormAheadCard(for: place) {
-                StormAheadCard(card: card, cards: cards) { openStorms() }
+                StormAheadCard(card: card, cards: cards) { openStorms(hurricane: card.hurricane) }
                     .cardContextMenu()
                     .id("storm")
             }

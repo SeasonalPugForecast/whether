@@ -450,6 +450,13 @@ final class StormsTests: XCTestCase {
         XCTAssertEqual(StormAheadRules.symbol("dire"), "hurricane")
     }
 
+    func testAHurricanesCardShowsTheHurricane() throws {
+        let hurricane = try StormAhead.decode(resource("storms-josephine-storm-ahead"))
+        XCTAssertEqual(StormAheadRules.symbol(for: hurricane), "hurricane")
+        let models = try StormAhead.decode(resource("storm-ahead-noreaster-imperial"))
+        XCTAssertEqual(StormAheadRules.symbol(for: models), StormAheadRules.symbol("poor"))
+    }
+
     func testTheCheckKeepsItsOwnFileBesideTheOutlook() {
         let dir = URL(fileURLWithPath: "/tmp/storms", isDirectory: true)
         let outlook = StormsRules.outlookURL("name:New York", in: dir)

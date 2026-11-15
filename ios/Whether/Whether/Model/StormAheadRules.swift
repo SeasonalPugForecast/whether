@@ -69,6 +69,12 @@ enum StormAheadRules {
         }
     }
 
+    /// The card's symbol: the hurricane's for a hurricane (its title names its kind),
+    /// else the level's.
+    static func symbol(for card: StormAhead) -> String {
+        card.hurricane == nil ? symbol(card.level) : "hurricane"
+    }
+
     /// Where tapping the card goes: the Storms tab when the tab bar has it, else the
     /// Storms screen full screen.
     static func opensTab(visible: [AppTabItem]) -> Bool {
