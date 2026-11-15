@@ -40,6 +40,39 @@ nonisolated struct RefreshQueue: Equatable {
     }
 }
 
+/// What opening the app fetches, and when, around the location fix that may
+/// move the following place: `due` the places whose data is old, `following`
+/// the place that follows the phone, `shown` the one on screen.
+nonisolated struct OpeningFetch: Equatable {
+    var due: Set<String>
+    var following: String?
+    var shown: String?
+
+    /// Whether the fetch waits for the fix (briefly) before it starts: the place
+    /// shown follows the phone, and is fetched first, where the phone is, rather
+    /// than after the others (or where it was, and then again).
+    var waitsForFix: Bool { following != nil && following == shown }
+
+    /// Fetched at once, side by side with the location read.
+    var atOnce: Set<String> { waitsForFix ? [] : due.subtracting(following.map { [$0] } ?? []) }
+
+    /// Fetched once the fix is in, `moved` saying whether the following place
+    /// moved (`nil`: the wait for it ended first, and it is fetched where it was
+    /// when due). With `waitsForFix` the others come with it, in one batch.
+    func afterFix(moved: Bool?) -> Set<String> {
+        var ids = waitsForFix ? due.subtracting(following.map { [$0] } ?? []) : []
+        if let following, moved == true || due.contains(following) { ids.insert(following) }
+        return ids
+    }
+
+    /// The following place when it `moved`: fetched again where the phone is
+    /// when a refresh fetched it where it was (one that runs, or once the fix
+    /// came after the wait).
+    func moved(_ moved: Bool?) -> Set<String> {
+        moved == true ? following.map { [$0] } ?? [] : []
+    }
+}
+
 /// Which places a refresh on opening the app fetches.
 nonisolated enum Freshness {
     /// The ids of `places` (with when each was last fetched, Unix seconds) whose

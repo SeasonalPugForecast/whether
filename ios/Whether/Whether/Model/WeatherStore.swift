@@ -706,12 +706,18 @@ final class WeatherStore {
     /// A launch's or a return's refresh is under way (`refreshOnOpen`).
     @ObservationIgnored private var opening = false
 
+    /// How long opening waits for the following place's fix before fetching
+    /// without it. The fix is still waited for after that, as long as `followMe`
+    /// waits, and moves the place when it comes.
+    private static let fixWait: Double = 5
+
     /// On launch and on coming back to the app: fetches the places whose data is
     /// due, and moves the following place to where the phone is. That place waits
     /// for the location (briefly), so it is fetched once, where the phone is,
-    /// rather than where it was and then again. A refresh already running (in the
-    /// background, or of a place just added) is joined: it fetches the due places
-    /// it has not fetched, and the following place again once it moved.
+    /// rather than where it was and then again; shown, it is fetched first
+    /// (`OpeningFetch`). A refresh already running (in the background, or of a
+    /// place just added) is joined: it fetches the due places it has not fetched,
+    /// and the following place again once it moved.
     func refreshOnOpen() async {
         guard !opening else { return }
         opening = true
@@ -723,14 +729,17 @@ final class WeatherStore {
             let args = ProcessInfo.processInfo.arguments
             if args.contains("-offline") || args.contains("-slow") { due = Set(places.map(\.id)) }
         #endif
-        let following = places.first(where: \.follows)?.id
-        let others = due.subtracting([following].compactMap { $0 })
-        async let fetched: Void = refresh(only: others, again: [])
-        let moved = await followMe(refetch: false, timeout: 5, reuseRecent: true)
-        if let following, moved || due.contains(following) {
-            // Joins the refresh of the others when it still runs.
-            await refresh(only: [following], again: moved ? [following] : [])
+        let plan = OpeningFetch(due: due, following: places.first(where: \.follows)?.id, shown: shownPlaceID)
+        let located = Task { await self.followMe(refetch: false, reuseRecent: true) }
+        async let fetched: Void = refresh(only: plan.atOnce, again: [])
+        let moved = await located.value(within: Self.fixWait)
+        // Joins the refresh of the others when it still runs.
+        async let joined: Void = refresh(only: plan.afterFix(moved: moved), again: plan.moved(moved))
+        if moved == nil {
+            // The fix came late: the place moves now, and is fetched where the phone is.
+            await refresh(only: plan.moved(await located.value))
         }
+        await joined
         await fetched
     }
 
