@@ -3,7 +3,8 @@ import SwiftUI
 import WhetherKit
 
 /// Apple's map with the NEXRAD frames as tile overlays; only frame `index`
-/// shows, so stepping through the loop is instant once the tiles are in.
+/// shows, so stepping through the loop is instant once the tiles are in. Frame `index`
+/// loads first, the others after it.
 struct RadarMap: UIViewRepresentable {
     let center: CLLocationCoordinate2D
     let frames: [RadarFrame]
@@ -21,6 +22,12 @@ struct RadarMap: UIViewRepresentable {
     var style = RadarOptions.MapStyle.muted
     /// How strongly the frame shown is drawn.
     var opacity = RadarOptions.defaultOpacity
+    /// Whether the loop's other frames load too, after the one shown; the Now tab's card
+    /// shows only the latest.
+    var loops = true
+    /// Called with the frames' templates once all of their tiles are in (or the wait for
+    /// them ran out): the loop can play.
+    var onLoopLoaded: (([String]) -> Void)? = nil
     @Environment(\.colorTheme) private var colors
     @Environment(\.colorVision) private var vision
     @Environment(\.showsPatterns) private var patterns
@@ -83,19 +90,10 @@ struct RadarMap: UIViewRepresentable {
         let coordinator = context.coordinator
         let templates = frames.map(\.tileTemplate)
         let ramp = ramp
+        coordinator.loops = loops
+        coordinator.onLoopLoaded = onLoopLoaded
         if coordinator.templates != templates || coordinator.ramp != ramp {
-            map.removeOverlays(map.overlays)
-            coordinator.templates = templates
-            coordinator.ramp = ramp
-            coordinator.overlays = templates.map { template in
-                let overlay = RadarTileOverlay(
-                    urlTemplate: template, ramp: RadarPalette.recolors(template: template) ? ramp : nil)
-                overlay.canReplaceMapContent = false
-                overlay.maximumZ = maximumZ
-                return overlay
-            }
-            coordinator.shown = index
-            map.addOverlays(coordinator.overlays, level: .aboveRoads)
+            coordinator.load(templates, ramp: ramp, showing: index, maximumZ: maximumZ, on: map)
         }
         coordinator.opacity = opacity
         coordinator.show(index)
@@ -142,8 +140,65 @@ struct RadarMap: UIViewRepresentable {
         var style = RadarOptions.MapStyle.muted
         var span: CLLocationDegrees = 0
         var opacity = RadarOptions.defaultOpacity
+        var loops = true
+        var onLoopLoaded: (([String]) -> Void)?
+        /// The frames not on the map yet, and what tells when their tiles are in.
+        private var waiting: [MKTileOverlay] = []
+        private var waitingLoads: TileLoads?
+        private weak var map: MKMapView?
+
+        /// Puts the frames of `templates` on `map`: frame `index` at once, the others once
+        /// its tiles are in (or after `RadarLoopRules.latestWait`), so they don't compete
+        /// with it for the connections. Without `loops` the others never load.
+        func load(_ templates: [String], ramp: [RGBA]?, showing index: Int, maximumZ: Int, on map: MKMapView) {
+            map.removeOverlays(map.overlays)
+            renderers = [:]
+            self.map = map
+            self.templates = templates
+            self.ramp = ramp
+            let first = min(max(index, 0), max(templates.count - 1, 0))
+            let firstLoads = TileLoads { [weak self] in self?.addWaiting(for: templates) }
+            let loopLoads = TileLoads { [weak self] in
+                guard let self, self.templates == templates else { return }
+                self.onLoopLoaded?(templates)
+            }
+            overlays = templates.enumerated().map { i, template in
+                let overlay = RadarTileOverlay(
+                    urlTemplate: template, ramp: RadarPalette.recolors(template: template) ? ramp : nil,
+                    loads: i == first ? firstLoads : loopLoads)
+                overlay.canReplaceMapContent = false
+                overlay.maximumZ = maximumZ
+                return overlay
+            }
+            shown = first
+            waiting = RadarLoopRules.deferred(count: overlays.count, shown: first).map { overlays[$0] }
+            waitingLoads = loopLoads
+            guard overlays.indices.contains(first) else { return }
+            map.addOverlay(overlays[first], level: .aboveRoads)
+            guard loops, !waiting.isEmpty else { return }
+            Task { [weak self] in
+                try? await Task.sleep(for: RadarLoopRules.latestWait)
+                self?.addWaiting(for: templates)
+            }
+        }
+
+        /// Adds the frames still waiting, while the map still shows `templates`; the
+        /// loop counts as loaded once their tiles are in, or after `RadarLoopRules.loopWait`.
+        func addWaiting(for templates: [String]) {
+            guard loops, templates == self.templates, !waiting.isEmpty, let map else { return }
+            let frames = waiting
+            waiting = []
+            map.addOverlays(frames, level: .aboveRoads)
+            let loads = waitingLoads
+            Task {
+                try? await Task.sleep(for: RadarLoopRules.loopWait)
+                loads?.settle()
+            }
+        }
 
         func show(_ index: Int) {
+            // Another frame than the first (dragged to): the others are wanted now.
+            if index != shown { addWaiting(for: templates) }
             shown = index
             for (i, overlay) in overlays.enumerated() {
                 renderers[ObjectIdentifier(overlay)]?.alpha = i == index ? opacity : 0

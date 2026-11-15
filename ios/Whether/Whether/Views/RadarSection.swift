@@ -37,7 +37,7 @@ struct RadarSection: View {
                     center: center, frames: loop.frames, index: loop.frames.count - 1,
                     interactive: false, span: options.startZoom.cardSpan,
                     maximumZ: source == .openWeather ? Int(radarOpenweatherMaxZoom()) : 20,
-                    style: options.style, opacity: options.opacity
+                    style: options.style, opacity: options.opacity, loops: false
                 )
                 .frame(height: 220)
                 .clipShape(.rect(cornerRadius: 12))

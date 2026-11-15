@@ -12,24 +12,28 @@ import WhetherKit
 /// With a `ramp` (color vision, or a theme's own radar colors), NEXRAD's n0q colors are
 /// mapped back to their dBZ step (`RadarPalette`) and painted with the ramp's color for
 /// that step. Repainted tiles are kept in memory per ramp and URL while they are fresh
-/// (`RadarTileCache`), so stepping through the loop again is instant.
+/// (`RadarTileCache`), so stepping through the loop again is instant. `loads` counts the
+/// tiles in flight, so the map can tell when a frame is in.
 nonisolated final class RadarTileOverlay: MKTileOverlay {
     /// The five legend colors, light to heavy, or `nil` to keep the tiles' own.
     let ramp: [RGBA]?
     private let rampKey: String
+    let loads: TileLoads?
 
     /// Repainted tiles by ramp and URL, while fresh.
     private static let cache = RadarTileCache()
 
-    init(urlTemplate: String?, ramp: [RGBA]?) {
+    init(urlTemplate: String?, ramp: [RGBA]?, loads: TileLoads? = nil) {
         self.ramp = ramp
         rampKey = ramp.map(RadarPalette.key) ?? ""
+        self.loads = loads
         super.init(urlTemplate: urlTemplate)
     }
 
     override func loadTile(at path: MKTileOverlayPath, result: @escaping (Data?, (any Error)?) -> Void) {
         let url = url(forTilePath: path)
-        let reply = TileReply(result: result)
+        loads?.begin()
+        let reply = TileReply(result: result, loads: loads)
         let key = "\(rampKey)|\(url.absoluteString)"
         if ramp != nil, let hit = Self.cache.tile(for: key, now: .now) {
             reply.send(hit, nil)
@@ -105,11 +109,13 @@ nonisolated final class RadarTileOverlay: MKTileOverlay {
 }
 
 /// MapKit's tile callback, carried into URLSession's completion handler: MapKit
-/// accepts the call from any thread.
+/// accepts the call from any thread. Sending it counts the tile as in.
 nonisolated private struct TileReply: @unchecked Sendable {
     let result: (Data?, (any Error)?) -> Void
+    let loads: TileLoads?
 
     func send(_ data: Data?, _ error: (any Error)?) {
         result(data, error)
+        loads?.end()
     }
 }

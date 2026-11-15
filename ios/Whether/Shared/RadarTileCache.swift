@@ -70,3 +70,64 @@ nonisolated final class RadarTileCache: @unchecked Sendable {
     /// Whether a response with HTTP `status` (none for a non-HTTP response) is a tile.
     static func succeeded(status: Int?) -> Bool { status.map { (200..<300).contains($0) } ?? true }
 }
+
+/// The tiles in flight for a group of tile overlays, to tell when the ones the map asked
+/// for are in: `settled` runs once, on the main actor, when none has been in flight for a
+/// moment (the map asks for a view's tiles together), or when `settle()` stops waiting.
+/// A failed tile counts as in. Thread-safe: MapKit asks for tiles on its own threads.
+nonisolated final class TileLoads: @unchecked Sendable {
+    /// How long nothing may be in flight before the group counts as settled.
+    static let quiet: Duration = .milliseconds(200)
+
+    private let lock = NSLock()
+    private var inFlight = 0
+    /// Tiles asked for so far: one asked for during the quiet moment starts it over.
+    private var asked = 0
+    private var done = false
+    private let settled: @MainActor @Sendable () -> Void
+
+    init(settled: @escaping @MainActor @Sendable () -> Void) {
+        self.settled = settled
+    }
+
+    /// Whether the group has settled.
+    var isSettled: Bool { lock.withLock { done } }
+
+    /// A tile was asked for.
+    func begin() {
+        lock.withLock {
+            inFlight += 1
+            asked += 1
+        }
+    }
+
+    /// A tile came in or failed.
+    func end() {
+        let quietFrom: Int? = lock.withLock {
+            inFlight = max(inFlight - 1, 0)
+            return inFlight == 0 && !done ? asked : nil
+        }
+        guard let quietFrom else { return }
+        Task { @MainActor in
+            try? await Task.sleep(for: Self.quiet)
+            if self.finish(quietFrom: quietFrom) { self.settled() }
+        }
+    }
+
+    /// Settles now, whatever is in flight: the fallback when tiles are slow or the map
+    /// asks for none.
+    @MainActor func settle() {
+        if finish(quietFrom: nil) { settled() }
+    }
+
+    /// Marks the group settled, once; with `quietFrom`, only if no tile was asked for
+    /// since then.
+    private func finish(quietFrom: Int?) -> Bool {
+        lock.withLock {
+            guard !done else { return false }
+            if let quietFrom, inFlight > 0 || asked != quietFrom { return false }
+            done = true
+            return true
+        }
+    }
+}
