@@ -170,6 +170,13 @@ extension SavedPlan {
             from: SharedPlan(other, by: "", at: Date(timeIntervalSince1970: 0)))
     }
 
+    /// Whether the two plans ask the same of the past: the same place, dates and years, so
+    /// an answer for one is the answer for the other (the name doesn't matter).
+    func asksTheSame(as other: SavedPlan) -> Bool {
+        SharedPlace(place) == SharedPlace(other.place) && fromDay == other.fromDay
+            && toDay == other.toDay && years == other.years
+    }
+
     /// This plan after the editor changed it to `edit`: the editor never changes how the
     /// plan is shared (`sharing` stays), and a participant who may only look keeps the
     /// shared fields as they are (only `looked` can change).

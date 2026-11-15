@@ -292,6 +292,18 @@ struct PlanEditor: View {
         // A plan looked up before shows its kept answer at once.
         .task { if plan?.looked == true { await look() } }
         .task(id: forecastKey) { await loadForecast() }
+        // A sync that moves the plan under the editor leaves the answer for its old dates:
+        // it goes, as it does for an edit here.
+        .onChange(of: askKey) {
+            answer = nil
+            problem = nil
+        }
+    }
+
+    /// What an answer depends on: the place, the dates and the years.
+    private var askKey: String {
+        guard let p = plan else { return "" }
+        return "\(forecastKey),\(p.years)"
     }
 
     /// What the forecast depends on: the place and the dates.
@@ -318,7 +330,9 @@ struct PlanEditor: View {
             return
         }
         let daysBack = max(c.dateComponents([.day], from: c.startOfDay(for: p.from), to: today).day ?? 0, 0)
-        guard let view = await store.planForecast(at: p.place, daysBack: daysBack) else { return }
+        // A newer look-up took over while this one ran (the dates or the place moved).
+        guard let view = await store.planForecast(at: p.place, daysBack: daysBack), !Task.isCancelled
+        else { return }
         forecast = Dictionary(
             (view.daily?.days ?? []).map { ($0.dateShort, $0) }, uniquingKeysWith: { a, _ in a })
         // Observed days, but not today (its forecast is the better guess).
@@ -634,8 +648,8 @@ struct PlanEditor: View {
     }
 
     private func look() async {
-        guard var p = plan else { return }
-        let trip = p.trip(lastYear: lastYear)
+        guard let asked = plan else { return }
+        let trip = asked.trip(lastYear: lastYear)
         if let why = tripProblem(trip: trip) {
             problem = why
             problemDetail = nil
@@ -645,11 +659,19 @@ struct PlanEditor: View {
         loading = true
         defer { loading = false }
         do {
-            answer = try await store.plan(trip, at: p.place)
+            let found = try await store.plan(trip, at: asked.place)
+            // The plan as it is now, not as it was asked: a sync may have brought someone's
+            // new dates meanwhile, which the old copy would put back (and send back). An
+            // answer for what the plan no longer asks is neither shown nor kept.
+            guard var now = plan, now.asksTheSame(as: asked) else { return }
+            answer = found
             problem = nil
-            p.looked = true
-            store.update(p)
+            if !now.looked {
+                now.looked = true
+                store.update(now)
+            }
         } catch {
+            guard plan?.asksTheSame(as: asked) == true else { return }
             answer = nil
             let message = userMessage(error)
             problem = message.title

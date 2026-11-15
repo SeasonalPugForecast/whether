@@ -493,6 +493,14 @@ final class PlanSyncTests: XCTestCase {
         XCTAssertTrue(PlanChange.notices(for: [renamed, years], ignoring: nil).isEmpty)
     }
 
+    func testPlansAskTheSameOfThePastWithoutTheName() {
+        XCTAssertTrue(plan().asksTheSame(as: plan(name: "Beach week", looked: true)))
+        XCTAssertFalse(plan().asksTheSame(as: plan(from: july14, to: july21)))
+        XCTAssertFalse(plan().asksTheSame(as: plan(to: july21)))
+        XCTAssertFalse(plan().asksTheSame(as: plan(place: cape)))
+        XCTAssertFalse(plan().asksTheSame(as: plan(years: 10)))
+    }
+
     func testPreferencesWithoutThePlanChangeSwitchTurnItOn() throws {
         func decode(_ json: String) throws -> Preferences {
             try JSONDecoder().decode(Preferences.self, from: Data(json.utf8))
