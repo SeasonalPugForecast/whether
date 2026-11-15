@@ -18,7 +18,9 @@ enum CurrentLocation {
     /// (`AppPlace.fixIsRecent`).
     private static var last: CLLocation?
 
-    /// One location fix, at about a kilometre (the following place moves at 1 km).
+    /// One location fix, at about a hundred metres: well inside the kilometre the
+    /// following place moves at, which a fix also has to be sure of
+    /// (`AppPlace.shouldMove`).
     /// Gives up after `timeout` seconds (no signal, or a permission prompt left alone).
     static func fix(timeout: Double = 12) async throws -> CLLocation {
         #if DEBUG
@@ -44,8 +46,8 @@ enum CurrentLocation {
         defer { withExtendedLifetime(session) {} }
         switch CLLocationManager().authorizationStatus {
         case .authorizedWhenInUse, .authorizedAlways:
-            // Wi-Fi and cell towers where they answer, rather than the best accuracy
-            // (which keeps GPS on).
+            // Wi-Fi where it answers, rather than the best accuracy (which keeps
+            // GPS on).
             return try await CoarseFix().location()
         case .denied, .restricted:
             throw Failure.denied
@@ -111,8 +113,8 @@ enum CurrentLocation {
     #endif
 }
 
-/// One fix at about a kilometre (`kCLLocationAccuracyKilometer`), once location
-/// access is given.
+/// One fix at about a hundred metres (`kCLLocationAccuracyHundredMeters`), once
+/// location access is given.
 private final class CoarseFix: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private var continuation: CheckedContinuation<CLLocation, any Error>?
@@ -126,7 +128,7 @@ private final class CoarseFix: NSObject, CLLocationManagerDelegate {
                 }
                 self.continuation = continuation
                 manager.delegate = self
-                manager.desiredAccuracy = kCLLocationAccuracyKilometer
+                manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
                 manager.requestLocation()
             }
         } onCancel: {

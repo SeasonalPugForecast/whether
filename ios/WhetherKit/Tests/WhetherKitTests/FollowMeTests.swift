@@ -22,6 +22,18 @@ final class FollowMeTests: XCTestCase {
         XCTAssertTrue(AppPlace.shouldMove(old: here, new: at(50_000)))
     }
 
+    func testACoarseFixMovesThePlaceOnlyWhenItIsSurelyAKilometerAway() {
+        let here = CLLocationCoordinate2D(latitude: 40, longitude: -75)
+        // A Wi-Fi fix, good to 65 m.
+        XCTAssertTrue(AppPlace.shouldMove(old: here, new: at(1_100), accuracy: 65))
+        XCTAssertFalse(AppPlace.shouldMove(old: here, new: at(1_050), accuracy: 65))
+        // Cell towers only, good to 3 km: a still phone's fix lands 1.5 km off.
+        XCTAssertFalse(AppPlace.shouldMove(old: here, new: at(1_500), accuracy: 3_000))
+        XCTAssertTrue(AppPlace.shouldMove(old: here, new: at(50_000), accuracy: 3_000))
+        // No accuracy: the coordinates mean nothing.
+        XCTAssertFalse(AppPlace.shouldMove(old: here, new: at(50_000), accuracy: -1))
+    }
+
     func testAFixAnswersForTenMinutes() {
         let now = Date(timeIntervalSince1970: 1_000_000)
         XCTAssertTrue(AppPlace.fixIsRecent(now, now: now))

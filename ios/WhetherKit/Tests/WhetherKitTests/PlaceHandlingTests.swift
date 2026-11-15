@@ -114,6 +114,19 @@ final class PlaceHandlingTests: XCTestCase {
         XCTAssertTrue(none.isEmpty)
     }
 
+    func testACoarseFixRemovesOnlyThePlacesItIsSureToBeNear() {
+        // 0.005 degrees of latitude is about 550 m; 0.0085 about 945 m.
+        let list = [at("me", 40.000, follows: true), at("home", 40.005), at("office", 40.0085)]
+        let (kept, removed) = AppPlace.removingDuplicates(of: "me", in: list, accuracy: 100)
+        XCTAssertEqual(kept.map(\.id), ["me", "office"])
+        XCTAssertEqual(removed.map(\.id), ["home"])
+        // Cell towers only: the phone may be kilometres from any of them.
+        let (all, none) = AppPlace.removingDuplicates(of: "me", in: list, accuracy: 2_000)
+        XCTAssertEqual(all, list)
+        XCTAssertTrue(none.isEmpty)
+        XCTAssertTrue(AppPlace.removingDuplicates(of: "me", in: list, accuracy: -1).removed.isEmpty)
+    }
+
     // MARK: A refresh asked for during a refresh joins it
 
     func testAFullRefreshFetchesEveryPlaceOnceAndEnds() {

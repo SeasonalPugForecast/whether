@@ -73,10 +73,16 @@ struct AppPlace: Codable, Hashable, Identifiable {
 
     // MARK: Following
 
-    /// Whether a place at `old` moves to `new`: the phone is 1 km or more away.
-    static func shouldMove(old: CLLocationCoordinate2D, new: CLLocationCoordinate2D) -> Bool {
-        CLLocation(latitude: old.latitude, longitude: old.longitude)
-            .distance(from: CLLocation(latitude: new.latitude, longitude: new.longitude)) >= 1_000
+    /// Whether a place at `old` moves to `new`, a fix good to `accuracy` metres
+    /// (its `horizontalAccuracy`): the phone is 1 km or more away however far off
+    /// the fix is. A coarse fix (cell towers, a few km) near the place moves
+    /// nothing; one without an accuracy (negative) never moves it.
+    static func shouldMove(
+        old: CLLocationCoordinate2D, new: CLLocationCoordinate2D, accuracy: Double = 0
+    ) -> Bool {
+        guard accuracy >= 0 else { return false }
+        return CLLocation(latitude: old.latitude, longitude: old.longitude)
+            .distance(from: CLLocation(latitude: new.latitude, longitude: new.longitude)) - accuracy >= 1_000
     }
 
     /// How long a location fix answers for a new one: coming back to the app
@@ -157,11 +163,16 @@ struct AppPlace: Codable, Hashable, Identifiable {
 
     /// `places` without the fixed places within 1 km of the place `id`, which
     /// follows the phone and keeps its own id and name: it is the same spot, and
-    /// two places would show the same forecast twice. The ones removed come second
-    /// (their caches go with them).
-    static func removingDuplicates(of id: String, in places: [AppPlace]) -> (kept: [AppPlace], removed: [AppPlace]) {
+    /// two places would show the same forecast twice. Its coordinates are a fix
+    /// good to `accuracy` metres, and only places within 1 km of anywhere the
+    /// phone can be go. The ones removed come second (their caches go with them).
+    static func removingDuplicates(
+        of id: String, in places: [AppPlace], accuracy: Double = 0
+    ) -> (kept: [AppPlace], removed: [AppPlace]) {
         guard let followed = places.first(where: { $0.id == id && $0.follows }) else { return (places, []) }
-        let removed = places.filter { $0.id != id && !$0.follows && isDuplicate(followed, of: $0) }
+        let removed = places.filter {
+            $0.id != id && !$0.follows && isDuplicate(followed, of: $0, accuracy: accuracy)
+        }
         let ids = Set(removed.map(\.id))
         return (places.filter { !ids.contains($0.id) }, removed)
     }
@@ -177,10 +188,13 @@ struct AppPlace: Codable, Hashable, Identifiable {
 
     // MARK: Identity
 
-    /// Whether `place` is `saved` again: within 1 km, whatever the names.
-    static func isDuplicate(_ place: AppPlace, of saved: AppPlace) -> Bool {
-        CLLocation(latitude: place.latitude, longitude: place.longitude)
-            .distance(from: CLLocation(latitude: saved.latitude, longitude: saved.longitude)) <= 1_000
+    /// Whether `place` is `saved` again: within 1 km, whatever the names. With
+    /// `place` a fix good to `accuracy` metres, within 1 km however far off it is
+    /// (none is, without an accuracy).
+    static func isDuplicate(_ place: AppPlace, of saved: AppPlace, accuracy: Double = 0) -> Bool {
+        guard accuracy >= 0 else { return false }
+        return CLLocation(latitude: place.latitude, longitude: place.longitude)
+            .distance(from: CLLocation(latitude: saved.latitude, longitude: saved.longitude)) + accuracy <= 1_000
     }
 
     /// The cache file: the id with everything outside `[A-Za-z0-9_-]` as `_`.

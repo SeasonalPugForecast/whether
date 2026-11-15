@@ -566,9 +566,10 @@ final class WeatherStore {
     }
 
     /// Removes the saved fixed places within 1 km of the following place `id`
-    /// (and their caches): after a move there it would be listed twice.
-    private func dropDuplicates(of id: String) {
-        let (kept, removed) = AppPlace.removingDuplicates(of: id, in: places)
+    /// (and their caches): after a move there it would be listed twice. Its
+    /// coordinates are a fix good to `accuracy` metres.
+    private func dropDuplicates(of id: String, accuracy: Double = 0) {
+        let (kept, removed) = AppPlace.removingDuplicates(of: id, in: places, accuracy: accuracy)
         for place in removed {
             caches[place.id] = nil
             try? FileManager.default.removeItem(at: place.cacheURL(in: directory))
@@ -600,7 +601,11 @@ final class WeatherStore {
             return false
         }
         locationOff = false
-        guard AppPlace.shouldMove(old: followed.coordinate, new: location.coordinate) else { return false }
+        // A coarse fix (cell towers only) is not sure enough to move the place, nor
+        // to remove the saved places near it.
+        let accuracy = location.horizontalAccuracy
+        guard AppPlace.shouldMove(old: followed.coordinate, new: location.coordinate, accuracy: accuracy)
+        else { return false }
         let named = await CurrentLocation.place(at: location)
         guard let i = places.firstIndex(where: { $0.id == followed.id }) else { return false }
         places[i].name = named.name
@@ -611,7 +616,7 @@ final class WeatherStore {
         caches[followed.id] = PlaceCache()
         save(places[i])
         let shown = places.indices.contains(active) ? places[active].id : nil
-        dropDuplicates(of: followed.id)
+        dropDuplicates(of: followed.id, accuracy: accuracy)
         if let shown, let now = places.firstIndex(where: { $0.id == shown }) { active = now }
         active = max(0, min(active, places.count - 1))
         savePlaces()
