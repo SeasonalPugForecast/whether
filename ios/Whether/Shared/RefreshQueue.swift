@@ -14,15 +14,17 @@ nonisolated struct RefreshQueue: Equatable {
         self.only = only
     }
 
-    /// Joins a refresh asked for while this one runs: `ids` are fetched (again, if
-    /// need be); `nil` (every place) widens a targeted refresh to the places not
-    /// fetched yet.
-    mutating func request(_ ids: Set<String>?) {
-        if let ids {
-            requested.formUnion(ids)
-        } else {
+    /// Joins a refresh asked for while this one runs: `ids` are fetched, again
+    /// when this one fetched them already (or is fetching them) and they are in
+    /// `again` (`nil`: all of them; a place that moved); `nil` (every place) widens
+    /// a targeted refresh to the places not fetched yet.
+    mutating func request(_ ids: Set<String>?, again: Set<String>? = nil) {
+        guard let ids else {
             only = nil
+            return
         }
+        let again = again ?? ids
+        requested.formUnion(ids.filter { again.contains($0) || !fetched.contains($0) })
     }
 
     /// The ids to fetch next out of the places there are now, in their order:

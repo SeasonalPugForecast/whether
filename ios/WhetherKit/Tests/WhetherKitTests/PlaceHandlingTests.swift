@@ -166,6 +166,25 @@ final class PlaceHandlingTests: XCTestCase {
         XCTAssertEqual(queue.next(among: ["a", "b", "c"]), ["b", "c"])
     }
 
+    func testOpeningDuringARefreshFetchesOnlyTheDuePlacesItHasNot() {
+        // refreshOnOpen() while a background refresh is fetching "a" and "b": "b"
+        // still has its old forecast, "c" was never in it.
+        var queue = RefreshQueue(only: ["a", "b"])
+        XCTAssertEqual(queue.next(among: ["a", "b", "c"]), ["a", "b"])
+        queue.request(["b", "c"], again: [])
+        XCTAssertEqual(queue.next(among: ["a", "b", "c"]), ["c"], "b is not fetched twice")
+        XCTAssertEqual(queue.next(among: ["a", "b", "c"]), [])
+    }
+
+    func testOpeningDuringARefreshFetchesTheMovedPlaceAgain() {
+        // The following place "a" moved after the running refresh fetched it.
+        var queue = RefreshQueue(only: nil)
+        XCTAssertEqual(queue.next(among: ["a", "b"]), ["a", "b"])
+        queue.request(["a", "b"], again: ["a"])
+        XCTAssertEqual(queue.next(among: ["a", "b"]), ["a"])
+        XCTAssertEqual(queue.next(among: ["a", "b"]), [])
+    }
+
     func testARequestForARemovedPlaceIsIgnored() {
         var queue = RefreshQueue(only: ["a"])
         XCTAssertEqual(queue.next(among: ["a"]), ["a"])

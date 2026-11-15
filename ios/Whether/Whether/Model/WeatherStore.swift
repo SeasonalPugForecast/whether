@@ -709,10 +709,11 @@ final class WeatherStore {
     /// On launch and on coming back to the app: fetches the places whose data is
     /// due, and moves the following place to where the phone is. That place waits
     /// for the location (briefly), so it is fetched once, where the phone is,
-    /// rather than where it was and then again. A refresh already running is
-    /// fresh enough.
+    /// rather than where it was and then again. A refresh already running (in the
+    /// background, or of a place just added) is joined: it fetches the due places
+    /// it has not fetched, and the following place again once it moved.
     func refreshOnOpen() async {
-        guard !opening, !refreshing else { return }
+        guard !opening else { return }
         opening = true
         defer { opening = false }
         await cachesRead?.value
@@ -724,11 +725,11 @@ final class WeatherStore {
         #endif
         let following = places.first(where: \.follows)?.id
         let others = due.subtracting([following].compactMap { $0 })
-        async let fetched: Void = refresh(only: others)
+        async let fetched: Void = refresh(only: others, again: [])
         let moved = await followMe(refetch: false, timeout: 5, reuseRecent: true)
         if let following, moved || due.contains(following) {
             // Joins the refresh of the others when it still runs.
-            await refresh(only: [following])
+            await refresh(only: [following], again: moved ? [following] : [])
         }
         await fetched
     }
@@ -846,14 +847,15 @@ final class WeatherStore {
     /// the cache when nothing changed or a fetch fails; each place shows as
     /// soon as its forecast arrives. In the background, new or worse alerts
     /// become notifications; in the foreground they are only remembered (they
-    /// are on screen).
-    func refresh(inBackground: Bool = false, only: Set<String>? = nil) async {
+    /// are on screen). Joining a refresh that runs, the places of `only` it has
+    /// fetched already are fetched again only when in `again` (`nil`: all of them).
+    func refresh(inBackground: Bool = false, only: Set<String>? = nil, again: Set<String>? = nil) async {
         // A fetch starts from the place's cache (its validators, minutes and history).
         await cachesRead?.value
         if only?.isEmpty == true { return }
         guard !refreshing else {
             // Joins the running refresh, which fetches these before it ends.
-            queue?.request(only)
+            queue?.request(only, again: again)
             return
         }
         // The pill says so at once (`refreshing`); the views say it with the first
