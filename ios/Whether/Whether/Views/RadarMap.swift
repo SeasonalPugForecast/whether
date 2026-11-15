@@ -146,6 +146,10 @@ struct RadarMap: UIViewRepresentable {
         private var waiting: [MKTileOverlay] = []
         private var waitingLoads: TileLoads?
         private weak var map: MKMapView?
+        /// Counts the loads, so what an earlier one started (its timers, its tiles
+        /// arriving late) does nothing once another took its place, even with the same
+        /// frames (a new ramp).
+        private var generation = 0
 
         /// Puts the frames of `templates` on `map`: frame `index` at once, the others once
         /// its tiles are in (or after `RadarLoopRules.latestWait`), so they don't compete
@@ -156,10 +160,12 @@ struct RadarMap: UIViewRepresentable {
             self.map = map
             self.templates = templates
             self.ramp = ramp
+            generation += 1
+            let current = generation
             let first = min(max(index, 0), max(templates.count - 1, 0))
-            let firstLoads = TileLoads { [weak self] in self?.addWaiting(for: templates) }
+            let firstLoads = TileLoads { [weak self] in self?.addWaiting(generation: current) }
             let loopLoads = TileLoads { [weak self] in
-                guard let self, self.templates == templates else { return }
+                guard let self, self.generation == current else { return }
                 self.onLoopLoaded?(templates)
             }
             overlays = templates.enumerated().map { i, template in
@@ -178,27 +184,28 @@ struct RadarMap: UIViewRepresentable {
             guard loops, !waiting.isEmpty else { return }
             Task { [weak self] in
                 try? await Task.sleep(for: RadarLoopRules.latestWait)
-                self?.addWaiting(for: templates)
+                self?.addWaiting(generation: current)
             }
         }
 
-        /// Adds the frames still waiting, while the map still shows `templates`; the
-        /// loop counts as loaded once their tiles are in, or after `RadarLoopRules.loopWait`.
-        func addWaiting(for templates: [String]) {
-            guard loops, templates == self.templates, !waiting.isEmpty, let map else { return }
+        /// Adds the frames still waiting, while load `generation` is the map's; the loop
+        /// counts as loaded once their tiles are in, or after `RadarLoopRules.loopWait`.
+        func addWaiting(generation: Int) {
+            guard loops, generation == self.generation, !waiting.isEmpty, let map else { return }
             let frames = waiting
             waiting = []
             map.addOverlays(frames, level: .aboveRoads)
             let loads = waitingLoads
-            Task {
+            Task { [weak self] in
                 try? await Task.sleep(for: RadarLoopRules.loopWait)
+                guard self?.generation == generation else { return }
                 loads?.settle()
             }
         }
 
         func show(_ index: Int) {
             // Another frame than the first (dragged to): the others are wanted now.
-            if index != shown { addWaiting(for: templates) }
+            if index != shown { addWaiting(generation: generation) }
             shown = index
             for (i, overlay) in overlays.enumerated() {
                 renderers[ObjectIdentifier(overlay)]?.alpha = i == index ? opacity : 0
