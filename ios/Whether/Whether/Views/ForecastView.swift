@@ -14,7 +14,8 @@ struct ForecastView: View {
     @State private var editingSections = false
     /// The Storms screen full screen (the Storm ahead card, with the tab hidden).
     @State private var showStorms = false
-    /// The hurricane the Storm ahead card warns of, framed on the Storms map (NHC id).
+    /// The hurricane the Storm ahead card warns of, framed on the Storms map (NHC id), for the
+    /// one visit the card opens: cleared when the Storms screen closes or the tab is left.
     @State private var stormFocus: String?
 
     enum AppTab: Hashable {
@@ -418,8 +419,11 @@ struct ForecastView: View {
             }
         }
         .onChange(of: visibleTabs) { keepTabVisible() }
-        .onChange(of: tab) { keepTabVisible() }
-        .fullScreenCover(isPresented: $showStorms) {
+        .onChange(of: tab) { old, _ in
+            keepTabVisible()
+            if old == .storms { stormFocus = nil }
+        }
+        .fullScreenCover(isPresented: $showStorms, onDismiss: { stormFocus = nil }) {
             StormsTab(store: store, close: { showStorms = false }, focus: stormFocus)
         }
         // White controls on the skies (the accent blue vanishes on them).
