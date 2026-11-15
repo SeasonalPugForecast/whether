@@ -134,6 +134,16 @@ pub struct Hurricane {
     pub advisory_time: UnixTime,
     /// The latest public advisory's web page.
     pub advisory_url: Option<String>,
+    /// When NHC issued the forecast advisory the tracks belong with: the
+    /// official forecast changes only with it (public advisories between
+    /// two keep it). `None` in outlooks from before it was kept.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub forecast_advisory_time: Option<UnixTime>,
+    /// When the official forecast's run started (`None` without one):
+    /// the synoptic hour before its forecast advisory, so an older one is
+    /// an earlier advisory's (see [`Hurricane::official_is_current`]).
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub official_init: Option<UnixTime>,
     /// NHC's official forecast track, from the advisory's position on.
     #[cfg_attr(feature = "serde", serde(default))]
     pub official: Vec<TrackFix>,
@@ -144,6 +154,32 @@ pub struct Hurricane {
     /// The observed (best) track, oldest first.
     #[cfg_attr(feature = "serde", serde(default))]
     pub past: Vec<TrackFix>,
+}
+
+/// How long before its forecast advisory the official forecast's run
+/// starts at most, in seconds: NHC starts it at the synoptic hour before
+/// the advisory (00 UTC for the 03 UTC advisory, 18 UTC for a special
+/// advisory at 20 UTC), so a run this much older is an earlier advisory's.
+pub const OFFICIAL_LEAD_SECS: i64 = 6 * 3_600;
+
+impl Hurricane {
+    /// When the forecast advisory was issued: [`Self::forecast_advisory_time`],
+    /// else the public advisory's time.
+    pub fn forecast_time(&self) -> UnixTime {
+        self.forecast_advisory_time.unwrap_or(self.advisory_time)
+    }
+
+    /// Whether the official track is the forecast advisory's: there is one,
+    /// and its run started no more than [`OFFICIAL_LEAD_SECS`] before
+    /// [`Self::forecast_time`]. A track from an earlier run (NHC had not
+    /// published the new one yet, or an old copy was served) is still drawn,
+    /// but is read again.
+    pub fn official_is_current(&self) -> bool {
+        !self.official.is_empty()
+            && self
+                .official_init
+                .is_some_and(|init| init.0 + OFFICIAL_LEAD_SECS >= self.forecast_time().0)
+    }
 }
 
 /// The season [`CONE_RADII_NMI`] is for.
@@ -1198,6 +1234,34 @@ mod tests {
         );
     }
 
+    #[test]
+    fn an_official_track_is_current_for_its_forecast_advisory() {
+        let advisory = UnixTime(T0.0 + 3 * HOUR);
+        let mut h = Hurricane {
+            advisory_time: UnixTime(advisory.0 + 3 * HOUR),
+            forecast_advisory_time: Some(advisory),
+            official_init: Some(T0),
+            ..hurricane(northbound())
+        };
+        assert_eq!(h.forecast_time(), advisory);
+        assert!(h.official_is_current());
+        // The next forecast advisory, six hours on: the run is too old.
+        h.forecast_advisory_time = Some(UnixTime(advisory.0 + 6 * HOUR));
+        assert!(!h.official_is_current());
+        h.official_init = Some(UnixTime(T0.0 + 6 * HOUR));
+        assert!(h.official_is_current());
+        // Without the forecast advisory, the public one stands for it.
+        h.forecast_advisory_time = None;
+        assert_eq!(h.forecast_time(), h.advisory_time);
+        assert!(h.official_is_current());
+        // Without the run's start, or a track, it is never current.
+        h.official_init = None;
+        assert!(!h.official_is_current());
+        h.official_init = Some(T0);
+        h.official.clear();
+        assert!(!h.official_is_current());
+    }
+
     #[cfg(feature = "serde")]
     #[test]
     fn hurricanes_load_without_tracks() {
@@ -1207,6 +1271,8 @@ mod tests {
             "advisory_time":1792702800,"advisory_url":null}"#;
         let h: Hurricane = serde_json::from_str(json).unwrap();
         assert!(h.official.is_empty() && h.aids.is_empty() && h.past.is_empty());
+        assert_eq!((h.forecast_advisory_time, h.official_init), (None, None));
+        assert!(!h.official_is_current());
         assert_eq!(h.basin, Basin::Atlantic);
         let back = serde_json::to_value(&h).unwrap();
         assert_eq!(back["basin"], "atlantic");

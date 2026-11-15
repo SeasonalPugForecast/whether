@@ -30,7 +30,7 @@ use whether_core::strings::Strings;
 use whether_core::time::{UnixTime, UtcOffset};
 use whether_core::view::build_storms;
 use whether_providers::nhc::{
-    ActiveStorm, AidTracks, adeck_request, bdeck_request, current_storms_request, parse_adeck,
+    ActiveStorm, ForecastTracks, adeck_request, bdeck_request, current_storms_request, parse_adeck,
     parse_bdeck, parse_current_storms,
 };
 use whether_providers::open_meteo::storm::{
@@ -226,11 +226,15 @@ async fn hurricane(
         return None;
     }
     let advisory_time = storm
-        .hurricane(Vec::new(), AidTracks::new(), Vec::new())
+        .hurricane(ForecastTracks::default(), Vec::new())
         .advisory_time;
     let same = earlier.filter(|h| h.advisory_time == advisory_time);
-    let (official, aids) = match same.filter(|h| !h.official.is_empty()) {
-        Some(h) => (h.official.clone(), h.aids.clone()),
+    let forecast = match same.filter(|h| !h.official.is_empty()) {
+        Some(h) => ForecastTracks {
+            official: h.official.clone(),
+            official_init: h.official_init,
+            aids: h.aids.clone(),
+        },
         None => exchange_with(
             host,
             adeck_request(&storm.id),
@@ -256,7 +260,7 @@ async fn hurricane(
         .await
         .unwrap_or_default(),
     };
-    let h = storm.hurricane(official, aids, past);
+    let h = storm.hurricane(forecast, past);
     comes_near(place, (h.latitude, h.longitude), &h.official).then_some(h)
 }
 

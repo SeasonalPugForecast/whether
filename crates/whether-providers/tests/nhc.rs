@@ -6,8 +6,9 @@ use whether_core::storm::hurricane::{DRAWN_AIDS, cone, ring_contains};
 use whether_core::storm::{Basin, TrackFix};
 use whether_core::time::{UnixTime, parse_rfc3339};
 use whether_providers::nhc::{
-    ADECK_BASE_URL, AidTracks, CURRENT_STORMS_URL, MAX_DECK_BYTES, adeck_request, bdeck_request,
-    current_storms_request, gunzip, is_gzip, parse_adeck, parse_bdeck, parse_current_storms,
+    ADECK_BASE_URL, CURRENT_STORMS_URL, ForecastTracks, MAX_DECK_BYTES, adeck_request,
+    bdeck_request, current_storms_request, gunzip, is_gzip, parse_adeck, parse_bdeck,
+    parse_current_storms,
 };
 use whether_providers::{Endpoint, ProviderError};
 
@@ -89,6 +90,7 @@ fn the_sample_lists_four_storms() {
         Some("https://www.nhc.noaa.gov/text/MIATCPAT1.shtml")
     );
     assert_eq!(gert.advisory_time, parse_rfc3339("2023-08-22T03:00:00Z"));
+    assert_eq!(gert.forecast_advisory_time, gert.advisory_time);
     assert_eq!(gert.last_update, gert.advisory_time.unwrap());
     let hilary = &storms[3];
     assert_eq!((hilary.latitude, hilary.longitude), (44.6, -115.5));
@@ -111,10 +113,15 @@ fn josephine_parses_from_the_summary_and_decks() {
         ),
         ("al102026", "Josephine", "STS")
     );
-    let (official, aids) = parse_adeck(ADECK, &DRAWN_AIDS).unwrap();
+    let forecast = parse_adeck(ADECK, &DRAWN_AIDS).unwrap();
     let past = parse_bdeck(BDECK).unwrap();
-    let h = storm.hurricane(official, aids, past);
+    let h = storm.hurricane(forecast, past);
     assert_eq!(h.advisory_time, UnixTime(LAST_INIT.0 + 3 * HOUR));
+    // Her advisory 5 is a forecast advisory too, and its track is the one
+    // started three hours before.
+    assert_eq!(h.forecast_advisory_time, Some(h.advisory_time));
+    assert_eq!(h.official_init, Some(LAST_INIT));
+    assert!(h.official_is_current());
     assert_eq!(h.official[0].position(), (h.latitude, h.longitude));
     assert_eq!(h.past.last().map(TrackFix::position), Some((39.5, -66.8)));
     let ring = cone(&h.official, h.basin);
@@ -126,8 +133,27 @@ fn josephine_parses_from_the_summary_and_decks() {
 }
 
 #[test]
+fn an_intermediate_advisory_keeps_the_forecast_advisory() {
+    // Advisory 5A three hours on: a public advisory without a new forecast.
+    let summary = JOSEPHINE.replacen("2026-10-22T21:00:00.000Z", "2026-10-23T00:00:00.000Z", 2);
+    let storm = &parse_current_storms(summary.as_bytes()).unwrap()[0];
+    let forecast_advisory = UnixTime(LAST_INIT.0 + 3 * HOUR);
+    assert_eq!(storm.advisory_time, Some(UnixTime(LAST_INIT.0 + 6 * HOUR)));
+    assert_eq!(storm.forecast_advisory_time, Some(forecast_advisory));
+    assert_eq!(storm.forecast_time(), forecast_advisory);
+    let h = storm.hurricane(parse_adeck(ADECK, &DRAWN_AIDS).unwrap(), Vec::new());
+    assert_eq!(h.forecast_time(), forecast_advisory);
+    assert!(h.official_is_current());
+}
+
+#[test]
 fn the_adeck_keeps_each_aids_newest_run() {
-    let (official, aids) = parse_adeck(ADECK, &DRAWN_AIDS).unwrap();
+    let ForecastTracks {
+        official,
+        official_init,
+        aids,
+    } = parse_adeck(ADECK, &DRAWN_AIDS).unwrap();
+    assert_eq!(official_init, Some(LAST_INIT));
     let hours: Vec<i64> = official
         .iter()
         .map(|f| (f.time.0 - LAST_INIT.0) / HOUR)
@@ -151,8 +177,9 @@ fn the_adeck_keeps_each_aids_newest_run() {
     assert_eq!(gfs[1].wind_kt, Some(63));
     assert_eq!(gfs[1].time, UnixTime(LAST_INIT.0 + 12 * HOUR));
     // Only the aids asked for.
-    let (_, only) = parse_adeck(ADECK, &["tvcn"]).unwrap();
-    assert_eq!(only.keys().collect::<Vec<_>>(), ["tvcn"]);
+    let only = parse_adeck(ADECK, &["tvcn"]).unwrap();
+    assert_eq!(only.aids.keys().collect::<Vec<_>>(), ["tvcn"]);
+    assert_eq!(only.official_init, Some(LAST_INIT));
 }
 
 #[test]
@@ -199,10 +226,7 @@ fn garbage_is_an_error_not_a_panic() {
         assert!(parse_adeck(body, &DRAWN_AIDS).is_err(), "{body:?}");
         assert!(parse_bdeck(body).is_err(), "{body:?}");
     }
-    assert_eq!(
-        parse_adeck(b"", &DRAWN_AIDS),
-        Ok((Vec::new(), AidTracks::new()))
-    );
+    assert_eq!(parse_adeck(b"", &DRAWN_AIDS), Ok(ForecastTracks::default()));
     assert_eq!(parse_bdeck(b"\n"), Ok(Vec::new()));
     // A wrong checksum.
     let mut bad = ADECK.to_vec();
@@ -264,8 +288,8 @@ mod view {
 
     pub(super) fn josephine() -> Hurricane {
         let storms = parse_current_storms(JOSEPHINE.as_bytes()).unwrap();
-        let (official, aids) = parse_adeck(ADECK, &DRAWN_AIDS).unwrap();
-        storms[0].hurricane(official, aids, parse_bdeck(BDECK).unwrap())
+        let forecast = parse_adeck(ADECK, &DRAWN_AIDS).unwrap();
+        storms[0].hurricane(forecast, parse_bdeck(BDECK).unwrap())
     }
 
     pub(super) fn place(name: &str, latitude: f64, longitude: f64) -> ResolvedLocation {

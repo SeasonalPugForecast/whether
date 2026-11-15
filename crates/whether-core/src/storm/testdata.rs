@@ -643,6 +643,8 @@ pub fn hurricane() -> Hurricane {
         movement_kt: Some(8.0),
         advisory_time: UnixTime(HURRICANE_START.0 + 3 * HOUR),
         advisory_url: Some("https://www.nhc.noaa.gov/text/MIATCPAT1.shtml".to_string()),
+        forecast_advisory_time: Some(UnixTime(HURRICANE_START.0 + 3 * HOUR)),
+        official_init: Some(HURRICANE_START),
         aids: [("AVNI", 0.6), ("CMCI", -0.7), ("TVCN", 0.1)]
             .into_iter()
             .map(|(aid, drift)| (aid.to_string(), shifted(drift)))

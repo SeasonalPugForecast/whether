@@ -53,6 +53,18 @@ const MPH_PER_KT: f64 = 1.150_779_448;
 /// Guidance tracks by ATCF aid code.
 pub type AidTracks = BTreeMap<String, Vec<TrackFix>>;
 
+/// The forecast tracks of an a-deck.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ForecastTracks {
+    /// NHC's official forecast: its newest run, empty before the first
+    /// advisory.
+    pub official: Vec<TrackFix>,
+    /// When that run started (its synoptic time); `None` without one.
+    pub official_init: Option<UnixTime>,
+    /// The guidance aids' newest runs.
+    pub aids: AidTracks,
+}
+
 /// One active cyclone in `CurrentStorms.json`.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ActiveStorm {
@@ -84,18 +96,25 @@ pub struct ActiveStorm {
     pub advisory_time: Option<UnixTime>,
     /// The latest public advisory's web page (https only).
     pub advisory_url: Option<String>,
+    /// When the latest forecast advisory was issued: the official forecast
+    /// changes only with it, while public advisories also come between.
+    pub forecast_advisory_time: Option<UnixTime>,
 }
 
 impl ActiveStorm {
-    /// The storm as a [`Hurricane`] with its tracks: `official` and `aids`
-    /// from [`parse_adeck`], `past` from [`parse_bdeck`]. The advisory time
-    /// is the public advisory's issuance, else the summary's time.
-    pub fn hurricane(
-        &self,
-        official: Vec<TrackFix>,
-        aids: AidTracks,
-        past: Vec<TrackFix>,
-    ) -> Hurricane {
+    /// When the latest forecast advisory was issued, else the public
+    /// advisory, else the summary's time.
+    pub fn forecast_time(&self) -> UnixTime {
+        self.forecast_advisory_time
+            .or(self.advisory_time)
+            .unwrap_or(self.last_update)
+    }
+
+    /// The storm as a [`Hurricane`] with its tracks: `forecast` from
+    /// [`parse_adeck`], `past` from [`parse_bdeck`]. The advisory time is
+    /// the public advisory's issuance, else the summary's time; the forecast
+    /// advisory's is [`Self::forecast_time`].
+    pub fn hurricane(&self, forecast: ForecastTracks, past: Vec<TrackFix>) -> Hurricane {
         Hurricane {
             id: self.id.clone(),
             name: self.name.clone(),
@@ -109,8 +128,10 @@ impl ActiveStorm {
             movement_kt: self.movement_kt,
             advisory_time: self.advisory_time.unwrap_or(self.last_update),
             advisory_url: self.advisory_url.clone(),
-            official,
-            aids,
+            forecast_advisory_time: Some(self.forecast_time()),
+            official_init: forecast.official_init,
+            official: forecast.official,
+            aids: forecast.aids,
             past,
         }
     }
@@ -190,6 +211,7 @@ struct RawStorm {
     movement_speed: Option<Value>,
     last_update: Option<String>,
     public_advisory: Option<Product>,
+    forecast_advisory: Option<Product>,
 }
 
 #[derive(Deserialize)]
@@ -254,6 +276,10 @@ impl RawStorm {
             .or_else(|| hemisphere_degrees(self.longitude.as_deref()?, b'E', b'W'))
             .filter(|lon| (-360.0..=360.0).contains(lon))
             .map(longitude)?;
+        let forecast_advisory_time = self
+            .forecast_advisory
+            .as_ref()
+            .and_then(|a| parse_rfc3339(a.issuance.as_deref()?));
         let advisory = self.public_advisory;
         let advisory_time = advisory
             .as_ref()
@@ -295,6 +321,7 @@ impl RawStorm {
             advisory_url: advisory
                 .and_then(|a| a.url)
                 .filter(|u| u.starts_with("https://")),
+            forecast_advisory_time,
             id,
         })
     }
@@ -559,10 +586,7 @@ fn no_rows(text: &[u8]) -> Result<(), ProviderError> {
 /// serves it, or already inflated). Each aid's newest run is kept, one fix
 /// per forecast hour, in time order; aids without rows are left out. The
 /// official track is empty before NHC's first advisory.
-pub fn parse_adeck(
-    body: &[u8],
-    aids: &[&str],
-) -> Result<(Vec<TrackFix>, AidTracks), ProviderError> {
+pub fn parse_adeck(body: &[u8], aids: &[&str]) -> Result<ForecastTracks, ProviderError> {
     let text = deck_text(body)?;
     let mut newest: BTreeMap<String, (UnixTime, BTreeMap<i64, TrackFix>)> = BTreeMap::new();
     let mut rows = 0_usize;
@@ -588,12 +612,15 @@ pub fn parse_adeck(
     if rows == 0 {
         no_rows(&text)?;
     }
-    let mut tracks: AidTracks = newest
-        .into_iter()
-        .map(|(aid, (_, fixes))| (aid, fixes.into_values().collect()))
-        .collect();
-    let official = tracks.remove(OFFICIAL_AID).unwrap_or_default();
-    Ok((official, tracks))
+    let official = newest.remove(OFFICIAL_AID);
+    Ok(ForecastTracks {
+        official_init: official.as_ref().map(|(init, _)| *init),
+        official: official.map_or_else(Vec::new, |(_, fixes)| fixes.into_values().collect()),
+        aids: newest
+            .into_iter()
+            .map(|(aid, (_, fixes))| (aid, fixes.into_values().collect()))
+            .collect(),
+    })
 }
 
 /// The observed track of a b-deck: one fix per time, oldest first.
@@ -700,6 +727,8 @@ mod tests {
         assert_eq!((irma.latitude, irma.longitude), (22.9, -79.9));
         assert!((irma.movement_kt.unwrap() - 7.82).abs() < 0.01);
         assert_eq!(irma.advisory_url, None);
+        assert_eq!(irma.forecast_advisory_time, None);
+        assert_eq!(irma.forecast_time(), irma.last_update);
         assert!(parse_current_storms(b"[]").is_err());
         assert!(parse_current_storms(b"{}").is_err());
         assert_eq!(

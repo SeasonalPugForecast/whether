@@ -79,11 +79,11 @@ fn on_josephines_track() -> ResolvedLocation {
 fn josephine_outlook() -> StormOutlook {
     let read = |file: &str| std::fs::read(path(NHC, file)).unwrap();
     let storms = parse_current_storms(&read("current_storms_josephine.synthetic.json")).unwrap();
-    let (official, aids) = parse_adeck(&read("aal102026.dat.gz"), &DRAWN_AIDS).unwrap();
+    let forecast = parse_adeck(&read("aal102026.dat.gz"), &DRAWN_AIDS).unwrap();
     let past = parse_bdeck(&read("bal102026.dat")).unwrap();
     StormOutlook {
         place: on_josephines_track(),
-        hurricanes: vec![storms[0].hurricane(official, aids, past)],
+        hurricanes: vec![storms[0].hurricane(forecast, past)],
         fetched_at: JOSEPHINE_NOW,
         ..StormOutlook::default()
     }
