@@ -77,7 +77,8 @@ extension WidgetData {
         let place = places[index]
         // The widget never uses a key (it is not metered): none is read.
         let settings = preferences.settings(withKey: false)
-        let forecast = await forecast(for: place, of: places, settings: settings, in: dir, now: now)
+        let forecast = await forecast(
+            for: place, of: places, settings: settings, in: dir, now: now, content: setup.content)
         let observedAt = forecast.flatMap { observedAt(snapshotJson: $0.json) } ?? forecast?.at
         let viewSettings = viewSettings(settings, content: setup.content, temperature: setup.temperature)
         var calendar = Calendar(identifier: .gregorian)
@@ -97,10 +98,11 @@ extension WidgetData {
     }
 
     /// The newest forecast for `place`: the app's cache or the widget's own while
-    /// fresh, else one fetched now (shared by every widget asking at once and kept
-    /// for the others), else the newest there is, however old.
+    /// fresh for `content`, else one fetched now (shared by every widget asking at
+    /// once and kept for the others), else the newest there is, however old.
     private static func forecast(
-        for place: AppPlace, of places: [AppPlace], settings: Settings, in dir: URL, now: Date
+        for place: AppPlace, of places: [AppPlace], settings: Settings, in dir: URL, now: Date,
+        content: WidgetContent
     ) async -> (json: String, at: Int64?)? {
         // The legacy name is read as is: only the app moves cache files.
         let cache = place.existingCacheURL(in: dir)
@@ -111,7 +113,7 @@ extension WidgetData {
         let newest = newest(
             appSnapshot: cache?["snapshotJson"] as? String,
             appAt: (cache?["lastSuccess"] as? NSNumber)?.int64Value, widget: own, place: place)
-        if let newest, isFresh(newest.at, now: now) { return newest }
+        if let newest, isFresh(newest.at, now: now, content: content) { return newest }
         guard let fetched = await WidgetFetches.shared.fetch(place, settings: settings, now: now) else {
             return newest
         }

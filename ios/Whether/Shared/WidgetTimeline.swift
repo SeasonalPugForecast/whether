@@ -26,15 +26,24 @@ struct WidgetForecast: Codable, Equatable, Sendable {
 extension WidgetData {
     /// A forecast younger than this is shown as it is; an older one is fetched again.
     static let freshFor: Int64 = 2 * 3600
+    /// The same for "The next hour": its rain changes by the minute, so each of its
+    /// half-hourly reloads (`soonestReload`) finds the last forecast old and fetches.
+    static let nextHourFreshFor: Int64 = 20 * 60
     /// Entries in a timeline: now, then the next hours, all from the same forecast.
     static let entryCount = 6
     /// The soonest a timeline asks to be reloaded (the app also reloads it after
     /// each refresh).
     static let soonestReload: TimeInterval = 30 * 60
 
-    /// Whether a forecast from `at` (Unix seconds) is fresh at `now`.
-    static func isFresh(_ at: Int64?, now: Date) -> Bool {
-        at.map { Int64(now.timeIntervalSince1970) - $0 < freshFor } ?? false
+    /// How long a forecast stays fresh for a widget showing `content`.
+    static func freshFor(_ content: WidgetContent) -> Int64 {
+        content == .nextHour ? nextHourFreshFor : freshFor
+    }
+
+    /// Whether a forecast from `at` (Unix seconds) is fresh at `now` for a widget
+    /// showing `content`: shown as it is, else fetched again.
+    static func isFresh(_ at: Int64?, now: Date, content: WidgetContent = .overview) -> Bool {
+        at.map { Int64(now.timeIntervalSince1970) - $0 < freshFor(content) } ?? false
     }
 
     /// The newest forecast for `place`: the app's cache (`appSnapshot`, from
@@ -78,7 +87,8 @@ extension WidgetData {
 
     /// When to ask for a new timeline: when the forecast (from `dataAt`) turns
     /// old, but not before half an hour nor after two hours; the next hour's rain
-    /// changes by the minute, so it asks again in half an hour.
+    /// changes by the minute, so it asks again in half an hour (and fetches then,
+    /// `nextHourFreshFor`).
     static func reloadDate(now: Date, dataAt: Int64?, content: WidgetContent) -> Date {
         let soonest = now.addingTimeInterval(soonestReload)
         guard content != .nextHour, let dataAt else { return soonest }

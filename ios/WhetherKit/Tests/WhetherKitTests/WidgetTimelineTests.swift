@@ -28,6 +28,25 @@ final class WidgetTimelineTests: XCTestCase {
         XCTAssertTrue(WidgetData.isFresh(t0, now: date(t0 + 2 * 3600 - 1)))
         XCTAssertFalse(WidgetData.isFresh(t0, now: date(t0 + 2 * 3600)))
         XCTAssertFalse(WidgetData.isFresh(nil, now: date(t0)), "a forecast without a time is old")
+        for content in [WidgetContent.overview, .nextHours, .today] {
+            XCTAssertTrue(WidgetData.isFresh(t0, now: date(t0 + 3600), content: content), "\(content)")
+        }
+    }
+
+    func testTheNextHoursReloadFetchesAgain() {
+        let reload = WidgetData.reloadDate(now: date(t0), dataAt: t0, content: .nextHour)
+        XCTAssertFalse(
+            WidgetData.isFresh(t0, now: reload, content: .nextHour),
+            "by its reload the forecast it showed is old")
+        XCTAssertTrue(
+            WidgetData.isFresh(t0, now: date(t0 + 10 * 60), content: .nextHour),
+            "the app's forecast from minutes ago is shown")
+        XCTAssertFalse(WidgetData.isFresh(t0, now: date(t0 + 20 * 60), content: .nextHour))
+        // The other contents reload when their forecast turns old, and fetch then.
+        for content in [WidgetContent.overview, .nextHours, .today] {
+            let reload = WidgetData.reloadDate(now: date(t0), dataAt: t0, content: content)
+            XCTAssertFalse(WidgetData.isFresh(t0, now: reload, content: content), "\(content)")
+        }
     }
 
     func testTheNewestOfTheAppsAndTheWidgetsOwnIsShown() {
