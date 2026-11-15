@@ -97,26 +97,22 @@ struct PrecipitationSection: View {
                     .opacity(startsSnow ? 1 : 0)
                     .accessibilityHidden(true)
             }
-            GeometryReader { geo in
-                let fill = CGFloat(min(max(hour.intensity, 0), 1))
-                ZStack(alignment: .leading) {
-                    Capsule().fill(.quaternary)
+            let fill = CGFloat(min(max(hour.intensity, 0), 1))
+            let bar = LeadingCapsule(fraction: fill)
+            Capsule()
+                .fill(.quaternary)
+                .overlay {
                     if fill > 0 {
-                        Capsule()
-                            .fill(colors.color(role))
-                            .overlay {
-                                // Snow, sleet and freezing rain are hatched: not by color alone.
-                                if patterns && hour.frozen {
-                                    Hatch()
-                                        .stroke(colors.hatch(on: role, dark: scheme == .dark), lineWidth: 1.2)
-                                        .clipShape(.capsule)
-                                }
-                            }
-                            .frame(width: max(geo.size.height, geo.size.width * fill))
+                        bar.fill(colors.color(role))
+                        // Snow, sleet and freezing rain are hatched: not by color alone.
+                        if patterns && hour.frozen {
+                            Hatch()
+                                .stroke(colors.hatch(on: role, dark: scheme == .dark), lineWidth: 1.2)
+                                .clipShape(bar)
+                        }
                     }
                 }
-            }
-            .frame(height: 8)
+                .frame(height: 8)
             Text(hour.chance ?? "")
                 .font(.caption)
                 .foregroundStyle(colors.rain)
@@ -128,5 +124,16 @@ struct PrecipitationSection: View {
         .monospacedDigit()
         .frame(height: 18)
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// A capsule from the leading edge over `fraction` of the width, never shorter
+/// than it is tall: a bar that needs no measuring of its row.
+nonisolated struct LeadingCapsule: Shape {
+    var fraction: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let width = min(max(rect.height, rect.width * fraction), rect.width)
+        return Capsule().path(in: CGRect(x: rect.minX, y: rect.minY, width: width, height: rect.height))
     }
 }
