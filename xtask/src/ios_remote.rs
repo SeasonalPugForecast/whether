@@ -490,6 +490,29 @@ const SHOTS: &[(&str, &str)] = &[
     ("hours", "-seed -scrollTo hours"),
     ("days", "-seed -scrollTo days"),
     ("details", "-seed -scrollTo details"),
+    // A made-up spell of rain on the next hours' graph (`-nowcastSample`, for the
+    // launch only): an hour of minutes, and eight hours of quarter hours.
+    (
+        "rain-next-hour",
+        "-seed -scrollTo nexthours -nowcastSample 60",
+    ),
+    (
+        "rain-next-hours",
+        "-seed -scrollTo nexthours -nowcastSample 32",
+    ),
+    // The moving skies whatever the weather is (`-skyTheme`, for the launch only),
+    // behind the forecast whatever the background chosen (`-sky`).
+    (
+        "sky-clouds",
+        "-seed -sky -scrollTo now -skyTheme cloudy_day",
+    ),
+    ("sky-fog", "-seed -sky -scrollTo now -skyTheme fog"),
+    (
+        "sky-stars",
+        "-seed -sky -scrollTo now -skyTheme clear_night",
+    ),
+    ("sky-rain", "-seed -sky -scrollTo now -skyTheme rain"),
+    ("sky-snow", "-seed -sky -scrollTo now -skyTheme snow"),
     ("radar", "-seed -showradar -scrollTo radar"),
     ("radar-full", "-seed -showradar -scrollTo radar -show radar"),
     // Radar options, for the launch only: the hybrid map at 40 % on the
@@ -1829,6 +1852,23 @@ mod tests {
         assert!(launch("radar-aurora").is_some_and(|l| {
             l.contains("-show radar") && l.contains("-colors aurora") && !l.contains("-vision")
         }));
+    }
+
+    #[test]
+    fn rain_and_sky_shots_draw_their_samples_for_the_launch() {
+        let launch = |name: &str| SHOTS.iter().find(|(n, _)| *n == name).map(|(_, l)| *l);
+        for (name, wanted) in [
+            ("rain-next-hour", "-nowcastSample 60"),
+            ("rain-next-hours", "-nowcastSample 32"),
+            ("sky-clouds", "-skyTheme cloudy_day"),
+            ("sky-fog", "-skyTheme fog"),
+            ("sky-stars", "-skyTheme clear_night"),
+            ("sky-rain", "-skyTheme rain"),
+            ("sky-snow", "-skyTheme snow"),
+        ] {
+            let line = launch(name).unwrap_or_default();
+            assert!(line.contains(wanted), "{name}: {line}");
+        }
     }
 
     #[test]
