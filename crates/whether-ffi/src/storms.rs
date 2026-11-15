@@ -5,6 +5,9 @@
 //! when some model has a newer run than the cached outlook are the point, the
 //! ensemble and the grid requested. Requests go out one after another, like
 //! every other fetch here.
+//!
+//! The "Storm ahead" check is lighter: it asks only for the models' hours at
+//! the place, and not again while its outlook is younger than three hours.
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -122,33 +125,36 @@ fn is_current(
     runs: &BTreeMap<&'static str, ModelRun>,
     now: i64,
 ) -> bool {
-    if (cached.place.latitude - place.latitude).abs() > SAME_PLACE_DEG
-        || (cached.place.longitude - place.longitude).abs() > SAME_PLACE_DEG
-    {
+    if !same_place(cached, place) {
         return false;
     }
     if runs.len() < domains().len() && now - cached.fetched_at.0 >= TRUSTED_WITHOUT_META_SECS {
         return false;
     }
-    let fresh =
-        |run: Option<&ModelRun>, latest: &ModelRun| run.is_some_and(|r| r.init >= latest.init);
+    // Without the latest run, being there is all that can be checked.
+    let fresh = |run: Option<Option<&ModelRun>>, latest: Option<&ModelRun>| match latest {
+        Some(latest) => run.flatten().is_some_and(|r| r.init >= latest.init),
+        None => run.is_some(),
+    };
     let deterministic = DETERMINISTIC_MODELS.iter().all(|m| {
-        let Some(latest) = run_domain(m).and_then(|d| runs.get(d)) else {
-            return true;
-        };
+        let latest = run_domain(m).and_then(|d| runs.get(d));
         let point = cached.points.iter().find(|p| p.model == *m);
         let grid = cached.grids.iter().find(|g| g.model == *m);
-        fresh(point.and_then(|p| p.run.as_ref()), latest)
-            && fresh(grid.and_then(|g| g.run.as_ref()), latest)
+        fresh(point.map(|p| p.run.as_ref()), latest) && fresh(grid.map(|g| g.run.as_ref()), latest)
     });
     let ensembles = ENSEMBLE_MODELS.iter().all(|m| {
-        let Some(latest) = ensemble_domain(m).and_then(|d| runs.get(d)) else {
-            return true;
-        };
+        let latest = ensemble_domain(m).and_then(|d| runs.get(d));
         let ensemble = cached.ensembles.iter().find(|e| e.model == *m);
-        fresh(ensemble.and_then(|e| e.run.as_ref()), latest)
+        fresh(ensemble.map(|e| e.run.as_ref()), latest)
     });
     deterministic && ensembles
+}
+
+/// Whether `outlook` is for `place`: within [`SAME_PLACE_DEG`] in both
+/// coordinates.
+fn same_place(outlook: &StormOutlook, place: &Place) -> bool {
+    (outlook.place.latitude - place.latitude).abs() <= SAME_PLACE_DEG
+        && (outlook.place.longitude - place.longitude).abs() <= SAME_PLACE_DEG
 }
 
 /// The outlook's place: the app's name and coordinates. The offset is the
@@ -300,6 +306,116 @@ pub async fn fetch_storms(
     Ok(StormsOutcome {
         outlook_json: to_json("storm outlook", &outlook)?,
         view_json: view(outlook, &[], &place, &settings, now)?,
+        refreshed: true,
+        attempts,
+    })
+}
+
+/// How long [`storm_ahead`] trusts a cached outlook, in seconds: 3 hours, so
+/// the check costs at most one Open-Meteo call per place every 3 hours.
+pub const STORM_AHEAD_MAX_AGE_SECS: i64 = 3 * 3_600;
+
+/// Whether a significant storm is coming, checked or rebuilt from the cache.
+#[derive(Clone, Debug, PartialEq, uniffi::Record)]
+pub struct StormAheadOutcome {
+    /// The "Storm ahead" card (`StormAheadVm`) as JSON, built at `now`;
+    /// `None` when nothing coming is significant.
+    pub view_json: Option<String>,
+    /// The outlook the card was built from, as JSON: cache it per place and
+    /// pass it back as `cached_json`. A fetched one holds only the models'
+    /// hours at the place, without run times, so [`fetch_storms`] fetches
+    /// the full outlook when it is given one.
+    pub outlook_json: String,
+    /// The hours at the place were fetched now; `false` when the cached
+    /// outlook was used.
+    pub refreshed: bool,
+    /// Every request's outcome: none when the cache was used, else the one
+    /// point request.
+    pub attempts: Vec<AttemptInfo>,
+}
+
+/// The "Storm ahead" card of `outlook` as JSON, in `place`'s units and under
+/// its current name; `None` when nothing coming is significant.
+fn ahead_view(
+    mut outlook: StormOutlook,
+    place: &Place,
+    settings: &Settings,
+    now: i64,
+) -> Result<Option<String>, WhetherError> {
+    outlook.place.name.clone_from(&place.name);
+    let presentation = settings.presentation(place);
+    let strings = Strings::localized(&settings.language, &BTreeMap::default()).0;
+    whether_core::view::storm_ahead(&outlook, &presentation, &strings, UnixTime(now))
+        .map(|vm| to_json("storm ahead", &vm))
+        .transpose()
+}
+
+/// Whether a significant storm is coming to `place`, at Unix time `now`,
+/// through `host`.
+///
+/// `cached_json` is the last outlook kept for the place: a
+/// [`StormAheadOutcome::outlook_json`] or a [`StormsOutcome::outlook_json`].
+/// When it is for the place, holds the models' hours there and is younger than
+/// [`STORM_AHEAD_MAX_AGE_SECS`], the card is built from it with no request.
+/// Otherwise only the models' hours at the place are fetched (no run times,
+/// ensembles or pressure grid), and the agreement comes from their totals.
+/// It is an error when that request fails.
+#[uniffi::export]
+#[allow(clippy::needless_pass_by_value)] // UniFFI passes arguments by value
+pub async fn storm_ahead(
+    place: Place,
+    settings: Settings,
+    cached_json: Option<String>,
+    now: i64,
+    host: Arc<dyn FetchHost>,
+) -> Result<StormAheadOutcome, WhetherError> {
+    // A cache that doesn't read is no cache: the hours are fetched again.
+    let cached = cached_json
+        .as_deref()
+        .and_then(|json| from_json::<StormOutlook>("cached storm outlook", json).ok());
+    if let (Some(json), Some(outlook)) = (cached_json, cached)
+        && same_place(&outlook, &place)
+        && !outlook.points.is_empty()
+        && (0..STORM_AHEAD_MAX_AGE_SECS).contains(&(now - outlook.fetched_at.0))
+    {
+        return Ok(StormAheadOutcome {
+            view_json: ahead_view(outlook, &place, &settings, now)?,
+            outlook_json: json,
+            refreshed: false,
+            attempts: Vec::new(),
+        });
+    }
+
+    let mut attempts = Vec::new();
+    let loc = outgoing(&place);
+    let Some(point) = exchange(
+        &host,
+        &point_request(&loc, &DETERMINISTIC_MODELS),
+        "point",
+        &mut attempts,
+        |b| parse_points(b, &DETERMINISTIC_MODELS),
+    )
+    .await
+    else {
+        return Err(failed(&attempts));
+    };
+    let mut points = point.series;
+    // No run times were read: fetch_storms takes this outlook as out of date.
+    for p in &mut points {
+        p.run = None;
+    }
+    let outlook = StormOutlook {
+        place: location(&place, Some(&point.location)),
+        offset_changes: place.core_offset_changes(),
+        points,
+        ensembles: Vec::new(),
+        grids: Vec::new(),
+        past_runs: Vec::new(),
+        fetched_at: UnixTime(now),
+    };
+    Ok(StormAheadOutcome {
+        outlook_json: to_json("storm outlook", &outlook)?,
+        view_json: ahead_view(outlook, &place, &settings, now)?,
         refreshed: true,
         attempts,
     })
@@ -958,5 +1074,171 @@ mod tests {
             storms_view(place(), "[]".into(), None, default_settings(), NOW),
             Err(WhetherError::InvalidJson { .. })
         ));
+    }
+
+    fn check(
+        host: &Arc<Recorded>,
+        cached: Option<String>,
+        now: i64,
+    ) -> Result<StormAheadOutcome, WhetherError> {
+        let shared: Arc<dyn FetchHost> = host.clone();
+        pollster::block_on(storm_ahead(
+            place(),
+            default_settings(),
+            cached,
+            now,
+            shared,
+        ))
+    }
+
+    #[test]
+    fn a_storm_check_asks_only_for_the_point() {
+        let net = Arc::new(Recorded::default());
+        let outcome = check(&net, None, NOW).unwrap();
+        assert!(outcome.refreshed);
+        let asked = net.asked();
+        assert_eq!(asked.len(), 1);
+        assert_eq!(host_path(&asked[0]), "api.open-meteo.com/v1/forecast");
+        assert!(asked[0].contains("latitude=40.71&longitude=-74.01&models="));
+        assert!(!asked[0].contains("temporal_resolution"));
+        assert_eq!(outcome.attempts.len(), 1);
+        assert_eq!(outcome.attempts[0].endpoint, "point");
+        assert_eq!(outcome.attempts[0].error, None);
+
+        let o: StormOutlook = serde_json::from_str(&outcome.outlook_json).unwrap();
+        assert_eq!(
+            (o.points.len(), o.ensembles.len(), o.grids.len()),
+            (4, 0, 0)
+        );
+        assert!(o.points.iter().all(|p| p.run.is_none()));
+        assert_eq!(o.fetched_at, UnixTime(NOW));
+        assert_eq!(o.place.utc_offset, UtcOffset(-18_000));
+        assert_eq!(o.offset_changes, place().core_offset_changes());
+        // The recorded ten days in New York are dry (under 1 mm from any
+        // model, gusts under 50 km/h): no event, so no card.
+        assert_eq!(outcome.view_json, None);
+        assert_eq!(whether_core::storm::analysis::find_events(&o), []);
+    }
+
+    #[test]
+    fn a_young_storm_check_is_reused() {
+        let first = check(&Arc::new(Recorded::default()), None, NOW).unwrap();
+        let net = Arc::new(Recorded::default());
+        let young = NOW + STORM_AHEAD_MAX_AGE_SECS - 1;
+        let again = check(&net, Some(first.outlook_json.clone()), young).unwrap();
+        assert_eq!(net.asked(), Vec::<String>::new());
+        assert!(!again.refreshed);
+        assert_eq!(again.attempts, []);
+        assert_eq!(again.outlook_json, first.outlook_json);
+
+        // Three hours old: the point is fetched again.
+        let net = Arc::new(Recorded::default());
+        let old = NOW + STORM_AHEAD_MAX_AGE_SECS;
+        let late = check(&net, Some(first.outlook_json.clone()), old).unwrap();
+        assert!(late.refreshed);
+        assert_eq!(net.asked().len(), 1);
+        let o: StormOutlook = serde_json::from_str(&late.outlook_json).unwrap();
+        assert_eq!(o.fetched_at, UnixTime(old));
+
+        // Another place, a cache that doesn't read or one from the future
+        // is not used.
+        let moved = Place {
+            latitude: 42.36,
+            ..place()
+        };
+        let net = Arc::new(Recorded::default());
+        let shared: Arc<dyn FetchHost> = net.clone();
+        let cached = Some(first.outlook_json.clone());
+        let out = pollster::block_on(storm_ahead(moved, default_settings(), cached, NOW, shared));
+        assert!(out.unwrap().refreshed);
+        assert!(
+            check(&Arc::new(Recorded::default()), Some("{".into()), NOW)
+                .unwrap()
+                .refreshed
+        );
+        assert!(
+            check(
+                &Arc::new(Recorded::default()),
+                Some(first.outlook_json),
+                NOW - 1
+            )
+            .unwrap()
+            .refreshed
+        );
+    }
+
+    #[test]
+    fn a_full_outlook_serves_the_storm_check() {
+        let full = fetch(&Arc::new(Recorded::default()), None, NOW).unwrap();
+        let net = Arc::new(Recorded::default());
+        let outcome = check(&net, Some(full.outlook_json.clone()), NOW + HOUR).unwrap();
+        assert_eq!(net.asked(), Vec::<String>::new());
+        assert!(!outcome.refreshed);
+        assert_eq!(outcome.outlook_json, full.outlook_json);
+        assert_eq!(outcome.view_json, None);
+        // An outlook whose point failed has nothing to check.
+        let pointless = fetch(
+            &Arc::new(Recorded {
+                down: vec!["api.open-meteo.com/v1/forecast?latitude"],
+                ..Recorded::default()
+            }),
+            None,
+            NOW,
+        )
+        .unwrap();
+        assert_eq!(outlook(&pointless).points, []);
+        let net = Arc::new(Recorded::default());
+        assert!(
+            check(&net, Some(pointless.outlook_json), NOW)
+                .unwrap()
+                .refreshed
+        );
+        assert_eq!(net.asked().len(), 1);
+    }
+
+    #[test]
+    fn the_storms_screen_fetches_over_a_storm_check() {
+        let light = check(&Arc::new(Recorded::default()), None, NOW).unwrap();
+        // With the run times, and without them while the check is young.
+        for down in [vec![], vec!["meta.json"]] {
+            let net = Arc::new(Recorded {
+                down,
+                ..Recorded::default()
+            });
+            let full = fetch(&net, Some(light.outlook_json.clone()), NOW + HOUR).unwrap();
+            assert!(full.refreshed);
+            assert_eq!(net.asked().len(), 9);
+            let o = outlook(&full);
+            assert_eq!((o.ensembles.len(), o.grids.len()), (2, 4));
+        }
+    }
+
+    #[test]
+    fn a_failed_storm_check_is_an_error() {
+        let net = Arc::new(Recorded {
+            down: vec!["/v1/"],
+            ..Recorded::default()
+        });
+        match check(&net, None, NOW) {
+            Err(WhetherError::NoStorms { summary }) => {
+                assert_eq!(summary, "open-meteo point: HTTP 503");
+            }
+            other => panic!("{other:?}"),
+        }
+        assert_eq!(net.asked().len(), 1);
+    }
+
+    #[test]
+    fn a_coming_storm_shows_its_card() {
+        use whether_core::storm::testdata::{STORM_NOW, noreaster};
+        let json = serde_json::to_string(&noreaster()).unwrap();
+        let net = Arc::new(Recorded::default());
+        let outcome = check(&net, Some(json), STORM_NOW.0).unwrap();
+        assert_eq!(net.asked().len(), 0);
+        let vm: serde_json::Value = serde_json::from_str(&outcome.view_json.unwrap()).unwrap();
+        assert_eq!(vm["title"], "Storm ahead · Sat night – Sun night");
+        assert_eq!(vm["line"], "Up to 35 cm of snow · models disagree");
+        assert_eq!(vm["level"], "poor");
+        assert_eq!(vm["agreement"], "Low agreement");
     }
 }

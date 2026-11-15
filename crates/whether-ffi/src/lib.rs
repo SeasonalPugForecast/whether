@@ -45,7 +45,10 @@ pub use settings::{
     DEFAULT_DAILY_CALLS, ModelPreset, OffsetChange, Place, Settings, SourceChoice, Units,
     default_settings, default_sources, model_presets, models_from_noaa_blend, nws_covers,
 };
-pub use storms::{StormsOutcome, fetch_past_runs, fetch_storms, past_run_key, storms_view};
+pub use storms::{
+    STORM_AHEAD_MAX_AGE_SECS, StormAheadOutcome, StormsOutcome, fetch_past_runs, fetch_storms,
+    past_run_key, storm_ahead, storms_view,
+};
 pub use units::{
     DistanceOption, DistanceUnit, PrecipitationOption, PrecipitationUnit, PressureOption,
     PressureUnit, TemperatureOption, TemperatureUnit, UnitLabels, UnitOverrides, WindOption,
