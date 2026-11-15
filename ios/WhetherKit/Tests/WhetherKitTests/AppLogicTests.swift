@@ -242,7 +242,8 @@ final class AppLogicTests: XCTestCase {
         let old = try? decode(
             #"{"sections":[{"section":"sun","shown":true},{"section":"now","shown":true},{"section":"radar","shown":true}]}"#
         )
-        XCTAssertEqual(old?.sections.prefix(2).map(\.section), [.now, .radar])
+        // (The storm card, with no alerts in the list to follow, goes first.)
+        XCTAssertEqual(old?.sections.prefix(3).map(\.section), [.storm, .now, .radar])
         XCTAssertFalse(old?.sections.contains { $0.section == .sun } ?? true)
         XCTAssertEqual(old?.appIcon, .seasonal)
     }
@@ -264,9 +265,9 @@ final class AppLogicTests: XCTestCase {
         XCTAssertEqual(Preferences.OverviewSection.storm.title, "Storm ahead")
     }
 
-    func testStormAheadJoinsListsSavedBeforeItShown() throws {
+    func testStormAheadJoinsListsSavedBeforeItUnderTheAlerts() throws {
         // A list saved before the card existed, history hidden: the card is added, shown,
-        // after the saved ones, as the sections added before it were (history, radar).
+        // right after the alerts; the sections added at the end before it still are.
         let old = try decode(
             #"{"sections":[{"section":"now","shown":true},{"section":"alerts","shown":true},"#
                 + #"{"section":"hours","shown":true},{"section":"days","shown":true},"#
@@ -274,13 +275,50 @@ final class AppLogicTests: XCTestCase {
         let storm = try XCTUnwrap(old.sections.first { $0.section == .storm })
         XCTAssertTrue(storm.shown)
         XCTAssertEqual(old.sections.filter { $0.section == .storm }.count, 1)
-        XCTAssertEqual(Array(old.sections.prefix(6).map(\.section)), [.now, .alerts, .hours, .days, .details, .history])
+        XCTAssertEqual(
+            old.sections.map(\.section),
+            [.now, .alerts, .storm, .hours, .days, .details, .history, .precipitation, .radar])
         XCTAssertFalse(old.sections.first { $0.section == .history }?.shown ?? true, "a saved choice stays")
+        // History and radar join a list saved before them at the end, as they did.
+        let older = try decode(
+            #"{"sections":[{"section":"now","shown":true},{"section":"alerts","shown":true},"#
+                + #"{"section":"storm","shown":true},{"section":"hours","shown":true}]}"#)
+        XCTAssertEqual(
+            older.sections.map(\.section), [.now, .alerts, .storm, .hours, .precipitation, .days, .radar, .details, .history])
+        XCTAssertTrue(older.sections.allSatisfy(\.shown))
         // Hidden once, it stays hidden.
         var prefs = old
         prefs.hide(.storm)
         let back = try JSONDecoder().decode(Preferences.self, from: JSONEncoder().encode(prefs))
         XCTAssertFalse(back.sections.first { $0.section == .storm }?.shown ?? true)
+        XCTAssertEqual(back.sections.last?.section, .storm)
+    }
+
+    func testAStormCardTheUserMovedOrHidStaysPut() throws {
+        let moved = try decode(
+            #"{"sections":[{"section":"now","shown":true},{"section":"hours","shown":true},"#
+                + #"{"section":"alerts","shown":true},{"section":"days","shown":true},"#
+                + #"{"section":"storm","shown":true},{"section":"precipitation","shown":true},"#
+                + #"{"section":"details","shown":true},{"section":"history","shown":true},"#
+                + #"{"section":"radar","shown":false}]}"#)
+        XCTAssertEqual(
+            moved.sections.map(\.section),
+            [.now, .hours, .alerts, .days, .storm, .precipitation, .details, .history, .radar])
+        let hidden = try decode(
+            #"{"sections":[{"section":"now","shown":true},{"section":"alerts","shown":true},"#
+                + #"{"section":"precipitation","shown":true},{"section":"hours","shown":true},"#
+                + #"{"section":"days","shown":true},{"section":"details","shown":true},"#
+                + #"{"section":"history","shown":true},{"section":"radar","shown":false},"#
+                + #"{"section":"storm","shown":false}]}"#)
+        XCTAssertEqual(hidden.sections.last, Preferences.SectionChoice(section: .storm, shown: false))
+        XCTAssertEqual(hidden.sections.filter(\.shown).map(\.section).contains(.storm), false)
+        // A fresh install keeps the usual order.
+        XCTAssertEqual(Preferences().sections, Preferences.defaultSections)
+        let empty = try decode("{}")
+        XCTAssertEqual(empty.sections, Preferences.defaultSections)
+        XCTAssertEqual(
+            Preferences.defaultSections.map(\.section),
+            [.now, .precipitation, .alerts, .storm, .hours, .days, .details, .history, .radar])
     }
 
     private func shownBeforeHidden(_ sections: [Preferences.SectionChoice]) -> Bool {

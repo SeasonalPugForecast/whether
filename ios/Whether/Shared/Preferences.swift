@@ -152,6 +152,16 @@ struct Preferences: Codable, Equatable {
             case .history: "History"
             }
         }
+
+        /// Where an update adds this section to a list saved before it existed: right
+        /// after this one, or at the top when the saved list lacks it. `nil` adds it at
+        /// the end.
+        var addedAfter: OverviewSection? {
+            switch self {
+            case .storm: .alerts
+            default: nil
+            }
+        }
     }
 
     /// One section's place and whether it shows.
@@ -246,11 +256,20 @@ struct Preferences: Codable, Equatable {
         + [SectionChoice(section: .radar, shown: false)]
 
     /// `sections` with each offered section once, the ones it lacks (new in an
-    /// update) added at the end, shown.
+    /// update) added shown: where their `addedAfter` says, else at the end.
     static func complete(_ sections: [SectionChoice]) -> [SectionChoice] {
         var seen = Set<OverviewSection>()
         var out = sections.filter { offeredSections.contains($0.section) && seen.insert($0.section).inserted }
-        out += offeredSections.filter { !seen.contains($0) }.map { SectionChoice(section: $0) }
+        let saved = seen
+        for section in offeredSections where !seen.contains(section) {
+            let choice = SectionChoice(section: section)
+            if let anchor = section.addedAfter {
+                let after = saved.contains(anchor) ? out.firstIndex(where: { $0.section == anchor }) : nil
+                out.insert(choice, at: after.map { $0 + 1 } ?? 0)
+            } else {
+                out.append(choice)
+            }
+        }
         // Saved before alerts had to show.
         for i in out.indices where !hideable(out[i].section) {
             out[i].shown = true
