@@ -651,6 +651,7 @@ struct ForecastView: View {
                 await store.followMe(refetch: false)
                 await store.refresh()
             }
+            .holdsSkyWhileScrolling()
             .task(id: shown && view.current != nil) {
                 #if DEBUG
                     // Screenshots (`cargo xtask ios remote shots`): `-scrollTo days`

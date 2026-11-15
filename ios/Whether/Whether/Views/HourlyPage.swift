@@ -336,6 +336,7 @@ struct HourlyGraphPage: View {
             .padding(.top, 12)
             .padding(.bottom, 40)
         }
+        .holdsSkyWhileScrolling()
         .task {
             #if DEBUG
                 if let i = ProcessInfo.processInfo.arguments.firstIndex(of: "-pickHour"),

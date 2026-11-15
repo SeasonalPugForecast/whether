@@ -54,6 +54,7 @@ struct PlanTab: View {
                         .onMove { store.movePlans(from: $0, to: $1) }
                     }
                     .scrollContentBackground(.hidden)
+                    .holdsSkyWhileScrolling()
                 }
             }
             .navigationTitle("Plans")
@@ -263,6 +264,7 @@ struct PlanEditor: View {
             .padding(.top, 12)
             .padding(.bottom, 40)
         }
+        .holdsSkyWhileScrolling()
         .navigationTitle(plan?.name ?? "Plan")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

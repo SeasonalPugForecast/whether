@@ -59,6 +59,7 @@ struct DaysPage: View {
             .padding(.top, 12)
             .padding(.bottom, 40)
         }
+        .holdsSkyWhileScrolling()
         .sheet(isPresented: $editing) {
             CardsEditor(items: daysCards, title: "Days tab", sheet: true)
         }
