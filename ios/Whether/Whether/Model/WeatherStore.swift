@@ -582,9 +582,10 @@ final class WeatherStore {
     /// from its coordinates (updating its name and time zone, keeping its id, and
     /// fetching it again unless `refetch` is `false`). With access turned off the
     /// place keeps its last coordinates and `locationOff` says why. Gives up on
-    /// the location after `timeout` seconds. Returns whether it moved.
+    /// the location after `timeout` seconds; with `reuseRecent` (opening the app)
+    /// a fix read minutes ago answers. Returns whether it moved.
     @discardableResult
-    func followMe(refetch: Bool = true, timeout: Double = 12) async -> Bool {
+    func followMe(refetch: Bool = true, timeout: Double = 12, reuseRecent: Bool = false) async -> Bool {
         guard !followingNow, let followed = places.first(where: \.follows) else {
             if !places.contains(where: \.follows) { locationOff = false }
             return false
@@ -593,7 +594,7 @@ final class WeatherStore {
         defer { followingNow = false }
         let location: CLLocation
         do {
-            location = try await CurrentLocation.fix(timeout: timeout)
+            location = try await CurrentLocation.fix(timeout: timeout, reuseRecent: reuseRecent)
         } catch CurrentLocation.Failure.denied {
             locationOff = true
             return false
@@ -724,7 +725,7 @@ final class WeatherStore {
         let following = places.first(where: \.follows)?.id
         let others = due.subtracting([following].compactMap { $0 })
         async let fetched: Void = refresh(only: others)
-        let moved = await followMe(refetch: false, timeout: 5)
+        let moved = await followMe(refetch: false, timeout: 5, reuseRecent: true)
         if let following, moved || due.contains(following) {
             // Joins the refresh of the others when it still runs.
             await refresh(only: [following])

@@ -42,6 +42,15 @@ final class FollowMeTests: XCTestCase {
         XCTAssertFalse(AppPlace.fixIsRecent(now.addingTimeInterval(60), now: now), "the clock went back")
     }
 
+    func testOpeningReusesARecentFixOnlyWhileAccessIsOn() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        XCTAssertTrue(AppPlace.reusesFix(taken: now.addingTimeInterval(-120), now: now, allowed: true))
+        XCTAssertFalse(
+            AppPlace.reusesFix(taken: now.addingTimeInterval(-120), now: now, allowed: false),
+            "access turned off since: the new read says so")
+        XCTAssertFalse(AppPlace.reusesFix(taken: now.addingTimeInterval(-900), now: now, allowed: true))
+    }
+
     func testAtMostOneFollowingPlaceAndItIsFirst() {
         let list = AppPlace.arranged([
             place("a"), place("b", follows: true), place("c"), place("d", follows: true),

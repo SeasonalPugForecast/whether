@@ -14,19 +14,29 @@ enum CurrentLocation {
         }
     }
 
-    /// The last fix: one under ten minutes old answers for a new one
-    /// (`AppPlace.fixIsRecent`).
+    /// The last fix: with `reuseRecent`, one under ten minutes old answers for a
+    /// new one (`AppPlace.reusesFix`).
     private static var last: CLLocation?
 
     /// One location fix, at about a hundred metres: well inside the kilometre the
     /// following place moves at, which a fix also has to be sure of
-    /// (`AppPlace.shouldMove`).
+    /// (`AppPlace.shouldMove`). With `reuseRecent` (coming back to the app) the
+    /// last one answers while it is recent and access is still on; asked for
+    /// (a pull to refresh, "where am I") a new one is read.
     /// Gives up after `timeout` seconds (no signal, or a permission prompt left alone).
-    static func fix(timeout: Double = 12) async throws -> CLLocation {
+    static func fix(timeout: Double = 12, reuseRecent: Bool = false) async throws -> CLLocation {
         #if DEBUG
             if let fake = debugFix() { return try fake.get() }
         #endif
-        if let last, AppPlace.fixIsRecent(last.timestamp, now: .now) { return last }
+        if let last, reuseRecent {
+            let status = CLLocationManager().authorizationStatus
+            if status == .denied || status == .restricted {
+                self.last = nil
+                throw Failure.denied
+            }
+            let allowed = status == .authorizedWhenInUse || status == .authorizedAlways
+            if AppPlace.reusesFix(taken: last.timestamp, now: .now, allowed: allowed) { return last }
+        }
         let location = try await withThrowingTaskGroup(of: CLLocation.self) { group in
             group.addTask { try await liveFix() }
             group.addTask {

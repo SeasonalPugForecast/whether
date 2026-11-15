@@ -95,6 +95,13 @@ struct AppPlace: Codable, Hashable, Identifiable {
         return age >= 0 && age < fixLasts
     }
 
+    /// Whether coming back to the app reuses the fix taken at `taken` rather than
+    /// reading a new one: it is recent, and location access is still `allowed`
+    /// (turned off since, the new read says so).
+    static func reusesFix(taken: Date, now: Date, allowed: Bool) -> Bool {
+        allowed && fixIsRecent(taken, now: now)
+    }
+
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
