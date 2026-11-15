@@ -22,6 +22,20 @@ final class WidgetTimelineTests: XCTestCase {
         return try String(contentsOf: url, encoding: .utf8)
     }
 
+    /// The sample snapshot's view for New York at `now`, as a widget builds it.
+    private func widgetView(
+        _ content: WidgetContent, temperature: WidgetTemperature = .app, now: Int64
+    ) throws -> ViewModel {
+        let place = Place(
+            name: "New York", latitude: 40.7143, longitude: -74.00597, units: nil, utcOffsetSeconds: nil,
+            offsetChanges: [])
+        let entry = LocationEntry(
+            place: place, snapshotJson: try resource("sample-snapshot"), lastSuccess: sampleNow, error: nil,
+            refreshing: false)
+        let settings = WidgetData.viewSettings(defaultSettings(), content: content, temperature: temperature)
+        return try ViewModel.build(locations: [entry], active: 0, settings: settings, now: date(now))
+    }
+
     // MARK: Which forecast
 
     func testAForecastIsFreshForTwoHours() {
@@ -191,7 +205,6 @@ final class WidgetTimelineTests: XCTestCase {
             "a clear day's pale bottom is shaded")
     }
 
-
     func testAnHoursSkyFollowsItsWeatherAndTheSun() {
         XCTAssertEqual(WidgetData.sky(icon: "clear_day", isDay: true), "clear_day")
         XCTAssertEqual(WidgetData.sky(icon: "partly_cloudy_night", isDay: false), "clear_night")
@@ -250,8 +263,27 @@ final class WidgetTimelineTests: XCTestCase {
     }
 
     func testTheSavedNamesOfTheOptionsStayStable() {
-        XCTAssertEqual(WidgetBackdrop.allCases.map(\.rawValue), ["sky", "plain"])
-        XCTAssertEqual(WidgetTemperature.allCases.map(\.rawValue), ["app", "actual", "feelsLike"])
+        // What App Intents saves for each widget: Edit Widget's options.
+        XCTAssertEqual(WidgetContentOption.allCases.map(\.rawValue), ["overview", "nextHour", "nextHours", "today"])
+        XCTAssertEqual(WidgetBackdropOption.allCases.map(\.rawValue), ["sky", "plain"])
+        XCTAssertEqual(WidgetTemperatureOption.allCases.map(\.rawValue), ["app", "actual", "feelsLike"])
+        // Each option is the choice of the same name.
+        XCTAssertEqual(WidgetContentOption.allCases.map(\.content.rawValue), WidgetContentOption.allCases.map(\.rawValue))
+        XCTAssertEqual(WidgetBackdropOption.allCases.map(\.backdrop.rawValue), WidgetBackdropOption.allCases.map(\.rawValue))
+        XCTAssertEqual(
+            WidgetTemperatureOption.allCases.map(\.temperature.rawValue), WidgetTemperatureOption.allCases.map(\.rawValue))
+        XCTAssertEqual(WidgetContentOption.allCases.map(\.content), WidgetContent.allCases)
+        XCTAssertEqual(WidgetBackdropOption.allCases.map(\.backdrop), WidgetBackdrop.allCases)
+        XCTAssertEqual(WidgetTemperatureOption.allCases.map(\.temperature), WidgetTemperature.allCases)
+        for option in WidgetContentOption.allCases {
+            XCTAssertNotNil(WidgetContentOption.caseDisplayRepresentations[option], "\(option)")
+        }
+        for option in WidgetBackdropOption.allCases {
+            XCTAssertNotNil(WidgetBackdropOption.caseDisplayRepresentations[option], "\(option)")
+        }
+        for option in WidgetTemperatureOption.allCases {
+            XCTAssertNotNil(WidgetTemperatureOption.caseDisplayRepresentations[option], "\(option)")
+        }
     }
 
     func testAWidgetsViewHoldsOnlyWhatAWidgetShows() {
@@ -270,12 +302,40 @@ final class WidgetTimelineTests: XCTestCase {
         XCTAssertFalse(WidgetData.viewSettings(app, content: .overview, temperature: .actual).feelsLike)
     }
 
-    func testTheSlimViewStillListsEveryHourAndDayTheWidgetsShow() {
+    func testTheSlimViewStillListsEveryHourAndDayTheWidgetsShow() throws {
         for content in WidgetContent.allCases {
-            XCTAssertLessThanOrEqual(content.hours(large: true) + 1, 13, "\(content)")
-            XCTAssertLessThanOrEqual(content.hours(large: false) + 1, 13, "\(content)")
+            // Now, then the hours after it: the large widget's strip, or (the next
+            // hour, dry) its six rows.
+            let hours = 1 + max(content.hours(large: true), content.hours(large: false), content == .nextHour ? 6 : 0)
+            // Today (its high and low), then the large widget's rows.
+            let days = max(content.days, 1)
+            // From the timeline's first entry to its last, on the same forecast.
+            for hoursOn in 0..<WidgetData.entryCount {
+                let view = try widgetView(content, now: sampleNow + Int64(hoursOn) * 3600)
+                let label = "\(content) +\(hoursOn) h"
+                XCTAssertNotNil(view.current, label)
+                XCTAssertGreaterThanOrEqual(view.hourly?.hours.count ?? 0, hours, label)
+                XCTAssertLessThanOrEqual(view.hourly?.hours.count ?? 0, 13, "no more than the widgets show: \(label)")
+                XCTAssertGreaterThanOrEqual(view.daily?.days.count ?? 0, days, label)
+                XCTAssertTrue(view.daily?.days.allSatisfy(\.hours.isEmpty) ?? true, "days without their hours: \(label)")
+            }
         }
-        XCTAssertEqual(WidgetContent.overview.days, 5)
-        XCTAssertEqual(WidgetContent.today.days - 1, 5, "five days after today")
+    }
+
+    func testAWidgetLeadsWithTheTemperatureItIsSetToFromTheSameForecast() throws {
+        let actual = try widgetView(.overview, temperature: .actual, now: sampleNow)
+        let feelsLike = try widgetView(.overview, temperature: .feelsLike, now: sampleNow)
+        let current = try XCTUnwrap(feelsLike.current)
+        XCTAssertEqual(current.temperature, current.feelsLike)
+        XCTAssertNotEqual(actual.current?.temperature, current.temperature)
+        // Today's high and low and the days' are the "feels like" ones too.
+        XCTAssertNotEqual(actual.current?.high, current.high)
+        let days = try XCTUnwrap(feelsLike.daily?.days)
+        XCTAssertFalse(days.isEmpty)
+        for day in days {
+            XCTAssertNotEqual(day.high, day.actualHigh, day.label)
+            XCTAssertNotEqual(day.low, day.actualLow, day.label)
+        }
+        XCTAssertEqual(actual.daily?.days.map(\.high), actual.daily?.days.map(\.actualHigh))
     }
 }
