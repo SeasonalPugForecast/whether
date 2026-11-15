@@ -54,7 +54,9 @@ pub use units::{
     PressureUnit, TemperatureOption, TemperatureUnit, UnitLabels, UnitOverrides, WindOption,
     WindUnit, unit_labels,
 };
-pub use view::{LocationEntry, chance_text, radar_step_words, severity_word, view_model};
+pub use view::{
+    LocationEntry, chance_text, radar_step_words, severity_word, view_model, view_models,
+};
 
 /// Why a call failed.
 #[derive(Debug, PartialEq, Eq, thiserror::Error, uniffi::Error)]

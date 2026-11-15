@@ -1,5 +1,6 @@
 //! The display contract for the app, as JSON.
 
+use whether_core::history::History;
 use whether_core::model::WeatherSnapshot;
 use whether_core::strings::Strings;
 use whether_core::time::UnixTime;
@@ -36,65 +37,119 @@ pub fn view_model(
     settings: Settings,
     now: i64,
 ) -> Result<String, WhetherError> {
-    let snapshots = locations
+    Parsed::new(&locations, &settings, now)?.view(&locations, active, &settings, now)
+}
+
+/// The `ViewModel`s for `locations` showing each of `indices` in turn, as JSON and
+/// in that order: what one [`view_model`] call per index returns, with every
+/// snapshot and history read once instead of once per view.
+#[uniffi::export]
+#[allow(clippy::needless_pass_by_value)] // UniFFI passes arguments by value
+pub fn view_models(
+    locations: Vec<LocationEntry>,
+    indices: Vec<u32>,
+    settings: Settings,
+    now: i64,
+) -> Result<Vec<String>, WhetherError> {
+    let parsed = Parsed::new(&locations, &settings, now)?;
+    indices
         .iter()
-        .map(|l| {
-            l.snapshot_json
-                .as_deref()
-                .map(|json| from_json::<WeatherSnapshot>("snapshot", json))
-                .transpose()
+        .map(|&active| parsed.view(&locations, active, &settings, now))
+        .collect()
+}
+
+/// What every view of a list of locations reads, parsed once: the snapshots,
+/// histories and statuses, and the settings' strings.
+struct Parsed {
+    snapshots: Vec<Option<WeatherSnapshot>>,
+    histories: Vec<Option<History>>,
+    statuses: Vec<StatusInfo>,
+    strings: Strings,
+}
+
+impl Parsed {
+    fn new(
+        locations: &[LocationEntry],
+        settings: &Settings,
+        now: i64,
+    ) -> Result<Self, WhetherError> {
+        let snapshots = locations
+            .iter()
+            .map(|l| {
+                l.snapshot_json
+                    .as_deref()
+                    .map(|json| from_json::<WeatherSnapshot>("snapshot", json))
+                    .transpose()
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        // History that does not read is left out: it never costs the forecast.
+        let histories = locations
+            .iter()
+            .map(|l| {
+                l.history_json
+                    .as_deref()
+                    .and_then(|json| crate::history::kept(json).ok())
+                    .map(|k| k.history)
+            })
+            .collect();
+        let stale_after = i64::from(settings.refresh_minutes.max(5)) * 60 * 2;
+        let statuses = locations
+            .iter()
+            .map(|l| StatusInfo {
+                last_success: l.last_success.map(UnixTime),
+                error: l.error.clone(),
+                stale: l.last_success.is_some_and(|t| now - t > stale_after),
+                refreshing: l.refreshing,
+            })
+            .collect();
+        let strings =
+            Strings::localized(&settings.language, &std::collections::BTreeMap::default()).0;
+        Ok(Self {
+            snapshots,
+            histories,
+            statuses,
+            strings,
         })
-        .collect::<Result<Vec<_>, _>>()?;
-    // History that does not read is left out: it never costs the forecast.
-    let histories: Vec<_> = locations
-        .iter()
-        .map(|l| {
-            l.history_json
-                .as_deref()
-                .and_then(|json| crate::history::kept(json).ok())
-                .map(|k| k.history)
+    }
+
+    /// The view showing `active`, as JSON.
+    fn view(
+        &self,
+        locations: &[LocationEntry],
+        active: u32,
+        settings: &Settings,
+        now: i64,
+    ) -> Result<String, WhetherError> {
+        let views: Vec<LocationView<'_>> = locations
+            .iter()
+            .zip(&self.snapshots)
+            .zip(&self.statuses)
+            .zip(&self.histories)
+            .map(|(((l, snapshot), status), history)| LocationView {
+                name: &l.place.name,
+                snapshot: snapshot.as_ref(),
+                status,
+                history: history.as_ref(),
+            })
+            .collect();
+        let active = usize::try_from(active).unwrap_or(0);
+        let place = locations.get(active).map(|l| &l.place);
+        let presentation = place.map_or_else(
+            || settings.presentation(&placeholder()),
+            |p| settings.presentation(p),
+        );
+        let vm = build_view(&ViewInput {
+            locations: &views,
+            active,
+            presentation: &presentation,
+            strings: &self.strings,
+            now: UnixTime(now),
+        });
+        serde_json::to_string(&vm).map_err(|e| WhetherError::InvalidJson {
+            what: "view model".into(),
+            message: e.to_string(),
         })
-        .collect();
-    let stale_after = i64::from(settings.refresh_minutes.max(5)) * 60 * 2;
-    let statuses: Vec<StatusInfo> = locations
-        .iter()
-        .map(|l| StatusInfo {
-            last_success: l.last_success.map(UnixTime),
-            error: l.error.clone(),
-            stale: l.last_success.is_some_and(|t| now - t > stale_after),
-            refreshing: l.refreshing,
-        })
-        .collect();
-    let views: Vec<LocationView<'_>> = locations
-        .iter()
-        .zip(&snapshots)
-        .zip(&statuses)
-        .zip(&histories)
-        .map(|(((l, snapshot), status), history)| LocationView {
-            name: &l.place.name,
-            snapshot: snapshot.as_ref(),
-            status,
-            history: history.as_ref(),
-        })
-        .collect();
-    let active = usize::try_from(active).unwrap_or(0);
-    let place = locations.get(active).map(|l| &l.place);
-    let presentation = place.map_or_else(
-        || settings.presentation(&placeholder()),
-        |p| settings.presentation(p),
-    );
-    let strings = Strings::localized(&settings.language, &std::collections::BTreeMap::default()).0;
-    let vm = build_view(&ViewInput {
-        locations: &views,
-        active,
-        presentation: &presentation,
-        strings: &strings,
-        now: UnixTime(now),
-    });
-    serde_json::to_string(&vm).map_err(|e| WhetherError::InvalidJson {
-        what: "view model".into(),
-        message: e.to_string(),
-    })
+    }
 }
 
 /// A precipitation chance as the core writes it (`"40%"`), for fields the view

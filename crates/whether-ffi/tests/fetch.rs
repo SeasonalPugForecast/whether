@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 
 use whether_ffi::{
     Cached, FetchHost, HostError, HostRequest, HostResponse, LocationEntry, Place, Settings, Units,
-    WhetherError, default_settings, fetch, view_model,
+    WhetherError, default_settings, fetch, view_model, view_models,
 };
 
 const FORECAST: &str =
@@ -260,4 +260,69 @@ fn unreadable_history_leaves_the_forecast() {
     let vm: serde_json::Value = serde_json::from_str(&json).unwrap();
     assert!(vm["current"].is_object());
     assert!(vm["history"].is_null());
+}
+
+#[test]
+fn every_view_at_once_matches_one_call_per_view() {
+    let host = Fake::new(true);
+    let out = run(us_settings(), &host).unwrap();
+    let locations = vec![
+        LocationEntry {
+            place: new_york(),
+            snapshot_json: Some(out.snapshot_json.clone()),
+            last_success: Some(RECORDED_AT),
+            error: None,
+            refreshing: true,
+            history_json: None,
+        },
+        LocationEntry {
+            place: Place {
+                name: "Abroad".into(),
+                units: Some(Units::Metric),
+                ..new_york()
+            },
+            snapshot_json: Some(out.snapshot_json.clone()),
+            last_success: Some(RECORDED_AT - 4 * 3600),
+            error: Some("No connection".into()),
+            refreshing: false,
+            history_json: Some("{\"not\": \"history\"}".into()),
+        },
+        LocationEntry {
+            place: Place {
+                name: "New".into(),
+                ..new_york()
+            },
+            snapshot_json: None,
+            last_success: None,
+            error: None,
+            refreshing: true,
+            history_json: None,
+        },
+    ];
+    let now = RECORDED_AT + 60;
+    // In any order, repeated, and past the end (which shows the last, as one call does).
+    let indices = vec![0, 1, 2, 1, 7];
+    let all = view_models(locations.clone(), indices.clone(), us_settings(), now).unwrap();
+    let one_by_one: Vec<String> = indices
+        .iter()
+        .map(|&i| view_model(locations.clone(), i, us_settings(), now).unwrap())
+        .collect();
+    assert_eq!(all, one_by_one);
+    assert_ne!(all[0], all[1], "each view shows its own place");
+
+    assert_eq!(
+        view_models(Vec::new(), vec![0], us_settings(), now).unwrap(),
+        vec![view_model(Vec::new(), 0, us_settings(), now).unwrap()]
+    );
+    assert_eq!(
+        view_models(locations.clone(), Vec::new(), us_settings(), now).unwrap(),
+        Vec::<String>::new()
+    );
+    let mut broken = locations;
+    broken[1].snapshot_json = Some("{".into());
+    assert_eq!(
+        view_models(broken.clone(), vec![0], us_settings(), now).unwrap_err(),
+        view_model(broken, 0, us_settings(), now).unwrap_err(),
+        "a snapshot that does not read fails every view, as before"
+    );
 }
