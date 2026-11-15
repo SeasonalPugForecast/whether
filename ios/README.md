@@ -419,7 +419,7 @@ builds, so it spends no API calls. Without the group (unsigned simulator builds)
 or when the app's data is over two hours old, it fetches Open-Meteo itself and
 never writes back: the forecast it fetched goes to `whether/widget/` beside the
 app's caches, and every widget showing that place reuses it until it is two hours
-old too. A timeline is an entry for now and one for each of the next five hours,
+old too (twenty minutes for "The next hour", whose minutes age fast). A timeline is an entry for now and one for each of the next five hours,
 all from the same forecast (an hour after the observation the big number is the
 hour's forecast), and asks to be reloaded when that forecast turns old (between
 half an hour and two hours; the app reloads it after each refresh). The widget's
