@@ -1,16 +1,23 @@
 import SwiftUI
 import WhetherKit
 
+extension EnvironmentValues {
+    /// Whether the pager's page is the one on screen: the condition icon moves
+    /// only there, not on the places on either side.
+    @Entry var pageShown = true
+}
+
 /// The place, one big number, the condition, and what happens next.
 struct NowSection: View {
     let view: ViewModel
     let current: ViewModel.Current
     @Environment(\.feelsLikeLeads) private var feelsLeads
+    @Environment(\.pageShown) private var shown
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 18) {
-                ConditionIcon(icon: current.icon, size: 54, animated: true)
+                ConditionIcon(icon: current.icon, size: 54, animated: shown)
                 VStack(alignment: .leading, spacing: 0) {
                     if feelsLeads { FeelsLikeTag() }
                     Text(current.temperature.text)
@@ -35,10 +42,11 @@ struct CenteredNowSection: View {
     let view: ViewModel
     let current: ViewModel.Current
     @Environment(\.feelsLikeLeads) private var feelsLeads
+    @Environment(\.pageShown) private var shown
 
     var body: some View {
         VStack(spacing: 4) {
-            ConditionIcon(icon: current.icon, size: 46, animated: true)
+            ConditionIcon(icon: current.icon, size: 46, animated: shown)
             if feelsLeads { FeelsLikeTag() }
             Text(current.temperature.text)
                 .font(.system(size: 96, weight: .thin))

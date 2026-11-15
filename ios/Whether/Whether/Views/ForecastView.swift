@@ -608,6 +608,7 @@ struct ForecastView: View {
         return TabView(selection: $store.active) {
             ForEach(pages, id: \.element.0.id) { index, pair in
                 page(pair.1, pair.0, index == store.active)
+                    .environment(\.pageShown, index == store.active)
                     .tag(index)
             }
         }
