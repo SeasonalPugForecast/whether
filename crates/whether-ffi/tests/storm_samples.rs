@@ -1,10 +1,19 @@
-//! The storm outlooks the app's debug launch (`-storms`) shows, and the storms
-//! views the Swift package decodes, kept in step with the core: regenerate
-//! with `UPDATE_SAMPLE=1 cargo test -p whether-ffi`.
+//! The storm outlooks the app's debug launches (`-storms`, `-hurricane`) show,
+//! and the storms views the Swift package decodes, kept in step with the core:
+//! regenerate with `UPDATE_SAMPLE=1 cargo test -p whether-ffi`.
 
 use std::path::{Path, PathBuf};
 
+use whether_core::model::ResolvedLocation;
+use whether_core::presentation::{PresentationConfig, TimeFormat};
+use whether_core::storm::hurricane::DRAWN_AIDS;
 use whether_core::storm::testdata::{dry_week, noreaster, noreaster_past_runs};
+use whether_core::storm::{StormOutlook, hurricane};
+use whether_core::strings::Strings;
+use whether_core::time::{UnixTime, UtcOffset};
+use whether_core::units::UnitPrefs;
+use whether_core::view::storms::storm_ahead;
+use whether_providers::nhc::{parse_adeck, parse_bdeck, parse_current_storms};
 
 /// The app's debug-only resources (left out of release builds).
 const APP: &str = "../../ios/Whether/Whether/Debug";
@@ -44,6 +53,66 @@ fn the_app_storm_samples_are_current() {
         &compact(&noreaster_past_runs()),
     );
     check(&path(APP, "storms-dry-week.json"), &compact(&dry_week()));
+}
+
+/// NHC's recordings of Josephine (AL10 2026).
+const NHC: &str = "../whether-providers/tests/fixtures/nhc";
+/// Josephine's last official forecast started at 2026-10-22 18:00 UTC; the
+/// sample is half an hour after its advisory, three hours later.
+const JOSEPHINE_NOW: UnixTime = UnixTime(1_792_692_000 + 3 * 3_600 + 1_800);
+
+/// A place on Josephine's official track (her 36-hour position), out at sea:
+/// no coast lies in her cone. Its clock is New York's (EDT).
+fn on_josephines_track() -> ResolvedLocation {
+    ResolvedLocation {
+        name: "Test Point".to_string(),
+        latitude: 43.5,
+        longitude: -55.9,
+        utc_offset: UtcOffset(-4 * 3_600),
+        tz_name: Some("America/New_York".to_string()),
+        ..ResolvedLocation::default()
+    }
+}
+
+/// Josephine from the recorded summary (hand-made) and decks, alone in an
+/// outlook for the place on her track, fetched at the sample's time.
+fn josephine_outlook() -> StormOutlook {
+    let read = |file: &str| std::fs::read(path(NHC, file)).unwrap();
+    let storms = parse_current_storms(&read("current_storms_josephine.synthetic.json")).unwrap();
+    let (official, aids) = parse_adeck(&read("aal102026.dat.gz"), &DRAWN_AIDS).unwrap();
+    let past = parse_bdeck(&read("bal102026.dat")).unwrap();
+    StormOutlook {
+        place: on_josephines_track(),
+        hurricanes: vec![storms[0].hurricane(official, aids, past)],
+        fetched_at: JOSEPHINE_NOW,
+        ..StormOutlook::default()
+    }
+}
+
+/// The app's `-hurricane` outlook and the Storm ahead card it gives
+/// (`-stormahead hurricane`), in US units and a 12-hour clock as the app's
+/// screenshots show them.
+#[test]
+fn the_app_hurricane_samples_are_current() {
+    let outlook = josephine_outlook();
+    let place = on_josephines_track();
+    let cone = hurricane::cone(&outlook.hurricanes[0].official, outlook.hurricanes[0].basin);
+    assert!(hurricane::ring_contains(
+        &cone,
+        (place.latitude, place.longitude)
+    ));
+    check(
+        &path(APP, "storms-hurricane-josephine.json"),
+        &compact(&outlook),
+    );
+    let presentation = PresentationConfig {
+        units: UnitPrefs::IMPERIAL,
+        time_format: TimeFormat::H12,
+        ..PresentationConfig::default()
+    };
+    let card = storm_ahead(&outlook, &presentation, &Strings::default(), JOSEPHINE_NOW).unwrap();
+    assert_eq!(card.hurricane.as_deref(), Some("al102026"));
+    check(&path(APP, "storms-ahead-josephine.json"), &compact(&card));
 }
 
 /// The JSON of the insta snapshot `file` in `dir`.
