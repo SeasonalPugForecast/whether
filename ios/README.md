@@ -373,6 +373,31 @@ in Files), or use iCloud Drive.
   `now-nocolor`, `precip-patterns`, `radar-deutan`, …), `colors-editor`,
   `colors-editor-deutan`, `colors-custom` and `theme-received`.
 
+## Storms
+
+The **Storms** tab compares the weather models the news quotes (ECMWF, GFS, GEM and ICON) for the
+coming storms at the place shown. It is off by default: switch it on under Customize → Tabs. With
+all five other tabs shown, iOS lists it under More.
+
+- **The map** draws each model's low-pressure track with its own color and dash pattern (ECMWF
+  solid, GFS dashed, GEM dotted, ICON dash-dot), with the lows' pressure at the time the scrubber
+  shows. Tap a chip to hide a model.
+- **The drawer** ("At New York") holds how well the models agree, each model's snow, rain, gusts,
+  lowest pressure and start, the ECMWF and GFS ensemble plumes, and how the last runs changed.
+- **Data:** everything comes from Open-Meteo and is computed and worded by the Rust core
+  (`whether-core::storm`, `view::storms`). The app reads each model's run time first and fetches
+  the forecasts again only when a newer run is out; earlier runs are kept for good.
+- **The "Storm ahead" card** on the Now tab appears when, within 5 days, the models average at
+  least 5 cm of snow, 25 mm of rain or 60 km/h gusts. It is checked during the normal refresh with
+  one small request at most every 3 hours, opens the Storms screen even when the tab is off, and
+  can be hidden like any Now card.
+
+Screenshots: `-storms` (`-storms dry`) shows a built-in nor'easter (or a dry week) at the time it
+was made for, `-show storms` opens the tab, `-stormstep <n>` moves the scrubber, `-stormsheet
+large` opens the drawer, and `-stormahead` shows the card. The shots are `storms`, `storms-sheet`,
+`storms-charts`, `storms-map-step`, `storms-dark`, `storms-light`, `storms-deutan`, `storms-dry` and
+`now-storm-ahead`.
+
 ## Widgets
 
 The widget extension (`ios/Whether/WhetherWidget`, views in `ios/Whether/Shared`)

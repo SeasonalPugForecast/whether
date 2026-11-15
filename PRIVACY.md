@@ -1,6 +1,6 @@
 # Privacy
 
-*Last updated: 9 November 2026.* This policy is for the Pug Forecast iPhone app (the Whether
+*Last updated: 14 November 2026.* This policy is for the Pug Forecast iPhone app (the Whether
 project, <https://github.com/SeasonalPugForecast/whether>).
 
 Whether has no accounts, no ads, no analytics and no tracking. The project runs no server, and
@@ -12,7 +12,10 @@ To get a forecast, the app sends the **coordinates of each place you save** (and
 trip plan is for), **to two decimals (about 1 km)**, and your language, to the weather services
 below. Apple WeatherKit and Apple's place naming (reverse geocoding of your location) receive the
 same rounded coordinates. The radar asks the radar service for the map tiles you are looking at,
-so it sees roughly where you are looking. When you type in the place search, the text goes to
+so it sees roughly where you are looking. The Storms tab, and the "Storm ahead" card on the Now
+tab, ask Open-Meteo for several weather models' forecasts at the place shown (the same rounded
+coordinates); the Storms tab also asks for the models' ensembles and earlier runs at that place,
+and for sea-level pressure at a grid of 49 points up to about 1,000 km around it. When you type in the place search, the text goes to
 Apple Maps for suggestions and, if Apple has none, to Open-Meteo's place search; a search that is
 only digits (a postal code) also sends your phone's region code. Those services see your phone's IP
 address, as any web request does, and keep their own logs under their own policies.
@@ -28,7 +31,7 @@ neither; it lists the search text because it reaches a third party (Open-Meteo).
 | Service | Used for |
 |---|---|
 | [Apple Maps](https://www.apple.com/legal/privacy/data/en/apple-maps/) | place suggestions as you type a search (the text typed, ranked near the place shown, which is sent to about 1 km), and naming the place your location is |
-| [Open-Meteo](https://open-meteo.com/en/terms) | forecasts, history, place search when Apple has no suggestion |
+| [Open-Meteo](https://open-meteo.com/en/terms) | forecasts, history, place search when Apple has no suggestion, and the Storms tab and "Storm ahead" card (the models' forecasts, ensembles and earlier runs at the place shown, and pressure on a grid around it) |
 | [MET Norway](https://api.met.no/doc/TermsOfService) | the backup forecast, only when Open-Meteo cannot answer and you leave it on; the request names the project's web address as its contact |
 | [National Weather Service](https://www.weather.gov/privacy) | US alerts, and US forecasts if you switch them on |
 | [NOAA Regional Climate Centers (ACIS)](https://www.rcc-acis.org/) | US climate normals and history |
