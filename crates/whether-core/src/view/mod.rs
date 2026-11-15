@@ -20,7 +20,7 @@ pub use build::build_view;
 pub use format::{Formatter, Quantity};
 pub use history::plan_vm;
 pub use radar::radar_vm;
-pub use storms::{StormsVm, build_storms};
+pub use storms::{StormAheadVm, StormsVm, build_storms, storm_ahead};
 
 use crate::condition::Condition;
 use crate::history::History;

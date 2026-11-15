@@ -258,6 +258,13 @@ texts! {
     StormSnowRange => "storm_snow_range", "{wet} brings {wet_amount} of snow; {dry} {dry_amount}.";
     StormRainRange => "storm_rain_range", "{wet} brings {wet_amount} of rain; {dry} {dry_amount}.";
     StormMostMembers => "storm_most_members", "Most members: {low}–{high} (median {median})";
+    StormAheadTitle => "storm_ahead_title", "Storm ahead · {when}";
+    StormAheadSnow => "storm_ahead_snow", "Up to {amount} of snow";
+    StormAheadRain => "storm_ahead_rain", "Up to {amount} of rain";
+    StormAheadGusts => "storm_ahead_gusts", "Gusts to {speed}";
+    StormAheadLine => "storm_ahead_line", "{headline} · {agreement}";
+    StormAheadModelsDiffer => "storm_ahead_models_differ", "models differ";
+    StormAheadModelsDisagree => "storm_ahead_models_disagree", "models disagree";
 }
 
 impl Text {

@@ -328,6 +328,119 @@ pub fn build_storms(
     }
 }
 
+/// A card warning of the first significant storm coming at the place.
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct StormAheadVm {
+    /// e.g. "Storm ahead · Sat night – Sun night", named like
+    /// [`StormEventVm::title`].
+    pub title: String,
+    /// The headline amount, then how the models differ when they don't
+    /// agree well, e.g. "Up to 14 in of snow · models disagree", "Up to
+    /// 1.7 in of rain" or "Gusts to 52 mph".
+    pub line: String,
+    /// The severity level displays color the card with: the agreement's, or
+    /// Moderate when the agreement is unknown.
+    pub level: Level,
+    /// The agreement's name, e.g. "Low agreement"; `None` when fewer than two
+    /// models can be compared.
+    pub agreement: Option<String>,
+    /// The event window's start.
+    pub start: UnixTime,
+    /// The event window's end.
+    pub end: UnixTime,
+}
+
+/// The "Storm ahead" card for `outlook` at `now`: the first event
+/// [`analysis::significant_event`] finds, or `None` when nothing coming is
+/// significant.
+///
+/// The headline is whichever of snow, precipitation and gusts goes furthest
+/// past its significance threshold (snow, then precipitation, on a tie), as
+/// the largest any model brings. The agreement uses the storm centres when
+/// the outlook has pressure grids, else the totals alone.
+pub fn storm_ahead(
+    outlook: &StormOutlook,
+    presentation: &PresentationConfig,
+    strings: &Strings,
+    now: UnixTime,
+) -> Option<StormAheadVm> {
+    let event = analysis::significant_event(outlook, now)?;
+    let f = Formatter::new(presentation, strings);
+    let (wet_start, wet_end) = wet_span(outlook, &event);
+    let when = event_title(&f, outlook, wet_start, wet_end);
+    let found: Vec<Vec<Track>> = outlook.grids.iter().map(track::track_lows).collect();
+    let centers = storm_centers(outlook, &found, &event);
+    let agreement = agreement_vm(outlook, &event, &centers, &f);
+    let headline = headline(&f, &event);
+    let differ = match agreement.as_ref().map(|a| a.agreement) {
+        Some(Agreement::Medium) => Some(Text::StormAheadModelsDiffer),
+        Some(Agreement::Low) => Some(Text::StormAheadModelsDisagree),
+        Some(Agreement::High) | None => None,
+    };
+    let line = match differ {
+        Some(text) => f.strings.fmt(
+            Text::StormAheadLine,
+            &[("headline", &headline), ("agreement", f.strings.get(text))],
+        ),
+        None => headline,
+    };
+    Some(StormAheadVm {
+        title: f.strings.fmt(Text::StormAheadTitle, &[("when", &when)]),
+        line,
+        level: agreement
+            .as_ref()
+            .map_or(Level::Moderate, |a| a.agreement.level()),
+        agreement: agreement.map(|a| a.label),
+        start: event.start,
+        end: event.end,
+    })
+}
+
+/// The largest of a significant event's quantities, relative to its
+/// threshold: "Up to 14 in of snow", "Up to 1.7 in of rain" or "Gusts to
+/// 52 mph", each the most any model brings.
+fn headline(f: &Formatter<'_>, event: &StormEvent) -> String {
+    let most = |pick: fn(&ModelEventStats) -> Option<f32>| {
+        event.models.iter().filter_map(pick).reduce(f32::max)
+    };
+    let snow = most(|m| m.total_snow_cm).map(|cm| {
+        (
+            event.mean_snow_cm / analysis::SIGNIFICANT_SNOW_CM,
+            f.strings.fmt(
+                Text::StormAheadSnow,
+                &[("amount", &rough_amount(f, true, cm))],
+            ),
+        )
+    });
+    let rain = most(|m| m.total_mm).map(|mm| {
+        (
+            event.mean_total_mm / analysis::SIGNIFICANT_PRECIP_MM,
+            f.strings.fmt(
+                Text::StormAheadRain,
+                &[("amount", &rough_amount(f, false, mm))],
+            ),
+        )
+    });
+    let gusts = most(|m| m.peak_gust_kmh).map(|kmh| {
+        let speed = f.wind(Mps::from_unit(kmh, WindUnit::Kmh));
+        (
+            analysis::mean_peak_gust_kmh(event).unwrap_or(0.0) / analysis::SIGNIFICANT_GUST_KMH,
+            f.strings
+                .fmt(Text::StormAheadGusts, &[("speed", &speed.text)]),
+        )
+    });
+    [snow, rain, gusts]
+        .into_iter()
+        .flatten()
+        .fold(None, |best: Option<(f32, String)>, cur| match best {
+            Some(b) if b.0 >= cur.0 => Some(b),
+            _ => Some(cur),
+        })
+        .map_or_else(String::new, |(_, text)| text)
+}
+
 /// The place as `(latitude, longitude)`.
 fn place_of(outlook: &StormOutlook) -> (f64, f64) {
     (outlook.place.latitude, outlook.place.longitude)
@@ -1558,8 +1671,113 @@ mod tests {
     }
 
     #[cfg(feature = "serde")]
-    fn pretty(vm: &StormsVm) -> String {
+    fn pretty<T: serde::Serialize>(vm: &T) -> String {
         serde_json::to_string_pretty(vm).unwrap()
+    }
+
+    fn ahead(outlook: &StormOutlook, presentation: &PresentationConfig) -> Option<StormAheadVm> {
+        storm_ahead(outlook, presentation, &Strings::default(), STORM_NOW)
+    }
+
+    #[test]
+    fn the_noreaster_is_a_storm_ahead() {
+        let vm = ahead(&noreaster(), &imperial()).unwrap();
+        assert_eq!(vm.title, "Storm ahead · Sat night – Sun night");
+        assert_eq!(vm.line, "Up to 14 in of snow · models disagree");
+        assert_eq!(vm.level, Level::Poor);
+        assert_eq!(vm.agreement.as_deref(), Some("Low agreement"));
+        let event = &build(&noreaster(), &imperial()).events[0];
+        assert_eq!((vm.start, vm.end), (event.start, event.end));
+        let metric = ahead(&noreaster(), &PresentationConfig::default()).unwrap();
+        assert_eq!(metric.line, "Up to 35 cm of snow · models disagree");
+        let (de, _) = Strings::localized("de", &alloc::collections::BTreeMap::new());
+        let german = storm_ahead(&noreaster(), &PresentationConfig::default(), &de, STORM_NOW);
+        let german = german.unwrap();
+        assert_eq!(german.title, "Unwetter in Sicht · Sa Nacht – So Nacht");
+        assert_eq!(german.line, "Bis zu 35 cm Schnee · Modelle uneins");
+        // Without grids the totals alone rate the agreement.
+        let mut points_only = noreaster();
+        points_only.grids.clear();
+        points_only.ensembles.clear();
+        let vm = ahead(&points_only, &imperial()).unwrap();
+        assert_eq!(vm.agreement.as_deref(), Some("Low agreement"));
+    }
+
+    #[test]
+    fn a_dry_week_has_no_storm_ahead() {
+        assert_eq!(ahead(&dry_week(), &imperial()), None);
+        assert_eq!(ahead(&StormOutlook::default(), &imperial()), None);
+    }
+
+    #[test]
+    fn rain_and_wind_head_the_line_when_they_lead() {
+        // The noreaster's models with their snow taken away and the totals
+        // brought together: rain heads the line, and agreement is high.
+        let mut rain = noreaster();
+        rain.grids.clear();
+        for point in &mut rain.points {
+            point.snowfall_cm.iter_mut().for_each(|v| *v = Some(0.0));
+        }
+        let ecmwf = rain.points[0].clone();
+        for point in &mut rain.points[1..] {
+            point.precipitation_mm.clone_from(&ecmwf.precipitation_mm);
+            point.gust_kmh.iter_mut().for_each(|v| *v = Some(20.0));
+        }
+        let vm = ahead(&rain, &imperial()).unwrap();
+        assert_eq!(vm.line, "Up to 1.7 in of rain");
+        assert_eq!(vm.level, Level::Good);
+        assert_eq!(vm.agreement.as_deref(), Some("High agreement"));
+
+        // One model with 40 % less: the models differ.
+        let mut differ = rain.clone();
+        differ.points[1]
+            .precipitation_mm
+            .iter_mut()
+            .for_each(|v| *v = v.map(|mm| mm * 0.6));
+        let vm = ahead(&differ, &imperial()).unwrap();
+        assert_eq!(vm.line, "Up to 1.7 in of rain · models differ");
+        assert_eq!(vm.level, Level::Moderate);
+        assert_eq!(vm.agreement.as_deref(), Some("Medium agreement"));
+
+        // Light rain under strong gusts: the gusts head the line.
+        let mut wind = rain;
+        for point in &mut wind.points {
+            point
+                .precipitation_mm
+                .iter_mut()
+                .for_each(|v| *v = v.map(|mm| mm / 4.0));
+            point.gust_kmh.clone_from(&ecmwf.gust_kmh);
+        }
+        let vm = ahead(&wind, &imperial()).unwrap();
+        assert_eq!(vm.line, "Gusts to 52 mph");
+        let vm = ahead(&wind, &PresentationConfig::default()).unwrap();
+        assert_eq!(vm.line, "Gusts to 84 km/h");
+    }
+
+    #[test]
+    fn a_single_model_has_no_agreement() {
+        // One model has nothing to agree with: no wording, a moderate level.
+        let mut single = noreaster();
+        single.points.truncate(1);
+        single.grids.clear();
+        let vm = ahead(&single, &PresentationConfig::default()).unwrap();
+        assert_eq!(vm.agreement, None);
+        assert_eq!(vm.level, Level::Moderate);
+        assert_eq!(vm.line, "Up to 36 cm of snow");
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn snapshot_storm_ahead_noreaster_imperial() {
+        let vm = ahead(&noreaster(), &imperial());
+        insta::assert_snapshot!("storm_ahead_noreaster_imperial", pretty(&vm));
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn snapshot_storm_ahead_noreaster_metric() {
+        let vm = ahead(&noreaster(), &PresentationConfig::default());
+        insta::assert_snapshot!("storm_ahead_noreaster_metric", pretty(&vm));
     }
 
     #[cfg(feature = "serde")]

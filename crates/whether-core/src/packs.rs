@@ -291,6 +291,13 @@ const DE: Pack = &[
         Text::StormMostMembers,
         "Die meisten Läufe: {low}–{high} (Median {median})",
     ),
+    (Text::StormAheadTitle, "Unwetter in Sicht · {when}"),
+    (Text::StormAheadSnow, "Bis zu {amount} Schnee"),
+    (Text::StormAheadRain, "Bis zu {amount} Regen"),
+    (Text::StormAheadGusts, "Böen bis {speed}"),
+    (Text::StormAheadLine, "{headline} · {agreement}"),
+    (Text::StormAheadModelsDiffer, "Modelle weichen ab"),
+    (Text::StormAheadModelsDisagree, "Modelle uneins"),
 ];
 
 const ES: Pack = &[
@@ -569,6 +576,13 @@ const ES: Pack = &[
         Text::StormMostMembers,
         "La mayoría de los miembros: {low}–{high} (mediana {median})",
     ),
+    (Text::StormAheadTitle, "Temporal a la vista · {when}"),
+    (Text::StormAheadSnow, "Hasta {amount} de nieve"),
+    (Text::StormAheadRain, "Hasta {amount} de lluvia"),
+    (Text::StormAheadGusts, "Rachas de hasta {speed}"),
+    (Text::StormAheadLine, "{headline} · {agreement}"),
+    (Text::StormAheadModelsDiffer, "los modelos difieren"),
+    (Text::StormAheadModelsDisagree, "los modelos no coinciden"),
 ];
 
 const FR: Pack = &[
@@ -853,6 +867,13 @@ const FR: Pack = &[
         Text::StormMostMembers,
         "La plupart des membres : {low}–{high} (médiane {median})",
     ),
+    (Text::StormAheadTitle, "Tempête en vue · {when}"),
+    (Text::StormAheadSnow, "Jusqu’à {amount} de neige"),
+    (Text::StormAheadRain, "Jusqu’à {amount} de pluie"),
+    (Text::StormAheadGusts, "Rafales jusqu’à {speed}"),
+    (Text::StormAheadLine, "{headline} · {agreement}"),
+    (Text::StormAheadModelsDiffer, "les modèles diffèrent"),
+    (Text::StormAheadModelsDisagree, "les modèles divergent"),
 ];
 
 #[cfg(test)]
