@@ -59,9 +59,13 @@ struct StormsTab: View {
         .task(id: place) { await load() }
         .onChange(of: settings) { storms.rebuild(settings: settings) }
         .task {
-            // The steps' "Now" and the events' days move on with the clock.
+            // The steps' "Now" and the events' days move on with the clock, and a model
+            // may have a newer run: `load` reads the run times only when they are due
+            // (`StormsRules.isDue`, every 15 minutes), so most ticks send nothing.
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(300))
+                guard !Task.isCancelled else { break }
+                if storms.view != nil { await load() }
                 storms.rebuild()
             }
         }

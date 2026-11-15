@@ -58,6 +58,9 @@ enum StormsRules {
     static let pastRunRoles: Set<String> = ["ecmwf", "gfs"]
     /// How many earlier runs each comparison asks for.
     static let pastRuns: UInt32 = 4
+    /// An earlier runs' set that failed is asked for again after this, or sooner when
+    /// the outlook answers again.
+    static let retryPastRunsAfter: Int64 = 15 * 60
 
     /// Whether an outlook fetched at `fetchedAt` is too old to show without a note.
     static func isStale(fetchedAt: Int64, now: Int64) -> Bool {
@@ -84,8 +87,15 @@ enum StormsRules {
         }
     }
 
-    /// The requests still to send: not kept, not failed (until the outlook changes,
-    /// which changes their keys), and not already under way.
+    /// The failed earlier runs' sets still left alone at `now`, from `failed` (when each
+    /// failed, by key): those that failed under `retryPastRunsAfter` ago. One that failed
+    /// "in the future" (the clock moved back) is tried again.
+    static func stillFailed(_ failed: [String: Int64], now: Int64) -> [String: Int64] {
+        failed.filter { now >= $0.value && now - $0.value < retryPastRunsAfter }
+    }
+
+    /// The requests still to send: not kept, not failed lately (`stillFailed`), and not
+    /// already under way.
     static func toFetch(
         _ requests: [PastRunsRequest], kept: Set<String>, failed: Set<String>, running: Set<String>
     ) -> [PastRunsRequest] {

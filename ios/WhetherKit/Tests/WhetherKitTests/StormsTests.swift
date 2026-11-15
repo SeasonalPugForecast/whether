@@ -159,6 +159,20 @@ final class StormsTests: XCTestCase {
         XCTAssertEqual(StormsRules.toFetch(both, kept: [], failed: [], running: [ecmwf.key, gfs.key]), [])
     }
 
+    func testAFailedSetIsTriedAgainAfterFifteenMinutes() {
+        let now: Int64 = 1_800_039_600
+        let failed: [String: Int64] = ["a": now - 60, "b": now - 15 * 60 + 1, "c": now - 15 * 60, "d": now + 600]
+        let left = StormsRules.stillFailed(failed, now: now)
+        XCTAssertEqual(Set(left.keys), ["a", "b"], "c is old enough, d failed in the future")
+        XCTAssertEqual(left["a"], now - 60, "the failure time is kept")
+        XCTAssertEqual(StormsRules.stillFailed([:], now: now), [:])
+        let ecmwf = PastRunsRequest(model: "ecmwf_ifs025", latestInit: 1, windowStart: 2, windowEnd: 3)
+        let waiting = StormsRules.stillFailed([ecmwf.key: now - 60], now: now)
+        XCTAssertEqual(StormsRules.toFetch([ecmwf], kept: [], failed: Set(waiting.keys), running: []), [])
+        let due = StormsRules.stillFailed([ecmwf.key: now - 15 * 60], now: now)
+        XCTAssertEqual(StormsRules.toFetch([ecmwf], kept: [], failed: Set(due.keys), running: []), [ecmwf])
+    }
+
     func testKeptSetsJoinIntoOneList() throws {
         XCTAssertNil(StormsRules.joined([]))
         XCTAssertNil(StormsRules.joined(["[]", " [ ] \n", "not json"]))

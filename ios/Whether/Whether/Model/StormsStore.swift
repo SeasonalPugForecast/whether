@@ -5,7 +5,8 @@ import WhetherKit
 /// The Storms tab's state: the outlook for the place shown, kept per place in memory
 /// and in the caches directory, and the view the core builds from it.
 ///
-/// The tab loads only while it shows (`load`, from `.task(id:)` on the place). The
+/// The tab loads only while it shows (`load`, from `.task(id:)` on the place, and again
+/// from its clock while it stays open). The
 /// models' run times are read at most every `StormsRules.checkEvery`; the core fetches
 /// the data again only when a model has a newer run. The view is rebuilt by the core
 /// when the clock or the settings change; nothing is formatted here.
@@ -38,7 +39,12 @@ final class StormsStore {
     @ObservationIgnored private var checked: [String: Int64] = [:]
     /// Earlier runs' sets (JSON lists) by `PastRunsRequest.key`, as on disk.
     @ObservationIgnored private var pastRuns: [String: String] = [:]
-    @ObservationIgnored private var failedPastRuns: Set<String> = []
+    /// When each earlier runs' set last failed, Unix seconds, by key: not asked for again
+    /// for `StormsRules.retryPastRunsAfter`, nor until the outlook next answers.
+    @ObservationIgnored private var failedPastRuns: [String: Int64] = [:]
+    /// `failure` came from building the view, so the next build that works clears it; a
+    /// fetch's failure stays until the next fetch answers.
+    @ObservationIgnored private var failedToBuild = false
     @ObservationIgnored private var runningPastRuns: Set<String> = []
     private let directory: URL
     private let ledgerURL: URL
@@ -75,6 +81,7 @@ final class StormsStore {
             view = nil
             failure = nil
             failureDetail = nil
+            failedToBuild = false
             stale = false
         }
         #if DEBUG
@@ -97,13 +104,18 @@ final class StormsStore {
         guard view == nil || StormsRules.isDue(lastChecked: checked[place.id], now: t) else { return }
         loading = true
         defer { loading = false }
+        // An attempt that fails waits as long as one that answers, so an open tab
+        // doesn't ask again on every tick.
+        checked[place.id] = t
         do {
             let outcome = try await fetchStorms(
                 place: place.corePlace(now: now), settings: settings, cachedJson: kept, now: t,
                 host: URLSessionHost(ledgerURL: ledgerURL))
-            checked[place.id] = t
+            // Open-Meteo answers again: earlier runs that failed may be had now.
+            failedPastRuns = [:]
             failure = nil
             failureDetail = nil
+            failedToBuild = false
             if outcome.outlookJson != kept { keep(outcome.outlookJson, for: place) }
             // The place may have changed while the request ran.
             if shown == nil || shown?.place.id == place.id {
@@ -115,6 +127,7 @@ final class StormsStore {
             let message = userMessage(error)
             failure = message.title
             failureDetail = message.detail
+            failedToBuild = false
         }
     }
 
@@ -130,10 +143,16 @@ final class StormsStore {
                 settings: settings, now: t)
             view = try StormsView.decode(json)
             stale = StormsRules.isStale(fetchedAt: shown.runs.fetchedAt, now: t)
+            if failedToBuild {
+                failure = nil
+                failureDetail = nil
+                failedToBuild = false
+            }
         } catch {
             let message = userMessage(error)
             failure = message.title
             failureDetail = message.detail
+            failedToBuild = true
         }
     }
 
@@ -155,8 +174,9 @@ final class StormsStore {
             shown?.pastRunKeys.append(request.key)
             added = true
         }
+        failedPastRuns = StormsRules.stillFailed(failedPastRuns, now: Int64(now.timeIntervalSince1970))
         let missing = StormsRules.toFetch(
-            requests, kept: Set(pastRuns.keys), failed: failedPastRuns, running: runningPastRuns)
+            requests, kept: Set(pastRuns.keys), failed: Set(failedPastRuns.keys), running: runningPastRuns)
         let place = current.place
         for request in missing {
             runningPastRuns.insert(request.key)
@@ -175,7 +195,7 @@ final class StormsStore {
                     added = true
                 }
             } catch {
-                failedPastRuns.insert(request.key)
+                failedPastRuns[request.key] = Int64(now.timeIntervalSince1970)
             }
         }
         if added { rebuild() }
