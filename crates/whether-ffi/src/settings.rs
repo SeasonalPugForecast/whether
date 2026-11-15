@@ -270,6 +270,10 @@ pub struct Settings {
     /// key allows 10,000.
     #[uniffi(default = 9000)]
     pub pirate_weather_monthly_calls: u32,
+    /// Each day carries its hours, for expanding it. Off for views that only
+    /// list the days (the widgets), which are then much smaller.
+    #[uniffi(default = true)]
+    pub day_hours: bool,
 }
 
 impl core::fmt::Debug for Settings {
@@ -309,6 +313,7 @@ impl core::fmt::Debug for Settings {
                 "pirate_weather_monthly_calls",
                 &self.pirate_weather_monthly_calls,
             )
+            .field("day_hours", &self.day_hours)
             .finish()
     }
 }
@@ -342,6 +347,7 @@ pub fn default_settings() -> Settings {
         sources: Vec::new(),
         keys: HashMap::new(),
         pirate_weather_monthly_calls: DEFAULT_MONTHLY_CALLS,
+        day_hours: true,
     }
 }
 
@@ -461,8 +467,8 @@ impl Settings {
             } else {
                 TemperatureBasis::Actual
             }),
-            // Days expand to their hours in the app.
-            daily_hours: Some(true),
+            // Days expand to their hours in the app (the widgets only list them).
+            daily_hours: Some(self.day_hours),
             daily_icon: Some(if self.daylight_icons {
                 DailyIcon::Daylight
             } else {
@@ -682,6 +688,14 @@ mod tests {
             ..s
         };
         assert_eq!(s.presentation(&place()).date_format, DateFormat::Compact);
+    }
+
+    #[test]
+    fn days_carry_their_hours_unless_a_view_only_lists_them() {
+        let mut s = default_settings();
+        assert!(s.presentation(&place()).daily_hours, "the app expands days");
+        s.day_hours = false;
+        assert!(!s.presentation(&place()).daily_hours);
     }
 
     #[test]
