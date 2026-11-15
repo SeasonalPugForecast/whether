@@ -401,7 +401,7 @@ all five other tabs shown, iOS lists it under More.
   latest advisory and links to it.
   The cone is built from NHC's radii for the 2026 season (`whether-core::storm::hurricane`,
   `CONE_RADII_NMI`): update them each spring from NHC's "About the cone" page. The storm list is
-  fetched on each refresh; the track files are kept until NHC issues a new advisory. The card
+  fetched on each refresh; the track files are kept until NHC issues a new forecast (every 6 hours), and read again while they are older than it. The card
   shows a hurricane first when its cone reaches the place within 5 days.
 
 Screenshots: `-storms` (`-storms dry`) shows a built-in nor'easter (or a dry week) at the time it
