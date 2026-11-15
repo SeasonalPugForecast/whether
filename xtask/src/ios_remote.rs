@@ -678,6 +678,18 @@ const SHOTS: &[(&str, &str)] = &[
     ("storms-dry", "-seed -storms dry -show storms"),
     // The Now tab's Storm ahead card, built from the nor'easter (no request).
     ("now-storm-ahead", "-seed -stormahead -scrollTo storm"),
+    // Josephine from NHC's recordings, at a place on her track: the cone and
+    // tracks on the map, the drawer open on her advisory, and her Storm ahead
+    // card on the Now tab.
+    ("storms-hurricane", "-seed -hurricane -show storms"),
+    (
+        "storms-hurricane-sheet",
+        "-seed -hurricane -show storms -stormsheet large",
+    ),
+    (
+        "now-storm-ahead-hurricane",
+        "-seed -hurricane -stormahead hurricane -scrollTo storm",
+    ),
     ("places", "-seed -show places -search Brooklyn"),
     ("settings", "-seed -show settings"),
     // Customize: every editor in one place; the question before "Restore all
@@ -1873,6 +1885,18 @@ mod tests {
         assert!(launch("storms-map-step").is_some_and(|l| l.contains("-stormstep ")));
         assert!(launch("storms-deutan").is_some_and(|l| l.contains("-vision red_green")));
         assert!(launch("now-storm-ahead").is_some_and(|l| l.contains("-stormahead")));
+        for name in ["storms-hurricane", "storms-hurricane-sheet"] {
+            let line = launch(name).unwrap_or_default();
+            assert!(
+                line.contains("-hurricane") && line.contains("-show storms"),
+                "{name}: {line}"
+            );
+        }
+        assert!(launch("storms-hurricane-sheet").is_some_and(|l| l.contains("-stormsheet large")));
+        assert!(
+            launch("now-storm-ahead-hurricane")
+                .is_some_and(|l| l.contains("-hurricane") && l.contains("-stormahead hurricane"))
+        );
     }
 
     #[test]
