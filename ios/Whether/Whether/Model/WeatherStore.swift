@@ -244,6 +244,7 @@ final class WeatherStore {
             let args = ProcessInfo.processInfo.arguments
             if args.contains("-reset") {
                 try? FileManager.default.removeItem(at: directory.appending(path: "places.json"))
+                WidgetData.removeForecasts(in: directory)
             }
         #endif
         var places = (try? Data(contentsOf: directory.appending(path: "places.json")))
@@ -458,6 +459,7 @@ final class WeatherStore {
             caches[places[i].id] = nil
             try? FileManager.default.removeItem(at: places[i].cacheURL(in: directory))
             try? FileManager.default.removeItem(at: places[i].legacyCacheURL(in: directory))
+            WidgetData.removeForecast(for: places[i], in: directory)
         }
         let removed = Set(offsets.map { places[$0].id })
         places.remove(atOffsets: offsets)
@@ -574,6 +576,7 @@ final class WeatherStore {
             caches[place.id] = nil
             try? FileManager.default.removeItem(at: place.cacheURL(in: directory))
             try? FileManager.default.removeItem(at: place.legacyCacheURL(in: directory))
+            WidgetData.removeForecast(for: place, in: directory)
         }
         places = kept
     }

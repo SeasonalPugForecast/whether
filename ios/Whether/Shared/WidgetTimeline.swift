@@ -62,9 +62,24 @@ extension WidgetData {
         }
     }
 
+    /// The widget's own forecasts, in `directory/widget`.
+    static func forecastFolder(in directory: URL) -> URL {
+        directory.appending(path: "widget", directoryHint: .isDirectory)
+    }
+
     /// The widget's own forecast for `place`, in `directory/widget`.
     static func forecastURL(for place: AppPlace, in directory: URL) -> URL {
-        place.cacheURL(in: directory.appending(path: "widget", directoryHint: .isDirectory))
+        place.cacheURL(in: forecastFolder(in: directory))
+    }
+
+    /// Deletes the widget's own forecast for `place`, removed from the app.
+    static func removeForecast(for place: AppPlace, in directory: URL) {
+        try? FileManager.default.removeItem(at: forecastURL(for: place, in: directory))
+    }
+
+    /// Deletes every forecast the widget kept (the app forgot its places).
+    static func removeForecasts(in directory: URL) {
+        try? FileManager.default.removeItem(at: forecastFolder(in: directory))
     }
 
     /// When a snapshot's current conditions were observed (Unix seconds), from

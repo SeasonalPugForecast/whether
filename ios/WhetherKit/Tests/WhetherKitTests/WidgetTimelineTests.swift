@@ -81,6 +81,23 @@ final class WidgetTimelineTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(WidgetForecast.self, from: JSONEncoder().encode(kept)), kept)
     }
 
+    func testARemovedPlacesWidgetForecastGoesWithIt() throws {
+        let dir = FileManager.default.temporaryDirectory.appending(
+            path: "widget-forecasts-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let other = AppPlace(
+            id: "b", name: "B", detail: nil, latitude: 40.65, longitude: -73.95, timeZone: "America/New_York")
+        try FileManager.default.createDirectory(at: WidgetData.forecastFolder(in: dir), withIntermediateDirectories: true)
+        for p in [place, other] {
+            try JSONEncoder().encode(own(at: t0)).write(to: WidgetData.forecastURL(for: p, in: dir))
+        }
+        WidgetData.removeForecast(for: place, in: dir)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: WidgetData.forecastURL(for: place, in: dir).path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: WidgetData.forecastURL(for: other, in: dir).path))
+        WidgetData.removeForecasts(in: dir)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: WidgetData.forecastFolder(in: dir).path))
+    }
+
     // MARK: The timeline
 
     func testEntriesAreNowThenTheStartOfEachNextHour() throws {
