@@ -5,13 +5,22 @@ import Foundation
 @MainActor final class TaskChain {
     private var last: Task<Void, Never>?
 
-    func run<T: Sendable>(_ work: @escaping @MainActor @Sendable () async -> T) async -> T {
+    /// `work`'s value once the work asked for before it has ended. Cancelling the
+    /// caller cancels `work`; work whose caller is cancelled before its turn never
+    /// starts, and answers `nil`.
+    func run<T: Sendable>(_ work: @escaping @MainActor @Sendable () async -> T) async -> T? {
         let previous = last
-        let run = Task { () -> T in
+        let run = Task { () -> T? in
+            // Its turn comes in order, cancelled or not: the next waits for this one.
             await previous?.value
+            guard !Task.isCancelled else { return nil }
             return await work()
         }
         last = Task { _ = await run.value }
-        return await run.value
+        return await withTaskCancellationHandler {
+            await run.value
+        } onCancel: {
+            run.cancel()
+        }
     }
 }

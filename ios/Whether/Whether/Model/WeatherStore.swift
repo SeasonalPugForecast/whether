@@ -903,6 +903,8 @@ final class WeatherStore {
             cache.error = nil
             cache.errorDetail = nil
         } catch {
+            // Cancelled (a background refresh out of time): the cache stays as it was.
+            if Task.isCancelled { return }
             let message = userMessage(error)
             cache.error = message.title
             cache.errorDetail = message.detail
@@ -954,6 +956,7 @@ final class WeatherStore {
     /// `fetch` with the call ledger as last saved. Metered fetches (One Call,
     /// Pirate Weather) run one at a time: side by side, each would count from the
     /// same ledger and the last to save it would win, undercounting the day's calls.
+    /// One whose refresh is cancelled while it waits is not made.
     private func counted(
         _ place: Place, settings: Settings, snapshotJson: String?, lastModified: String?, now: Int64,
         host: URLSessionHost
@@ -971,8 +974,8 @@ final class WeatherStore {
                 return .failure(error)
             }
         }
-        let result =
-            fetchMetered(place: place, settings: settings) ? await meteredFetches.run(attempt) : await attempt()
+        guard fetchMetered(place: place, settings: settings) else { return try await attempt().get() }
+        guard let result = await meteredFetches.run(attempt) else { throw CancellationError() }
         return try result.get()
     }
 
