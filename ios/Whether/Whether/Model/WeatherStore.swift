@@ -569,6 +569,8 @@ final class WeatherStore {
 
     /// The One Call ledger (the phone's share of the day's calls).
     private var ledgerURL: URL { directory.appending(path: "ledger.json") }
+    /// The metered fetches, one after another (`counted`).
+    @ObservationIgnored private let meteredFetches = TaskChain()
 
     /// `place`'s cache, moving a legacy one (named after the place) to the id's name.
     private func load(_ place: AppPlace) -> PlaceCache {
@@ -822,13 +824,10 @@ final class WeatherStore {
     private func fetchOne(_ place: AppPlace, settings: Settings, host: URLSessionHost) async {
         var cache = caches[place.id] ?? PlaceCache()
         let now = Date.now
-        let cached = Cached(
-            snapshotJson: cache.snapshotJson, lastModified: cache.lastModified,
-            usageJson: try? String(contentsOf: ledgerURL, encoding: .utf8))
         do {
-            let outcome = try await fetch(
-                place: place.corePlace(now: now), settings: settings, cached: cached,
-                now: Int64(now.timeIntervalSince1970), host: host)
+            let outcome = try await counted(
+                place.corePlace(now: now), settings: settings, snapshotJson: cache.snapshotJson,
+                lastModified: cache.lastModified, now: Int64(now.timeIntervalSince1970), host: host)
             cache.snapshotJson = outcome.snapshotJson
             cache.lastModified = outcome.lastModified
             cache.lastSuccess = Int64(now.timeIntervalSince1970)
@@ -888,6 +887,31 @@ final class WeatherStore {
                 "fetch \(place.name): minutes and history after \(Date.now.timeIntervalSince(now))s"
                     + " (WeatherKit calls this launch: \(Self.weatherKitCalls))")
         #endif
+    }
+
+    /// `fetch` with the call ledger as last saved. Metered fetches (One Call,
+    /// Pirate Weather) run one at a time: side by side, each would count from the
+    /// same ledger and the last to save it would win, undercounting the day's calls.
+    private func counted(
+        _ place: Place, settings: Settings, snapshotJson: String?, lastModified: String?, now: Int64,
+        host: URLSessionHost
+    ) async throws -> FetchOutcome {
+        let attempt = { @MainActor @Sendable [ledgerURL] () async -> Result<FetchOutcome, any Error> in
+            do {
+                return .success(
+                    try await fetch(
+                        place: place, settings: settings,
+                        cached: Cached(
+                            snapshotJson: snapshotJson, lastModified: lastModified,
+                            usageJson: try? String(contentsOf: ledgerURL, encoding: .utf8)),
+                        now: now, host: host))
+            } catch {
+                return .failure(error)
+            }
+        }
+        let result =
+            fetchMetered(place: place, settings: settings) ? await meteredFetches.run(attempt) : await attempt()
+        return try result.get()
     }
 
     /// Keeps `cache` for `place` (unless the place was removed or moved meanwhile:
@@ -1060,11 +1084,8 @@ final class WeatherStore {
             }
         let now = Date.now
         let t = Int64(now.timeIntervalSince1970)
-        let outcome = try await fetch(
-            place: place.corePlace(now: now), settings: settings,
-            cached: Cached(
-                snapshotJson: nil, lastModified: nil,
-                usageJson: try? String(contentsOf: ledgerURL, encoding: .utf8)),
+        let outcome = try await counted(
+            place.corePlace(now: now), settings: settings, snapshotJson: nil, lastModified: nil,
             now: t, host: URLSessionHost(ledgerURL: ledgerURL))
         let entry = LocationEntry(
             place: place.corePlace(now: now), snapshotJson: outcome.snapshotJson, lastSuccess: t,
