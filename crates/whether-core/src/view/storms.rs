@@ -5,6 +5,10 @@
 //! [`crate::view::ViewModel`], it carries display text plus the numbers charts
 //! and maps need to place things (in display units); displays never convert or
 //! format.
+//!
+//! Active tropical cyclones ([`HurricaneVm`]) come with their official
+//! track, the guidance models' tracks, the observed track and NHC's forecast
+//! cone, ready to draw.
 
 use alloc::format;
 use alloc::string::{String, ToString};
@@ -12,13 +16,16 @@ use alloc::vec::Vec;
 
 use crate::models;
 use crate::presentation::PresentationConfig;
-use crate::scales::Level;
+use crate::scales::{Level, compass16, saffir_simpson};
 use crate::storm::analysis::{
     self, AgreementResult, EnsembleEventStats, MemberSpread, ModelEventStats, Percentiles,
     StormCenter, StormEvent,
 };
+use crate::storm::hurricane::{self, DRAWN_AIDS};
 use crate::storm::track::{self, Track};
-use crate::storm::{Agreement, ModelRole, ModelRun, PastRun, StormOutlook};
+use crate::storm::{
+    Agreement, Basin, Hurricane, ModelRole, ModelRun, PastRun, StormOutlook, TrackFix,
+};
 use crate::strings::{Strings, Text, weekday_text};
 use crate::time::{UnixTime, UtcOffset, Weekday};
 use crate::units::{Hpa, Meters, Mm, Mps, WindUnit};
@@ -50,6 +57,10 @@ pub struct StormsVm {
     pub events: Vec<StormEventVm>,
     /// Low-pressure tracks on the map, per model.
     pub tracks: Vec<TrackVm>,
+    /// Active tropical cyclones, in the outlook's order; left out of the
+    /// JSON when there are none.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Vec::is_empty"))]
+    pub hurricanes: Vec<HurricaneVm>,
     /// The time scrubber's steps, oldest first.
     pub steps: Vec<StepVm>,
     /// The required data credits; every display shows them.
@@ -284,6 +295,119 @@ pub struct TrackPointVm {
     pub pressure: Quantity,
 }
 
+/// One active tropical cyclone: its advisory, tracks and forecast cone.
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct HurricaneVm {
+    /// NHC's id, e.g. `al102026`.
+    pub id: String,
+    /// The storm's name, e.g. "Josephine".
+    pub name: String,
+    /// Its kind and name, with the Saffir–Simpson category for a hurricane:
+    /// "Hurricane Josephine · Category 1", "Tropical Storm Josephine",
+    /// "Post-Tropical Cyclone Josephine".
+    pub title: String,
+    /// NHC's classification code, e.g. `HU`, `TS`, `STS` or `PTC`.
+    pub classification: String,
+    /// The Saffir–Simpson category of a hurricane (1–5).
+    pub category: Option<u8>,
+    /// The severity level displays color it with: `extreme` for a major
+    /// hurricane (category 3 or more), `very_poor` for another hurricane,
+    /// `poor` for a tropical or subtropical storm, `moderate` otherwise.
+    pub level: Level,
+    /// The basin.
+    pub basin: Basin,
+    /// The centre's latitude, in degrees.
+    pub latitude: f32,
+    /// The centre's longitude, in degrees.
+    pub longitude: f32,
+    /// The maximum sustained wind, e.g. "75 mph".
+    pub wind: Quantity,
+    /// The central pressure, e.g. "29.18 inHg".
+    pub pressure: Quantity,
+    /// Where and how fast it moves, e.g. "NE at 13 mph", "Stationary", or
+    /// the missing placeholder.
+    pub movement: String,
+    /// When the advisory was issued, e.g. "Advisory Thu 5:00 PM".
+    pub advisory: String,
+    /// The advisory's issuance time.
+    pub advisory_time: UnixTime,
+    /// The advisory's web page at NHC.
+    pub advisory_url: Option<String>,
+    /// "The forecast cone reaches New York Thu", or "New York is in the
+    /// forecast cone", when the cone covers the place within the next 5
+    /// days.
+    pub reaches: Option<String>,
+    /// NHC's official forecast track, with a label and the wind at each
+    /// point.
+    pub official: Vec<ForecastPointVm>,
+    /// The guidance models' tracks, in display order, one per model family.
+    pub aids: Vec<AidTrackVm>,
+    /// The observed track, oldest first.
+    pub past: Vec<MapPointVm>,
+    /// NHC's forecast cone around the official track: a ring of points,
+    /// counter-clockwise, not closed (the last point joins the first).
+    pub cone: Vec<CoordinateVm>,
+}
+
+/// A point of the official forecast track.
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct ForecastPointVm {
+    /// Latitude in degrees.
+    pub latitude: f32,
+    /// Longitude in degrees, in `-180.0..180.0`.
+    pub longitude: f32,
+    /// When the centre is forecast there.
+    pub time: UnixTime,
+    /// The marker's label, e.g. "Fri 2 AM".
+    pub label: String,
+    /// The forecast maximum wind, e.g. "75 mph".
+    pub wind: Quantity,
+}
+
+/// One guidance model's track for a cyclone.
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct AidTrackVm {
+    /// The ATCF aid code, e.g. `AVNI`.
+    pub aid: String,
+    /// The model's short name, e.g. "GFS", "UKMET" or "Consensus".
+    pub short: String,
+    /// The color and dash role: `gfs` (AVNI), `gem` (CMCI), `ecmwf` (EMXI),
+    /// `ukmet` (UKXI), `hafs` (HFAI) or `consensus` (TVCN).
+    pub role: ModelRole,
+    /// The track, oldest first.
+    pub points: Vec<MapPointVm>,
+}
+
+/// A track position at a time.
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct MapPointVm {
+    /// Latitude in degrees.
+    pub latitude: f32,
+    /// Longitude in degrees, in `-180.0..180.0`.
+    pub longitude: f32,
+    /// When the centre is (or was) there.
+    pub time: UnixTime,
+}
+
+/// A position on the map.
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct CoordinateVm {
+    /// Latitude in degrees.
+    pub latitude: f32,
+    /// Longitude in degrees, in `-180.0..180.0`.
+    pub longitude: f32,
+}
+
 /// One step of the time scrubber.
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -323,6 +447,11 @@ pub fn build_storms(
             .map(|e| event_vm(outlook, past, &found, e, &f))
             .collect(),
         tracks: tracks(outlook, &found, events.first(), &f),
+        hurricanes: outlook
+            .hurricanes
+            .iter()
+            .map(|h| hurricane_vm(outlook, h, &f, now))
+            .collect(),
         steps: steps(outlook, &f, now),
         attribution: attribution(outlook),
     }
@@ -1097,6 +1226,229 @@ fn tracks(
     out
 }
 
+/// A coordinate rounded to 3 decimals (about 100 m), for the map.
+fn coordinate(x: f64) -> f32 {
+    (libm::round(x * 1_000.0) / 1_000.0) as f32
+}
+
+/// The words for an NHC classification, with a `{name}` placeholder.
+fn kind_text(classification: &str) -> Text {
+    match classification {
+        "HU" => Text::StormHurricane,
+        "TS" => Text::StormTropicalStorm,
+        "TD" => Text::StormTropicalDepression,
+        "STS" => Text::StormSubtropicalStorm,
+        "STD" => Text::StormSubtropicalDepression,
+        "PTC" => Text::StormPostTropical,
+        "PC" => Text::StormPotentialCyclone,
+        "TY" => Text::StormTyphoon,
+        _ => Text::StormTropicalCyclone,
+    }
+}
+
+/// Whether NHC classifies `h` as a hurricane (or typhoon).
+fn is_hurricane(h: &Hurricane) -> bool {
+    matches!(h.classification.as_str(), "HU" | "TY")
+}
+
+/// The Saffir–Simpson category of a hurricane.
+fn category(h: &Hurricane) -> Option<u8> {
+    if is_hurricane(h) {
+        h.wind_kt.and_then(saffir_simpson)
+    } else {
+        None
+    }
+}
+
+/// See [`HurricaneVm::level`].
+fn hurricane_level(h: &Hurricane) -> Level {
+    match category(h) {
+        Some(3..) => Level::Extreme,
+        Some(_) => Level::VeryPoor,
+        None if is_hurricane(h) => Level::VeryPoor,
+        None if matches!(h.classification.as_str(), "TS" | "STS") => Level::Poor,
+        None => Level::Moderate,
+    }
+}
+
+/// "Hurricane Josephine", "Tropical Storm Josephine".
+fn hurricane_name(f: &Formatter<'_>, h: &Hurricane) -> String {
+    f.strings
+        .fmt(kind_text(&h.classification), &[("name", &h.name)])
+}
+
+/// A speed in knots, in the display's wind unit.
+fn knots(f: &Formatter<'_>, kt: Option<f32>) -> Quantity {
+    f.wind(kt.and_then(|kt| Mps::from_unit(kt, WindUnit::Knots)))
+}
+
+/// "NE at 13 mph", "Stationary" below 1 kt, or the missing placeholder.
+fn movement(f: &Formatter<'_>, h: &Hurricane) -> String {
+    match (h.movement_deg, h.movement_kt) {
+        (_, Some(kt)) if kt < 1.0 => f.strings.get(Text::StormStationary).to_string(),
+        (Some(deg), Some(kt)) => f.strings.fmt(
+            Text::StormMovement,
+            &[
+                ("direction", compass16(deg)),
+                ("speed", &knots(f, Some(kt)).text),
+            ],
+        ),
+        _ => f.presentation.missing.clone(),
+    }
+}
+
+/// "Thu 5:00 PM".
+fn day_clock(f: &Formatter<'_>, t: UnixTime, offset: UtcOffset) -> String {
+    let day = f.strings.get(weekday_text(t.to_local(offset).weekday));
+    format!("{day} {}", f.clock(t, offset))
+}
+
+/// When the cone of `h` first covers the place within
+/// [`analysis::SIGNIFICANT_HORIZON_SECS`], as `(start, end)`.
+fn cone_window(
+    outlook: &StormOutlook,
+    h: &Hurricane,
+    now: UnixTime,
+) -> Option<(UnixTime, UnixTime)> {
+    hurricane::hurricane_window(
+        h,
+        place_of(outlook),
+        now,
+        analysis::SIGNIFICANT_HORIZON_SECS,
+    )
+}
+
+/// "The forecast cone reaches New York Thu", or "New York is in the
+/// forecast cone" when it covers the place at `now`.
+fn cone_sentence(
+    f: &Formatter<'_>,
+    outlook: &StormOutlook,
+    start: UnixTime,
+    now: UnixTime,
+) -> String {
+    let place = outlook.place.name.as_str();
+    if start <= now {
+        return f.strings.fmt(Text::StormConeCovers, &[("place", place)]);
+    }
+    let day = weekday_text(start.to_local(outlook.offset_at(start)).weekday);
+    f.strings.fmt(
+        Text::StormConeReaches,
+        &[("place", place), ("when", f.strings.get(day))],
+    )
+}
+
+/// The short name of a guidance aid: its model family's, else its code.
+fn aid_short(f: &Formatter<'_>, aid: &str) -> String {
+    match ModelRole::of_aid(aid) {
+        ModelRole::Gfs => "GFS".to_string(),
+        ModelRole::Gem => "GEM".to_string(),
+        ModelRole::Ecmwf => "ECMWF".to_string(),
+        ModelRole::Ukmet => "UKMET".to_string(),
+        ModelRole::Hafs => "HAFS".to_string(),
+        ModelRole::Consensus => f.strings.get(Text::StormConsensus).to_string(),
+        ModelRole::Official => "NHC".to_string(),
+        ModelRole::Icon | ModelRole::Other => aid.to_string(),
+    }
+}
+
+fn map_point(fix: &TrackFix) -> MapPointVm {
+    MapPointVm {
+        latitude: coordinate(fix.latitude),
+        longitude: coordinate(fix.longitude),
+        time: fix.time,
+    }
+}
+
+/// The guidance tracks: [`DRAWN_AIDS`] in order, then any other aid, one
+/// per model family (so ECMWF's raw run is drawn only without its
+/// interpolated one).
+fn aid_tracks(f: &Formatter<'_>, h: &Hurricane) -> Vec<AidTrackVm> {
+    let order = DRAWN_AIDS.iter().copied().chain(
+        h.aids
+            .keys()
+            .map(String::as_str)
+            .filter(|a| !DRAWN_AIDS.contains(a)),
+    );
+    let mut out: Vec<AidTrackVm> = Vec::new();
+    for aid in order {
+        let Some(fixes) = h.aids.get(aid).filter(|fixes| !fixes.is_empty()) else {
+            continue;
+        };
+        let role = ModelRole::of_aid(aid);
+        if role != ModelRole::Other && out.iter().any(|t| t.role == role) {
+            continue;
+        }
+        out.push(AidTrackVm {
+            aid: aid.to_string(),
+            short: aid_short(f, aid),
+            role,
+            points: fixes.iter().map(map_point).collect(),
+        });
+    }
+    out
+}
+
+/// One cyclone, formatted for the map and the drawer.
+fn hurricane_vm(
+    outlook: &StormOutlook,
+    h: &Hurricane,
+    f: &Formatter<'_>,
+    now: UnixTime,
+) -> HurricaneVm {
+    let name = hurricane_name(f, h);
+    let category = category(h);
+    let title = match category {
+        Some(n) => f.strings.fmt(
+            Text::StormCategory,
+            &[("storm", &name), ("n", &n.to_string())],
+        ),
+        None => name,
+    };
+    let advisory_offset = outlook.offset_at(h.advisory_time);
+    HurricaneVm {
+        id: h.id.clone(),
+        name: h.name.clone(),
+        title,
+        classification: h.classification.clone(),
+        category,
+        level: hurricane_level(h),
+        basin: h.basin,
+        latitude: coordinate(h.latitude),
+        longitude: coordinate(h.longitude),
+        wind: knots(f, h.wind_kt.map(f32::from)),
+        pressure: f.pressure(h.pressure_hpa.map(Hpa)),
+        movement: movement(f, h),
+        advisory: f.strings.fmt(
+            Text::StormAdvisory,
+            &[("time", &day_clock(f, h.advisory_time, advisory_offset))],
+        ),
+        advisory_time: h.advisory_time,
+        advisory_url: h.advisory_url.clone(),
+        reaches: cone_window(outlook, h, now)
+            .map(|(start, _)| cone_sentence(f, outlook, start, now)),
+        official: h
+            .official
+            .iter()
+            .map(|fix| ForecastPointVm {
+                latitude: coordinate(fix.latitude),
+                longitude: coordinate(fix.longitude),
+                time: fix.time,
+                label: day_time(f, fix.time, outlook.offset_at(fix.time)),
+                wind: knots(f, fix.wind_kt.map(f32::from)),
+            })
+            .collect(),
+        aids: aid_tracks(f, h),
+        past: h.past.iter().map(map_point).collect(),
+        cone: hurricane::cone(&h.official, h.basin)
+            .into_iter()
+            .map(|(lat, lon)| CoordinateVm {
+                latitude: coordinate(lat),
+                longitude: coordinate(lon),
+            })
+            .collect(),
+    }
+}
+
 /// The run's start in UTC, "12z".
 fn run_text(run: Option<&ModelRun>, presentation: &PresentationConfig) -> String {
     run.map_or_else(
@@ -1177,7 +1529,8 @@ fn step_label(t: UnixTime, offset: UtcOffset, f: &Formatter<'_>, now: UnixTime) 
 }
 
 /// "Models: ECMWF (CC BY 4.0), NOAA GFS, ECCC GEM, DWD ICON via Open-Meteo.com
-/// (CC BY 4.0)", naming the model families the outlook uses.
+/// (CC BY 4.0)", naming the model families the outlook uses, then
+/// "Hurricanes: NOAA National Hurricane Center" when it has hurricanes.
 fn attribution(outlook: &StormOutlook) -> Vec<String> {
     let mut roles: Vec<(ModelRole, &str)> = Vec::new();
     let ids = outlook
@@ -1220,7 +1573,11 @@ fn attribution(outlook: &StormOutlook) -> Vec<String> {
             credits.join(", ")
         )
     };
-    alloc::vec![line]
+    let mut lines = alloc::vec![line];
+    if !outlook.hurricanes.is_empty() {
+        lines.push(String::from("Hurricanes: NOAA National Hurricane Center"));
+    }
+    lines
 }
 
 #[cfg(test)]
@@ -1228,8 +1585,8 @@ mod tests {
     use super::*;
     use crate::presentation::TimeFormat;
     use crate::storm::testdata::{
-        GRID_STEP_SECS, STORM_NOW, STORM_OFFSET, STORM_PEAK, dry_week, noreaster,
-        noreaster_past_runs,
+        GRID_STEP_SECS, HURRICANE_START, STORM_NOW, STORM_OFFSET, STORM_PEAK, dry_week, noreaster,
+        noreaster_past_runs, with_hurricane,
     };
     use crate::units::UnitPrefs;
 
@@ -1943,6 +2300,167 @@ mod tests {
             vm.attribution,
             ["Model data via Open-Meteo.com (CC BY 4.0)"]
         );
+    }
+
+    fn sample(presentation: &PresentationConfig) -> HurricaneVm {
+        let vm = build(&with_hurricane(noreaster()), presentation);
+        assert_eq!(vm.hurricanes.len(), 1);
+        vm.hurricanes[0].clone()
+    }
+
+    #[test]
+    fn hurricanes_are_named_with_their_category() {
+        let vm = sample(&imperial());
+        assert_eq!(vm.title, "Hurricane Sample · Category 2");
+        assert_eq!((vm.category, vm.level), (Some(2), Level::VeryPoor));
+        let mut h = crate::storm::testdata::hurricane();
+        let titles: Vec<(String, Level)> = [
+            ("HU", 100),
+            ("TS", 55),
+            ("STS", 55),
+            ("TD", 30),
+            ("PTC", 45),
+            ("PC", 35),
+            ("XX", 30),
+        ]
+        .into_iter()
+        .map(|(class, wind)| {
+            h.classification = class.to_string();
+            h.wind_kt = Some(wind);
+            let p = PresentationConfig::default();
+            let s = Strings::default();
+            let f = Formatter::new(&p, &s);
+            (
+                hurricane_vm(&noreaster(), &h, &f, STORM_NOW).title,
+                hurricane_level(&h),
+            )
+        })
+        .collect();
+        let expected = [
+            ("Hurricane Sample · Category 3", Level::Extreme),
+            ("Tropical Storm Sample", Level::Poor),
+            ("Subtropical Storm Sample", Level::Poor),
+            ("Tropical Depression Sample", Level::Moderate),
+            ("Post-Tropical Cyclone Sample", Level::Moderate),
+            ("Potential Tropical Cyclone Sample", Level::Moderate),
+            ("Tropical Cyclone Sample", Level::Moderate),
+        ];
+        assert_eq!(titles, expected.map(|(t, l)| (t.to_string(), l)).to_vec());
+        let (de, _) = Strings::localized("de", &alloc::collections::BTreeMap::new());
+        let vm = build_storms(
+            &with_hurricane(noreaster()),
+            &[],
+            &PresentationConfig::default(),
+            &de,
+            STORM_NOW,
+        );
+        assert_eq!(vm.hurricanes[0].title, "Hurrikan Sample · Kategorie 2");
+    }
+
+    #[test]
+    fn hurricanes_show_strength_and_movement_in_display_units() {
+        let vm = sample(&imperial());
+        assert_eq!(vm.wind.text, "104 mph");
+        assert_eq!(vm.pressure.text, "28.50 inHg");
+        assert_eq!(vm.movement, "N at 9 mph");
+        assert_eq!(vm.advisory, "Advisory Fri 4:00 PM");
+        assert_eq!(vm.advisory_time, UnixTime(HURRICANE_START.0 + 3 * HOUR));
+        let metric = sample(&PresentationConfig::default());
+        assert_eq!(metric.wind.text, "167 km/h");
+        assert_eq!(metric.pressure.text, "965 hPa");
+        assert_eq!(metric.movement, "N at 15 km/h");
+        assert_eq!(metric.advisory, "Advisory Fri 16:00");
+        let mut h = crate::storm::testdata::hurricane();
+        let p = PresentationConfig::default();
+        let s = Strings::default();
+        let f = Formatter::new(&p, &s);
+        h.movement_kt = Some(0.4);
+        assert_eq!(movement(&f, &h), "Stationary");
+        h.movement_kt = None;
+        assert_eq!(movement(&f, &h), "—");
+    }
+
+    #[test]
+    fn hurricane_tracks_are_ready_to_draw() {
+        let vm = sample(&imperial());
+        let labels: Vec<&str> = vm.official.iter().map(|p| p.label.as_str()).collect();
+        assert_eq!(labels[..3], ["Fri 1 PM", "Sat 1 AM", "Sat 1 PM"]);
+        assert_eq!(vm.official[0].wind.text, "104 mph");
+        assert_eq!((vm.latitude, vm.longitude), (31.0, -75.0));
+        let aids: Vec<(&str, &str, &str)> = vm
+            .aids
+            .iter()
+            .map(|a| (a.aid.as_str(), a.short.as_str(), a.role.key()))
+            .collect();
+        assert_eq!(
+            aids,
+            [
+                ("AVNI", "GFS", "gfs"),
+                ("CMCI", "GEM", "gem"),
+                ("TVCN", "Consensus", "consensus")
+            ]
+        );
+        assert_eq!(vm.past.len(), 4);
+        assert!(vm.past.windows(2).all(|w| w[0].time < w[1].time));
+        let ring: Vec<(f64, f64)> = vm
+            .cone
+            .iter()
+            .map(|c| (f64::from(c.latitude), f64::from(c.longitude)))
+            .collect();
+        assert!(ring.len() > 20);
+        for p in &vm.official {
+            let at = (f64::from(p.latitude), f64::from(p.longitude));
+            assert!(hurricane::ring_contains(&ring, at), "{at:?}");
+        }
+        assert_eq!(
+            vm.reaches.as_deref(),
+            Some("The forecast cone reaches New York Sun")
+        );
+    }
+
+    #[test]
+    fn aids_keep_one_track_per_family() {
+        let mut h = crate::storm::testdata::hurricane();
+        let gfs = h.aids["AVNI"].clone();
+        h.aids.insert("EMX".to_string(), gfs.clone());
+        h.aids.insert("XTRP".to_string(), gfs.clone());
+        h.aids.insert("UKXI".to_string(), Vec::new());
+        let p = PresentationConfig::default();
+        let s = Strings::default();
+        let f = Formatter::new(&p, &s);
+        let codes = |h: &Hurricane| -> Vec<String> {
+            aid_tracks(&f, h).into_iter().map(|a| a.aid).collect()
+        };
+        assert_eq!(codes(&h), ["AVNI", "CMCI", "EMX", "TVCN", "XTRP"]);
+        h.aids.insert("EMXI".to_string(), gfs);
+        assert_eq!(codes(&h), ["AVNI", "CMCI", "EMXI", "TVCN", "XTRP"]);
+    }
+
+    #[test]
+    fn hurricanes_are_credited() {
+        let vm = build(&with_hurricane(dry_week()), &PresentationConfig::default());
+        assert_eq!(
+            vm.attribution.last().map(String::as_str),
+            Some("Hurricanes: NOAA National Hurricane Center")
+        );
+        assert_eq!(vm.attribution.len(), 2);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn hurricanes_are_left_out_of_the_json_without_any() {
+        let json =
+            serde_json::to_value(build(&noreaster(), &PresentationConfig::default())).unwrap();
+        assert!(json.get("hurricanes").is_none());
+        let json = serde_json::to_value(build(
+            &with_hurricane(noreaster()),
+            &PresentationConfig::default(),
+        ))
+        .unwrap();
+        let h = &json["hurricanes"][0];
+        assert_eq!(h["basin"], "atlantic");
+        assert_eq!(h["aids"][2]["role"], "consensus");
+        assert_eq!(h["cone"][0].as_object().map(serde_json::Map::len), Some(2));
     }
 
     #[cfg(feature = "serde")]

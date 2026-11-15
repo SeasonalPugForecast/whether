@@ -298,6 +298,31 @@ const DE: Pack = &[
     (Text::StormAheadLine, "{headline} · {agreement}"),
     (Text::StormAheadModelsDiffer, "Modelle weichen ab"),
     (Text::StormAheadModelsDisagree, "Modelle uneins"),
+    (Text::StormHurricane, "Hurrikan {name}"),
+    (Text::StormTropicalStorm, "Tropensturm {name}"),
+    (Text::StormTropicalDepression, "Tropisches Tief {name}"),
+    (Text::StormSubtropicalStorm, "Subtropensturm {name}"),
+    (
+        Text::StormSubtropicalDepression,
+        "Subtropisches Tief {name}",
+    ),
+    (Text::StormPostTropical, "Posttropischer Zyklon {name}"),
+    (
+        Text::StormPotentialCyclone,
+        "Potenzieller tropischer Wirbelsturm {name}",
+    ),
+    (Text::StormTyphoon, "Taifun {name}"),
+    (Text::StormTropicalCyclone, "Tropischer Wirbelsturm {name}"),
+    (Text::StormCategory, "{storm} · Kategorie {n}"),
+    (Text::StormMovement, "{direction} mit {speed}"),
+    (Text::StormStationary, "Ortsfest"),
+    (Text::StormAdvisory, "Bulletin {time}"),
+    (
+        Text::StormConeReaches,
+        "Der Vorhersagekegel erreicht {place} {when}",
+    ),
+    (Text::StormConeCovers, "{place} liegt im Vorhersagekegel"),
+    (Text::StormConsensus, "Konsens"),
 ];
 
 const ES: Pack = &[
@@ -583,6 +608,34 @@ const ES: Pack = &[
     (Text::StormAheadLine, "{headline} · {agreement}"),
     (Text::StormAheadModelsDiffer, "los modelos difieren"),
     (Text::StormAheadModelsDisagree, "los modelos no coinciden"),
+    (Text::StormHurricane, "Huracán {name}"),
+    (Text::StormTropicalStorm, "Tormenta tropical {name}"),
+    (Text::StormTropicalDepression, "Depresión tropical {name}"),
+    (Text::StormSubtropicalStorm, "Tormenta subtropical {name}"),
+    (
+        Text::StormSubtropicalDepression,
+        "Depresión subtropical {name}",
+    ),
+    (Text::StormPostTropical, "Ciclón postropical {name}"),
+    (
+        Text::StormPotentialCyclone,
+        "Potencial ciclón tropical {name}",
+    ),
+    (Text::StormTyphoon, "Tifón {name}"),
+    (Text::StormTropicalCyclone, "Ciclón tropical {name}"),
+    (Text::StormCategory, "{storm} · Categoría {n}"),
+    (Text::StormMovement, "{direction} a {speed}"),
+    (Text::StormStationary, "Estacionario"),
+    (Text::StormAdvisory, "Aviso {time}"),
+    (
+        Text::StormConeReaches,
+        "El cono de pronóstico llega a {place} el {when}",
+    ),
+    (
+        Text::StormConeCovers,
+        "{place} está en el cono de pronóstico",
+    ),
+    (Text::StormConsensus, "Consenso"),
 ];
 
 const FR: Pack = &[
@@ -874,6 +927,34 @@ const FR: Pack = &[
     (Text::StormAheadLine, "{headline} · {agreement}"),
     (Text::StormAheadModelsDiffer, "les modèles diffèrent"),
     (Text::StormAheadModelsDisagree, "les modèles divergent"),
+    (Text::StormHurricane, "Ouragan {name}"),
+    (Text::StormTropicalStorm, "Tempête tropicale {name}"),
+    (Text::StormTropicalDepression, "Dépression tropicale {name}"),
+    (Text::StormSubtropicalStorm, "Tempête subtropicale {name}"),
+    (
+        Text::StormSubtropicalDepression,
+        "Dépression subtropicale {name}",
+    ),
+    (Text::StormPostTropical, "Cyclone post-tropical {name}"),
+    (
+        Text::StormPotentialCyclone,
+        "Cyclone tropical potentiel {name}",
+    ),
+    (Text::StormTyphoon, "Typhon {name}"),
+    (Text::StormTropicalCyclone, "Cyclone tropical {name}"),
+    (Text::StormCategory, "{storm} · Catégorie {n}"),
+    (Text::StormMovement, "{direction} à {speed}"),
+    (Text::StormStationary, "Stationnaire"),
+    (Text::StormAdvisory, "Bulletin {time}"),
+    (
+        Text::StormConeReaches,
+        "Le cône de prévision atteint {place} {when}",
+    ),
+    (
+        Text::StormConeCovers,
+        "{place} est dans le cône de prévision",
+    ),
+    (Text::StormConsensus, "Consensus"),
 ];
 
 #[cfg(test)]

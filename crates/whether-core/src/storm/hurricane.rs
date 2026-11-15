@@ -764,11 +764,22 @@ pub fn hurricane_reaches(
     now: UnixTime,
     horizon_secs: i64,
 ) -> Option<UnixTime> {
+    hurricane_window(h, place, now, horizon_secs).map(|(start, _)| start)
+}
+
+/// Like [`hurricane_reaches`], with the time the cone leaves the place
+/// again: `(start, end)`, `start` no earlier than `now`.
+pub fn hurricane_window(
+    h: &Hurricane,
+    place: (f64, f64),
+    now: UnixTime,
+    horizon_secs: i64,
+) -> Option<(UnixTime, UnixTime)> {
     let until = now.0 + horizon_secs;
     cone_coverage(h, place)
         .into_iter()
         .find(|(start, end)| end.0 >= now.0 && start.0 <= until)
-        .map(|(start, _)| start.max(now))
+        .map(|(start, end)| (start.max(now), end))
 }
 
 #[cfg(test)]

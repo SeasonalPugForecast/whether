@@ -245,3 +245,107 @@ proptest! {
         let _ = parse_current_storms(&garbled);
     }
 }
+
+/// The storms view of Josephine built from the recordings (and the
+/// hand-made summary entry).
+#[cfg(feature = "serde")]
+mod view {
+    use super::*;
+    use whether_core::model::ResolvedLocation;
+    use whether_core::presentation::{PresentationConfig, TimeFormat};
+    use whether_core::storm::{Hurricane, StormOutlook};
+    use whether_core::strings::Strings;
+    use whether_core::time::UtcOffset;
+    use whether_core::units::UnitPrefs;
+    use whether_core::view::storms::build_storms;
+
+    /// Half an hour after Josephine's last advisory (5:30 PM EDT).
+    pub(super) const NOW: UnixTime = UnixTime(LAST_INIT.0 + 3 * HOUR + 1_800);
+
+    pub(super) fn josephine() -> Hurricane {
+        let storms = parse_current_storms(JOSEPHINE.as_bytes()).unwrap();
+        let (official, aids) = parse_adeck(ADECK, &DRAWN_AIDS).unwrap();
+        storms[0].hurricane(official, aids, parse_bdeck(BDECK).unwrap())
+    }
+
+    pub(super) fn place(name: &str, latitude: f64, longitude: f64) -> ResolvedLocation {
+        ResolvedLocation {
+            name: name.to_string(),
+            latitude,
+            longitude,
+            utc_offset: UtcOffset(-4 * 3_600),
+            ..ResolvedLocation::default()
+        }
+    }
+
+    pub(super) fn outlook(place: ResolvedLocation) -> StormOutlook {
+        StormOutlook {
+            place,
+            hurricanes: vec![josephine()],
+            fetched_at: NOW,
+            ..StormOutlook::default()
+        }
+    }
+
+    pub(super) fn new_york() -> ResolvedLocation {
+        place("New York", 40.7143, -74.005_97)
+    }
+
+    pub(super) fn imperial() -> PresentationConfig {
+        PresentationConfig {
+            units: UnitPrefs::IMPERIAL,
+            time_format: TimeFormat::H12,
+            ..PresentationConfig::default()
+        }
+    }
+
+    pub(super) fn pretty<T: serde::Serialize>(vm: &T) -> String {
+        serde_json::to_string_pretty(vm).unwrap()
+    }
+
+    #[test]
+    fn josephine_is_a_subtropical_storm_heading_out_to_sea() {
+        let vm = build_storms(
+            &outlook(new_york()),
+            &[],
+            &imperial(),
+            &Strings::default(),
+            NOW,
+        );
+        let h = &vm.hurricanes[0];
+        assert_eq!(h.title, "Subtropical Storm Josephine");
+        assert_eq!(h.movement, "NE at 13 mph");
+        assert_eq!(h.advisory, "Advisory Thu 5:00 PM");
+        assert_eq!(h.reaches, None);
+        let aids: Vec<&str> = h.aids.iter().map(|a| a.short.as_str()).collect();
+        assert_eq!(aids, ["GFS", "GEM", "UKMET", "HAFS", "Consensus"]);
+        assert_eq!(
+            vm.attribution.last().map(String::as_str),
+            Some("Hurricanes: NOAA National Hurricane Center")
+        );
+    }
+
+    #[test]
+    fn snapshot_josephine_imperial() {
+        let vm = build_storms(
+            &outlook(new_york()),
+            &[],
+            &imperial(),
+            &Strings::default(),
+            NOW,
+        );
+        insta::assert_snapshot!("josephine_imperial", pretty(&vm));
+    }
+
+    #[test]
+    fn snapshot_josephine_metric() {
+        let vm = build_storms(
+            &outlook(new_york()),
+            &[],
+            &PresentationConfig::default(),
+            &Strings::default(),
+            NOW,
+        );
+        insta::assert_snapshot!("josephine_metric", pretty(&vm));
+    }
+}

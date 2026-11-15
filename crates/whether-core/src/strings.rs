@@ -265,6 +265,22 @@ texts! {
     StormAheadLine => "storm_ahead_line", "{headline} · {agreement}";
     StormAheadModelsDiffer => "storm_ahead_models_differ", "models differ";
     StormAheadModelsDisagree => "storm_ahead_models_disagree", "models disagree";
+    StormHurricane => "storm_hurricane", "Hurricane {name}";
+    StormTropicalStorm => "storm_tropical_storm", "Tropical Storm {name}";
+    StormTropicalDepression => "storm_tropical_depression", "Tropical Depression {name}";
+    StormSubtropicalStorm => "storm_subtropical_storm", "Subtropical Storm {name}";
+    StormSubtropicalDepression => "storm_subtropical_depression", "Subtropical Depression {name}";
+    StormPostTropical => "storm_post_tropical", "Post-Tropical Cyclone {name}";
+    StormPotentialCyclone => "storm_potential_cyclone", "Potential Tropical Cyclone {name}";
+    StormTyphoon => "storm_typhoon", "Typhoon {name}";
+    StormTropicalCyclone => "storm_tropical_cyclone", "Tropical Cyclone {name}";
+    StormCategory => "storm_category", "{storm} · Category {n}";
+    StormMovement => "storm_movement", "{direction} at {speed}";
+    StormStationary => "storm_stationary", "Stationary";
+    StormAdvisory => "storm_advisory", "Advisory {time}";
+    StormConeReaches => "storm_cone_reaches", "The forecast cone reaches {place} {when}";
+    StormConeCovers => "storm_cone_covers", "{place} is in the forecast cone";
+    StormConsensus => "storm_consensus", "Consensus";
 }
 
 impl Text {

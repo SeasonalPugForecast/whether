@@ -1,5 +1,5 @@
 //! Categorical scales: severity levels, temperature bands, UV, air quality, compass
-//! points, wind arrows and moon phases.
+//! points, wind arrows, moon phases and hurricane categories.
 
 use crate::icon::UiIcon;
 
@@ -227,9 +227,38 @@ pub fn moon_phase(fraction: f32) -> UiIcon {
     PHASES[sector(fraction * 360.0, 45.0, 8)]
 }
 
+/// The Saffir–Simpson hurricane category (1–5) of a maximum sustained wind
+/// in knots: 64–82 is 1, 83–95 is 2, 96–112 is 3, 113–136 is 4 and 137 or
+/// more is 5. `None` below hurricane strength.
+pub fn saffir_simpson(wind_kt: u16) -> Option<u8> {
+    match wind_kt {
+        0..=63 => None,
+        64..=82 => Some(1),
+        83..=95 => Some(2),
+        96..=112 => Some(3),
+        113..=136 => Some(4),
+        _ => Some(5),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn saffir_simpson_boundaries() {
+        assert_eq!(saffir_simpson(63), None);
+        assert_eq!(saffir_simpson(64), Some(1));
+        assert_eq!(saffir_simpson(82), Some(1));
+        assert_eq!(saffir_simpson(83), Some(2));
+        assert_eq!(saffir_simpson(95), Some(2));
+        assert_eq!(saffir_simpson(96), Some(3));
+        assert_eq!(saffir_simpson(112), Some(3));
+        assert_eq!(saffir_simpson(113), Some(4));
+        assert_eq!(saffir_simpson(136), Some(4));
+        assert_eq!(saffir_simpson(137), Some(5));
+        assert_eq!(saffir_simpson(185), Some(5));
+    }
 
     #[test]
     fn temperature_bands() {
