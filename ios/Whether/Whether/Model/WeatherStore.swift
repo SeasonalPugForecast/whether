@@ -810,8 +810,23 @@ final class WeatherStore {
     #if DEBUG
         /// Screenshots: `-stormahead` builds the card from the built-in nor'easter through
         /// the core, at the time the sample was made for (its outlook is fresh then, so no
-        /// request goes out). In memory only.
+        /// request goes out); `-stormahead hurricane` shows Josephine's card. In memory only.
         func seedStormAhead() async {
+            let args = ProcessInfo.processInfo.arguments
+            if let i = args.firstIndex(of: "-stormahead"), i + 1 < args.count, args[i + 1] == "hurricane" {
+                // Josephine's card, as the core gave it for a place on her track (the core's
+                // checks need the models' hours there, which the sample has none of).
+                let read = { (name: String) in
+                    Bundle.main.url(forResource: name, withExtension: "json")
+                        .flatMap { try? String(contentsOf: $0, encoding: .utf8) }
+                }
+                guard let card = read("storms-ahead-josephine"),
+                    let runs = read("storms-hurricane-josephine").flatMap({ try? StormOutlookRuns.decode($0) })
+                else { return }
+                sampleStormAheadNow = runs.fetchedAt
+                sampleStormAhead = card
+                return
+            }
             guard places.indices.contains(active),
                 let url = Bundle.main.url(forResource: "storms-noreaster", withExtension: "json"),
                 let outlook = try? String(contentsOf: url, encoding: .utf8),

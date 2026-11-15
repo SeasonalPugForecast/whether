@@ -86,7 +86,7 @@ final class StormsStore {
         }
         #if DEBUG
             if let sample {
-                show(sample.outlookJson, for: place)
+                show(sample.outlookJson, for: sample.place ?? place)
                 if let past = sample.pastRunsJson {
                     pastRuns["sample"] = past
                     shown?.pastRunKeys = ["sample"]
@@ -234,26 +234,59 @@ final class StormsStore {
 
 #if DEBUG
     /// A built-in outlook for screenshots: `-storms` shows the nor'easter (with its
-    /// earlier runs), `-storms dry` the dry week, each at the time it was made for.
+    /// earlier runs), `-storms dry` the dry week, each at the time it was made for, and
+    /// `-hurricane` Josephine (from NHC's recordings) at her advisory's time, at a place
+    /// on her track.
     struct StormsSample {
         var outlookJson: String
         var pastRunsJson: String?
         var now: Date
+        /// The place the outlook is for, instead of the one shown (`-hurricane`).
+        var place: AppPlace?
 
         static func fromLaunch() -> StormsSample? {
             let args = ProcessInfo.processInfo.arguments
-            guard let i = args.firstIndex(of: "-storms") else { return nil }
-            let dry = i + 1 < args.count && args[i + 1] == "dry"
             let resource = { (name: String) in
                 Bundle.main.url(forResource: name, withExtension: "json")
                     .flatMap { try? String(contentsOf: $0, encoding: .utf8) }
             }
+            if args.contains("-hurricane") {
+                guard let outlook = resource("storms-hurricane-josephine"),
+                    let runs = try? StormOutlookRuns.decode(outlook),
+                    let place = try? SamplePlace.decode(outlook)
+                else { return nil }
+                return StormsSample(
+                    outlookJson: outlook, pastRunsJson: nil,
+                    now: Date(timeIntervalSince1970: TimeInterval(runs.fetchedAt)), place: place)
+            }
+            guard let i = args.firstIndex(of: "-storms") else { return nil }
+            let dry = i + 1 < args.count && args[i + 1] == "dry"
             guard let outlook = resource(dry ? "storms-dry-week" : "storms-noreaster"),
                 let runs = try? StormOutlookRuns.decode(outlook)
             else { return nil }
             return StormsSample(
                 outlookJson: outlook, pastRunsJson: dry ? nil : resource("storms-noreaster-past-runs"),
                 now: Date(timeIntervalSince1970: TimeInterval(runs.fetchedAt)))
+        }
+    }
+
+    /// The place a sample outlook is for, as a place of the app's.
+    private struct SamplePlace: Decodable {
+        struct Place: Decodable {
+            var name: String
+            var latitude: Double
+            var longitude: Double
+            var tzName: String?
+        }
+        var place: Place
+
+        static func decode(_ json: String) throws -> AppPlace {
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            let p = try decoder.decode(SamplePlace.self, from: Data(json.utf8)).place
+            return AppPlace(
+                id: "sample:\(p.name)", name: p.name, detail: nil, latitude: p.latitude, longitude: p.longitude,
+                timeZone: p.tzName ?? "UTC")
         }
     }
 #endif
