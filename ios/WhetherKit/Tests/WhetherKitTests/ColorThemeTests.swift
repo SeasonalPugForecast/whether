@@ -47,7 +47,7 @@ final class ColorThemeTests: XCTestCase {
 
     func testColorVisionReplacesExactlyTheInformationalRoles() {
         let informational = Set(ColorRole.allCases.filter(\.isInformational))
-        XCTAssertEqual(informational.count, 53)
+        XCTAssertEqual(informational.count, 58)
         XCTAssertTrue(ColorPresets.ramps(for: .typical).isEmpty)
         for vision in ColorVision.allCases where vision != .typical {
             XCTAssertEqual(Set(ColorPresets.ramps(for: vision).keys), informational, vision.rawValue)
@@ -119,6 +119,10 @@ final class ColorThemeTests: XCTestCase {
             // The Storms tab's blue, orange, green and purple, deepened and lightened for the map.
             .modelECMWF: (hex(0x1F5FCC), hex(0x7FB8FF)), .modelGFS: (hex(0xA34E00), hex(0xFFA552)),
             .modelGEM: (hex(0x1C7A35), hex(0x6EE08A)), .modelICON: (hex(0x8A3DBF), hex(0xD9A3FF)),
+            // Hurricanes: crimson, teal and olive guidance, the official track black or white, a slate cone.
+            .modelUKMET: (hex(0xB0173F), hex(0xFF8FA6)), .modelHAFS: (hex(0x00757D), hex(0x3FDCE6)),
+            .modelConsensus: (hex(0x6B6400), hex(0xE8DC5A)), .modelOfficial: (hex(0x141414), hex(0xF7F7F7)),
+            .hurricaneCone: (hex(0x4E5A6E), hex(0xC9D2DE)),
         ]
         let skies: [String: (UInt32, UInt32)] = [
             "clear_day": (0x2F6FD0, 0x6FB3F2), "clear_night": (0x070E24, 0x1C2C55),
@@ -333,13 +337,15 @@ final class ColorThemeTests: XCTestCase {
     private static let lightMap = [("light land", RGBA(rgb: 0xE6F4DB)), ("light ocean", RGBA(rgb: 0xB6E7FC))]
     private static let darkMap = [("dark land", RGBA(rgb: 0x0A4851)), ("dark ocean", RGBA(rgb: 0x0D2251))]
 
-    /// Every model color in every preset and color vision ramp: light variants against
-    /// the light map, dark ones against the dark map (WCAG 1.4.11: 3:1 for a track).
+    /// Every model and hurricane color in every preset and color vision ramp: light
+    /// variants against the light map, dark ones against the dark map (WCAG 1.4.11: 3:1
+    /// for a track, and for the cone's edge).
     func testModelColorsStandOffTheMap() {
         var sets: [(String, [ColorRole: ThemeColor])] = ColorPresets.all.map { ($0.id, $0.colors) }
         sets += ColorVision.allCases.filter { $0 != .typical }.map { ($0.rawValue, ColorPresets.ramps(for: $0)) }
+        XCTAssertEqual(Set(ColorRole.models + ColorRole.hurricane), Set(ColorRole.roles(in: .models)))
         for (label, colors) in sets {
-            for role in ColorRole.models {
+            for role in ColorRole.models + ColorRole.hurricane {
                 guard let color = colors[role] else { return XCTFail("\(label) lacks \(role.rawValue)") }
                 for (name, base) in Self.lightMap {
                     XCTAssertGreaterThanOrEqual(
@@ -379,6 +385,52 @@ final class ColorThemeTests: XCTestCase {
             for deficiency in vision.deficiencies {
                 check(ColorPresets.ramps(for: vision), as: deficiency, label: "\(vision.rawValue) as \(deficiency.rawValue)")
             }
+        }
+    }
+
+    /// A hurricane's guidance models stay apart pairwise, and apart from NHC's official
+    /// track: in each preset for typical vision (Graphite as an achromat), and in each
+    /// color vision ramp for each reader it serves. Lightness alone can't hold seven
+    /// tracks 0.06 apart at 3:1 on the dark map (that leaves 0.36 of OKLab lightness, from
+    /// 0.64 to 1), so for an achromat the official track is told apart by its line alone:
+    /// solid, thicker and with day markers, where the guidance are bands.
+    func testHurricaneGuidanceStaysApart() {
+        func check(_ colors: [ColorRole: ThemeColor], as deficiency: Deficiency?, label: String) {
+            let roles = ColorRole.aids + (deficiency == .achromat ? [] : [.modelOfficial])
+            for dark in [false, true] {
+                for i in roles.indices {
+                    for j in roles.indices where j > i {
+                        guard let x = colors[roles[i]]?.resolved(dark: dark),
+                            let y = colors[roles[j]]?.resolved(dark: dark)
+                        else { return XCTFail("\(label) lacks a guidance color") }
+                        XCTAssertGreaterThanOrEqual(
+                            ColorMath.deltaE(x, y, as: deficiency), minimumDelta,
+                            "\(label) dark=\(dark): \(roles[i].rawValue) ~ \(roles[j].rawValue)")
+                    }
+                }
+            }
+        }
+        for theme in ColorPresets.all {
+            check(theme.colors, as: theme.id == "graphite" ? .achromat : nil, label: theme.id)
+        }
+        for vision in ColorVision.allCases where vision != .typical {
+            for deficiency in vision.deficiencies {
+                check(ColorPresets.ramps(for: vision), as: deficiency, label: "\(vision.rawValue) as \(deficiency.rawValue)")
+            }
+        }
+    }
+
+    /// The official track is near-black on light maps and near-white on dark ones, in
+    /// every preset and ramp.
+    func testTheOfficialTrackIsBlackOrWhite() {
+        var sets: [(String, [ColorRole: ThemeColor])] = ColorPresets.all.map { ($0.id, $0.colors) }
+        sets += ColorVision.allCases.filter { $0 != .typical }.map { ($0.rawValue, ColorPresets.ramps(for: $0)) }
+        for (label, colors) in sets {
+            guard let official = colors[.modelOfficial] else { return XCTFail("\(label) lacks the official track") }
+            let light = ColorMath.oklab(official.light), dark = ColorMath.oklab(official.resolved(dark: true))
+            XCTAssertLessThan(light.l, 0.2, label)
+            XCTAssertGreaterThan(dark.l, 0.95, label)
+            XCTAssertLessThan(max(light.chroma, dark.chroma), 0.02, label)
         }
     }
 
@@ -497,6 +549,13 @@ final class ColorThemeTests: XCTestCase {
         XCTAssertEqual(ColorRole.model("icon"), .modelICON)
         XCTAssertNil(ColorRole.model("other"))
         XCTAssertEqual(ColorRole.models.map(\.group), [.models, .models, .models, .models])
+        XCTAssertEqual(ColorRole.model("ukmet"), .modelUKMET)
+        XCTAssertEqual(ColorRole.model("hafs"), .modelHAFS)
+        XCTAssertEqual(ColorRole.model("consensus"), .modelConsensus)
+        XCTAssertEqual(ColorRole.model("official"), .modelOfficial)
+        XCTAssertEqual(ColorRole.hurricaneCone.rawValue, "hurricane.cone")
+        XCTAssertEqual(Set(ColorRole.hurricane.map(\.group)), [.models])
+        XCTAssertTrue(ColorRole.hurricane.allSatisfy(\.isInformational))
         XCTAssertTrue(ColorRole.modelGFS.isInformational)
         XCTAssertEqual(Set(ColorRole.allCases.map(\.group)), Set(ColorRoleGroup.allCases))
     }

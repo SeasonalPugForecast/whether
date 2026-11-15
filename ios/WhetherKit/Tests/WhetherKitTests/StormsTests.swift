@@ -252,9 +252,13 @@ final class StormsTests: XCTestCase {
     // MARK: The map
 
     func testEachModelHasItsOwnDash() {
-        let roles = ["ecmwf", "gfs", "gem", "icon", "other"]
+        let roles = ["ecmwf", "gfs", "gem", "icon", "ukmet", "hafs", "consensus", "other"]
         let dashes = roles.map(StormMapRules.dash)
         XCTAssertEqual(dashes.first, [], "ECMWF is solid")
+        XCTAssertEqual(StormMapRules.dash("official"), [], "so is NHC's official track")
+        XCTAssertEqual(StormMapRules.dash("ukmet"), [10, 4, 2, 4])
+        XCTAssertEqual(StormMapRules.dash("hafs"), [3, 3])
+        XCTAssertEqual(StormMapRules.dash("consensus"), [12, 3])
         XCTAssertEqual(Set(dashes.map { $0.map(String.init(describing:)).joined(separator: ",") }).count, roles.count)
         for dash in dashes { XCTAssertEqual(dash.count % 2, 0, "on and off in pairs: \(dash)") }
         // Each gap leaves room between the round caps of the edge's strokes.

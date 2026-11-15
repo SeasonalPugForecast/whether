@@ -58,6 +58,10 @@ nonisolated enum ColorRole: String, CaseIterable, Codable, Sendable {
     // Weather models on the Storms tab: each model's track, chip and charts.
     case modelECMWF = "model.ecmwf", modelGFS = "model.gfs", modelGEM = "model.gem"
     case modelICON = "model.icon"
+    // Hurricanes on the Storms map: the other guidance models NHC lists, its official
+    // forecast track, and its forecast cone.
+    case modelUKMET = "model.ukmet", modelHAFS = "model.hafs", modelConsensus = "model.consensus"
+    case modelOfficial = "model.official", hurricaneCone = "hurricane.cone"
 
     /// The editor's group for this role.
     var group: ColorRoleGroup {
@@ -70,7 +74,7 @@ nonisolated enum ColorRole: String, CaseIterable, Codable, Sendable {
         case "precip", "rain": .precipitation
         case "radar": .radar
         case "twilight", "sun": .sunAndMoon
-        case "model": .models
+        case "model", "hurricane": .models
         default: .accent
         }
     }
@@ -129,9 +133,14 @@ nonisolated enum ColorRole: String, CaseIterable, Codable, Sendable {
     ]
     /// The weather models, by the core's role key (`ecmwf`, `gfs`, `gem`, `icon`).
     static let models: [ColorRole] = [.modelECMWF, .modelGFS, .modelGEM, .modelICON]
+    /// The guidance models drawn with a hurricane (ECMWF, GFS and GEM are the storm models'
+    /// colors), which must stay apart from each other and from NHC's official track.
+    static let aids: [ColorRole] = [.modelECMWF, .modelGFS, .modelGEM, .modelUKMET, .modelHAFS, .modelConsensus]
+    /// The hurricane layer's own roles.
+    static let hurricane: [ColorRole] = [.modelUKMET, .modelHAFS, .modelConsensus, .modelOfficial, .hurricaneCone]
 
-    /// The color for the core's model role key (`ecmwf`, …), or `nil` for another
-    /// model (`other`).
+    /// The color for the core's model role key (`ecmwf`, …, `ukmet`, `official`), or
+    /// `nil` for another model (`other`).
     static func model(_ role: String) -> ColorRole? {
         ColorRole(rawValue: "model.\(role)")
     }

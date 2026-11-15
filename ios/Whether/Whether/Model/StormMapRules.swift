@@ -10,14 +10,19 @@ enum StormMapRules {
 
     /// The dash pattern of a track's edges in points, on and off, drawn with round caps
     /// (so a near-zero dash is a dot) at `edgeWidth`: ECMWF solid, GFS long dashes, GEM
-    /// dots, ICON dash-dot, any other model short dashes. Empty is solid. The band's fill
-    /// between the edges is always continuous.
+    /// dots, ICON dash-dot; for a hurricane's guidance UKMET dash-dash-dot, HAFS short
+    /// even dashes, the consensus long dashes with short gaps; any other model short
+    /// dashes. NHC's official track is solid (and a thicker line, not a band). Empty is
+    /// solid. The band's fill between the edges is always continuous.
     static func dash(_ role: String) -> [Double] {
         switch role {
-        case "ecmwf": []
+        case "ecmwf", "official": []
         case "gfs": [7, 4]
         case "gem": [0.01, 3.5]
         case "icon": [8, 3.5, 0.01, 3.5]
+        case "ukmet": [10, 4, 2, 4]
+        case "hafs": [3, 3]
+        case "consensus": [12, 3]
         default: [3, 3.5]
         }
     }

@@ -269,6 +269,11 @@ nonisolated extension ColorRole {
         case .modelGFS: "GFS (American)"
         case .modelGEM: "GEM (Canadian)"
         case .modelICON: "ICON (German)"
+        case .modelUKMET: "UKMET (British)"
+        case .modelHAFS: "HAFS (NOAA hurricane model)"
+        case .modelConsensus: "Consensus of the models"
+        case .modelOfficial: "NHC official forecast"
+        case .hurricaneCone: "Hurricane forecast cone"
         default: rawValue
         }
     }
