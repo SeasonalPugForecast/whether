@@ -474,7 +474,7 @@ final class PlanSyncTests: XCTestCase {
         ]
         let notices = PlanChange.notices(for: changes, ignoring: nil)
         XCTAssertEqual(notices.map(\.planID), [planID, other])
-        XCTAssertEqual(notices[0].kind, .movedDates(from: july14, to: july21), "the last change")
+        XCTAssertEqual(notices[0].kind, .changed, "the place, then the dates: both moved")
         XCTAssertEqual(notices[1].who, "Alex")
         let mine = PlanChange.notices(for: changes, ignoring: "Alex")
         XCTAssertEqual(mine.map(\.planID), [planID])
@@ -491,6 +491,21 @@ final class PlanSyncTests: XCTestCase {
         // A rename alone, or other years alone, says nothing.
         let years = try XCTUnwrap(PlanChange(from: plan(), to: plan(years: 5), by: "Robin"))
         XCTAssertTrue(PlanChange.notices(for: [renamed, years], ignoring: nil).isEmpty)
+    }
+
+    func testAMoveOfThePlaceThenOfTheDatesInOneSyncSaysThePlanChanged() throws {
+        let place = try XCTUnwrap(PlanChange(from: plan(), to: plan(place: cape), by: "Robin"))
+        let dates = try XCTUnwrap(
+            PlanChange(from: plan(place: cape), to: plan(place: cape, from: july14, to: july21), by: "Robin"))
+        XCTAssertEqual(PlanChange.notices(for: [place, dates], ignoring: nil).map(\.kind), [.changed])
+        // The dates moved twice: the last dates are the news.
+        let again = try XCTUnwrap(
+            PlanChange(
+                from: plan(from: july14, to: july21), to: plan(from: july12, to: july21), by: "Robin"))
+        let first = try XCTUnwrap(PlanChange(from: plan(), to: plan(from: july14, to: july21), by: "Robin"))
+        XCTAssertEqual(
+            PlanChange.notices(for: [first, again], ignoring: nil).map(\.kind),
+            [.movedDates(from: july12, to: july21)])
     }
 
     func testPlansAskTheSameOfThePastWithoutTheName() {

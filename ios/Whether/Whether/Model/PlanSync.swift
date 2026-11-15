@@ -304,6 +304,15 @@ enum PlanChangeKind: Equatable {
     case movedPlace(to: String)
     /// Both the dates and the place moved: "Robin changed Summer at the shore".
     case changed
+
+    /// Whether this and `other` move the same thing (both the dates, both the place, or
+    /// both everything), so the later one alone says what happened.
+    func movesTheSame(as other: PlanChangeKind) -> Bool {
+        switch (self, other) {
+        case (.movedDates, .movedDates), (.movedPlace, .movedPlace), (.changed, .changed): true
+        default: false
+        }
+    }
 }
 
 /// One announcement for a plan someone else changed: the banner and the notification show it.
@@ -371,7 +380,13 @@ extension PlanChange {
             if latest[change.planID] == nil && !order.contains(change.planID) {
                 order.append(change.planID)
             }
-            latest[change.planID] = notice
+            var merged = notice
+            if let earlier = latest[change.planID], !earlier.kind.movesTheSame(as: notice.kind) {
+                // Moved to another place, then to other dates (or the other way round):
+                // the last sentence alone would leave out the first move.
+                merged.kind = .changed
+            }
+            latest[change.planID] = merged
         }
         return order.compactMap { latest[$0] }
     }
