@@ -247,6 +247,9 @@ extension StormsView {
         public var pressure: Quantity
         /// "NE at 13 mph".
         public var movement: String
+        /// The wind, pressure and movement in one line: "Winds 65 mph · 29.18 inHg · NE at 13
+        /// mph"; `nil` from a core without it.
+        public var strength: String?
         /// "Advisory Thu 5:00 PM".
         public var advisory: String
         /// When the advisory was issued, Unix seconds.

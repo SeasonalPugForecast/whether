@@ -100,6 +100,7 @@ final class StormsTests: XCTestCase {
         XCTAssertEqual(h.wind.text, "65 mph")
         XCTAssertEqual(h.pressure.text, "29.18 inHg")
         XCTAssertEqual(h.movement, "NE at 13 mph")
+        XCTAssertEqual(h.strength, "Winds 65 mph · 29.18 inHg · NE at 13 mph")
         XCTAssertEqual(h.advisory, "Advisory Thu 5:00 PM")
         XCTAssertEqual(h.advisoryTime, 1_792_702_800)
         XCTAssertEqual(h.advisoryUrl, "https://www.nhc.noaa.gov/text/MIATCPAT1.shtml")
@@ -124,6 +125,17 @@ final class StormsTests: XCTestCase {
         XCTAssertEqual(h.wind.text, "100 km/h")
         XCTAssertEqual(h.wind.unit, "km/h")
         XCTAssertEqual(h.pressure.text, "988 hPa")
+        XCTAssertEqual(h.strength, "Winds 100 km/h · 988 hPa · NE at 21 km/h")
+    }
+
+    func testAHurricaneWithoutItsStrengthLineDecodes() throws {
+        let json = try resource("storms-josephine-imperial")
+        let without = json.replacingOccurrences(
+            of: #""strength": "[^"]*","#, with: "", options: .regularExpression)
+        XCTAssertNotEqual(without, json)
+        let h = try XCTUnwrap(StormsView.decode(without).hurricanes.first)
+        XCTAssertNil(h.strength)
+        XCTAssertEqual(h.movement, "NE at 13 mph")
     }
 
     func testAHurricanesCardNamesIt() throws {

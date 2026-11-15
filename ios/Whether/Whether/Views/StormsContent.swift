@@ -496,7 +496,9 @@ private struct HurricaneCard: View {
                         .font(.headline)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Text("Winds \(hurricane.wind.text) · \(hurricane.pressure.text) · \(hurricane.movement)")
+                Text(
+                    hurricane.strength
+                        ?? [hurricane.wind.text, hurricane.pressure.text, hurricane.movement].joined(separator: " · "))
                     .font(.callout)
                     .fixedSize(horizontal: false, vertical: true)
                 if let reaches = hurricane.reaches {
