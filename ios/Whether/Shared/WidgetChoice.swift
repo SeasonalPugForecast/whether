@@ -79,7 +79,7 @@ enum WidgetContent: String, CaseIterable, Sendable {
     /// Hours the hour strip lists, in a medium or large widget (`nextHour` shows one).
     func hours(large: Bool) -> Int {
         switch self {
-        case .overview: large ? 6 : 5
+        case .overview: 6
         case .nextHour: 1
         case .nextHours: large ? 12 : 6
         case .today: 0
@@ -93,6 +93,31 @@ enum WidgetContent: String, CaseIterable, Sendable {
         case .overview: 5
         case .today: 6
         case .nextHour, .nextHours: 0
+        }
+    }
+}
+
+/// Behind a Home Screen widget (Edit Widget, "Background").
+enum WidgetBackdrop: String, CaseIterable, Sendable {
+    /// The weather's sky, as behind the forecast in the app (the default).
+    case sky
+    /// The system's plain background, light or dark.
+    case plain
+}
+
+/// Which temperature a widget leads with (Edit Widget, "Temperature").
+enum WidgetTemperature: String, CaseIterable, Sendable {
+    /// The app's choice (Settings, "Feels like"): the default.
+    case app
+    case actual
+    case feelsLike
+
+    /// Whether feels-like leads, given the app's choice.
+    func feelsLike(app: Bool) -> Bool {
+        switch self {
+        case .app: app
+        case .actual: false
+        case .feelsLike: true
         }
     }
 }

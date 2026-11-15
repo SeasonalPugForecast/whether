@@ -15,6 +15,16 @@ struct WeatherWidgetEntry: TimelineEntry {
     var followsApp = true
     /// The app's color theme, which the widget extension paints with.
     var colorTheme = ColorPresets.whether
+    /// The sky, or the plain background.
+    var backdrop = WidgetBackdrop.sky
+    /// The place follows the phone (an arrow beside its name).
+    var followsPhone = false
+    /// The current conditions are an hour old or more by `date`: the big number
+    /// is the hour's forecast.
+    var leadsWithHour = false
+
+    /// What the widget leads with; `nil` with nothing to show.
+    var now: WidgetNow? { view.flatMap { WidgetNow($0, fromHour: leadsWithHour) } }
 }
 
 /// How a widget was set up in Edit Widget.
@@ -22,6 +32,8 @@ struct WidgetSetup: Sendable {
     /// The place it was set to show, else (`nil`, or `WidgetPlaceOption.appsID`) the app's.
     var placeID: String?
     var content = WidgetContent.overview
+    var backdrop = WidgetBackdrop.sky
+    var temperature = WidgetTemperature.app
 }
 
 /// The widget's data: the app's cached forecast for its shown place, or (without
@@ -57,7 +69,8 @@ extension WidgetData {
                 favouriteID: preferences.favouritePlaceID)
         else {
             let entry = WeatherWidgetEntry(
-                date: now, view: nil, places: 0, content: setup.content, colorTheme: colorTheme)
+                date: now, view: nil, places: 0, content: setup.content, colorTheme: colorTheme,
+                backdrop: setup.backdrop)
             return ([entry], reloadDate(now: now, dataAt: nil, content: setup.content))
         }
         let followsApp = configuredIndex(places: places, configuredID: setup.placeID) == nil
@@ -65,7 +78,7 @@ extension WidgetData {
         // The widget never uses a key (it is not metered): none is read.
         let settings = preferences.settings(withKey: false)
         let forecast = await forecast(for: place, of: places, settings: settings, in: dir, now: now)
-        let viewSettings = viewSettings(settings, content: setup.content)
+        let viewSettings = viewSettings(settings, content: setup.content, temperature: setup.temperature)
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: place.timeZone) ?? .current
         let entries = entryDates(now: now, count: count, calendar: calendar).map { date in
@@ -75,7 +88,9 @@ extension WidgetData {
             let view = try? ViewModel.build(locations: [entry], active: 0, settings: viewSettings, now: date)
             return WeatherWidgetEntry(
                 date: date, view: view?.current == nil ? nil : view, places: places.count,
-                content: setup.content, followsApp: followsApp, colorTheme: colorTheme)
+                content: setup.content, followsApp: followsApp, colorTheme: colorTheme,
+                backdrop: setup.backdrop, followsPhone: place.follows,
+                leadsWithHour: leadsWithHour(at: date, dataAt: forecast?.at))
         }
         return (entries, reloadDate(now: now, dataAt: forecast?.at, content: setup.content))
     }

@@ -64,12 +64,51 @@ enum WidgetContentOption: String, AppEnum {
     }
 }
 
-/// Edit Widget: the place, and (medium and large) what to show. The defaults
-/// reproduce the widget before it was configurable.
+/// `WidgetBackdrop` for Edit Widget.
+enum WidgetBackdropOption: String, AppEnum {
+    case sky, plain
+
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Background"
+    static let caseDisplayRepresentations: [WidgetBackdropOption: DisplayRepresentation] = [
+        .sky: DisplayRepresentation(title: "Sky", subtitle: "The weather's colors, as in the app"),
+        .plain: DisplayRepresentation(title: "Plain", subtitle: "Light or dark, as the phone is"),
+    ]
+
+    var backdrop: WidgetBackdrop {
+        switch self {
+        case .sky: .sky
+        case .plain: .plain
+        }
+    }
+}
+
+/// `WidgetTemperature` for Edit Widget.
+enum WidgetTemperatureOption: String, AppEnum {
+    case app, actual, feelsLike
+
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Temperature"
+    static let caseDisplayRepresentations: [WidgetTemperatureOption: DisplayRepresentation] = [
+        .app: DisplayRepresentation(title: "The app's", subtitle: "As Settings choose"),
+        .actual: DisplayRepresentation(title: "Actual"),
+        .feelsLike: DisplayRepresentation(title: "Feels like"),
+    ]
+
+    var temperature: WidgetTemperature {
+        switch self {
+        case .app: .app
+        case .actual: .actual
+        case .feelsLike: .feelsLike
+        }
+    }
+}
+
+/// Edit Widget: the place, (medium and large) what to show, the background and
+/// the temperature. A widget placed before a choice existed gets its default:
+/// the app's place, the overview, the sky and the app's temperature.
 struct WeatherWidgetIntent: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "Weather"
     static let description = IntentDescription(
-        "Choose the place, and what the medium and large widgets show.")
+        "Choose the place, what the medium and large widgets show, the background and the temperature.")
 
     @Parameter(title: "Place", default: WidgetPlaceEntity.apps)
     var place: WidgetPlaceEntity?
@@ -77,14 +116,38 @@ struct WeatherWidgetIntent: WidgetConfigurationIntent {
     @Parameter(title: "Show", default: .overview)
     var show: WidgetContentOption
 
+    @Parameter(title: "Background", default: .sky)
+    var background: WidgetBackdropOption
+
+    @Parameter(title: "Temperature", default: .app)
+    var temperature: WidgetTemperatureOption
+
     static var parameterSummary: some ParameterSummary {
         When(widgetFamily: .oneOf, [.systemMedium, .systemLarge]) {
-            Summary("\(\.$place), showing \(\.$show)")
+            Summary("\(\.$place), showing \(\.$show)") {
+                \.$background
+                \.$temperature
+            }
         } otherwise: {
-            Summary("\(\.$place)")
+            // Lock Screen widgets have no background of their own.
+            When(widgetFamily: .equalTo, .systemSmall) {
+                Summary("\(\.$place)") {
+                    \.$background
+                    \.$temperature
+                }
+            } otherwise: {
+                Summary("\(\.$place)") {
+                    \.$temperature
+                }
+            }
         }
     }
 
     /// The choices, as the widget's data reads them.
-    var setup: WidgetSetup { WidgetSetup(placeID: place?.id, content: show.content) }
+    var setup: WidgetSetup {
+        WidgetSetup(
+            placeID: place?.id, content: show.content, backdrop: background.backdrop,
+            temperature: temperature.temperature)
+    }
 }
+

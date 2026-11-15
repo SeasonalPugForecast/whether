@@ -2,22 +2,24 @@ import SwiftUI
 import WidgetKit
 import WhetherKit
 
-/// The widgets: home screen (small, medium) and lock screen (rectangular,
-/// circular, inline). Values come formatted from the core.
+/// The widgets: home screen (small, medium, large) and lock screen (rectangular,
+/// circular, inline), laid out as the phone's own weather widgets are: the place
+/// and the temperature first, the conditions and today's high and low beside or
+/// below, then the hours and the days. Values come formatted from the core.
 struct WeatherWidgetView: View {
     @Environment(\.colorTheme) private var colors
+    @Environment(\.widgetRenderingMode) private var renderingMode
+    @Environment(\.showsWidgetContainerBackground) private var showsBackground
     let entry: WeatherWidgetEntry
     let family: WidgetFamily
 
     var body: some View {
-        if let view = entry.view, let current = view.current {
+        if let view = entry.view, let now = entry.now {
             switch family {
-            case .systemMedium: medium(view, current)
-            case .systemLarge: large(view, current)
-            case .accessoryRectangular: rectangular(view, current)
-            case .accessoryCircular: circular(current)
-            case .accessoryInline: inline(current)
-            default: small(view, current)
+            case .accessoryRectangular: rectangular(view, now)
+            case .accessoryCircular: circular(now)
+            case .accessoryInline: inline(now)
+            default: onBackground(home(view, now))
             }
         } else {
             Text(entry.places == 0 ? "Open Pug Forecast to choose a place" : "Open Pug Forecast to load the forecast")
@@ -26,8 +28,34 @@ struct WeatherWidgetView: View {
         }
     }
 
-    private func highLow(_ current: ViewModel.Current) -> String {
-        "H \(current.high.text)  L \(current.low.text)"
+    @ViewBuilder private func home(_ view: ViewModel, _ now: WidgetNow) -> some View {
+        switch family {
+        case .systemMedium: medium(view, now)
+        case .systemLarge: large(view, now)
+        default: small(view, now)
+        }
+    }
+
+    /// Whether the sky is behind: chosen, and drawn (not in StandBy, nor tinted).
+    private var onSky: Bool {
+        entry.backdrop == .sky && showsBackground && renderingMode == .fullColor
+    }
+
+    /// White text and the theme's colors for dark backgrounds on the sky (the
+    /// skies are deep enough for both, light or dark mode); the secondary text a
+    /// little stronger than usual, for the lighter day skies.
+    @ViewBuilder private func onBackground(_ content: some View) -> some View {
+        if onSky {
+            content
+                .foregroundStyle(.white, .white.opacity(0.8), .white.opacity(0.65))
+                .environment(\.colorScheme, .dark)
+        } else {
+            content
+        }
+    }
+
+    private func highLow(_ now: WidgetNow) -> String {
+        "H \(now.high.text)  L \(now.low.text)"
     }
 
     /// The forecast's source (core text), and Apple's Weather mark when its minutes show.
@@ -51,7 +79,7 @@ struct WeatherWidgetView: View {
         if entry.followsApp, entry.places > 1 {
             Button(intent: NextPlaceIntent()) {
                 Image(systemName: "arrow.right.circle.fill")
-                    .font(.body)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
@@ -59,69 +87,133 @@ struct WeatherWidgetView: View {
         }
     }
 
-    private func small(_ view: ViewModel, _ current: ViewModel.Current) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Text(view.location.name).font(.caption.weight(.semibold)).lineLimit(1)
-                Spacer(minLength: 4)
-                ConditionIcon(icon: current.icon, size: 20)
+    /// The place's name, with an arrow when it follows the phone.
+    private func name(_ view: ViewModel, font: Font) -> some View {
+        HStack(spacing: 3) {
+            Text(view.location.name).lineLimit(1)
+            if entry.followsPhone {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 9, weight: .semibold))
+                    .accessibilityLabel("Current location")
+            }
+        }
+        .font(font)
+    }
+
+    /// The big number.
+    private func temperature(_ now: WidgetNow, size: CGFloat) -> some View {
+        Text(now.temperature.text)
+            .font(.system(size: size, weight: .light))
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+    }
+
+    // MARK: Small
+
+    private func small(_ view: ViewModel, _ now: WidgetNow) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            name(view, font: .subheadline.weight(.semibold))
+            temperature(now, size: 44)
+            Spacer(minLength: 0)
+            ConditionIcon(icon: now.icon, size: 18).padding(.bottom, 3)
+            Text(now.conditionLabel).font(.caption.weight(.semibold)).lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Text(highLow(now)).font(.caption).lineLimit(1).minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    // MARK: Medium and large
+
+    /// The place and the temperature, beside the conditions and today's high and low.
+    private func header(_ view: ViewModel, _ now: WidgetNow, size: CGFloat) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 6) {
+                    name(view, font: .subheadline.weight(.semibold))
+                    nextPlace
+                }
+                temperature(now, size: size)
             }
             Spacer(minLength: 0)
-            Text(current.temperature.text)
-                .font(.system(size: 44, weight: .thin))
-                .minimumScaleFactor(0.6)
-            Text(current.conditionLabel).font(.caption).lineLimit(1)
-            Text(highLow(current)).font(.caption2).foregroundStyle(.secondary)
+            VStack(alignment: .trailing, spacing: 1) {
+                ConditionIcon(icon: now.icon, size: 18).padding(.bottom, 2)
+                Text(now.conditionLabel).font(.caption.weight(.semibold))
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                Text(highLow(now)).font(.caption).lineLimit(1).minimumScaleFactor(0.8)
+            }
+            .padding(.top, 2)
         }
     }
 
-    private func medium(_ view: ViewModel, _ current: ViewModel.Current) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            mediumBody(view, current)
+    private func medium(_ view: ViewModel, _ now: WidgetNow) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            header(view, now, size: 32)
+            Spacer(minLength: 0)
+            switch entry.content {
+            case .overview, .nextHours:
+                hourStrip(
+                    view, count: entry.content.hours(large: false), chance: entry.content == .nextHours,
+                    compact: true)
+            case .nextHour:
+                if let text = view.nowcast?.text {
+                    Text(text).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
+                nextHour(view, bars: 26)
+            case .today:
+                if let text = view.daily?.days.first?.outlook ?? view.summary {
+                    Text(text).font(.caption2).foregroundStyle(.secondary).lineLimit(2)
+                }
+                if let day = view.daily?.days.first { facts(day, columns: 3) }
+            }
+            Spacer(minLength: 0)
             credit(view)
         }
     }
 
-    private func mediumBody(_ view: ViewModel, _ current: ViewModel.Current) -> some View {
-        HStack(spacing: 14) {
-            small(view, current).frame(maxWidth: 130)
-            VStack(alignment: .leading, spacing: 6) {
-                switch entry.content {
-                case .overview, .nextHours:
-                    lead(view.summary)
-                    hourStrip(view, count: entry.content.hours(large: false), chance: entry.content == .nextHours)
-                case .nextHour:
-                    lead(view.nowcast?.text ?? view.summary)
-                    nextHour(view, bars: 34)
-                case .today:
-                    todayFigures(current)
-                    lead(view.daily?.days.first?.outlook ?? view.summary, lines: 2, button: false)
-                    if let day = view.daily?.days.first { facts(day, columns: 2) }
+    /// Now, then what `entry.content` chooses for the rest of the widget.
+    private func large(_ view: ViewModel, _ now: WidgetNow) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            header(view, now, size: 40)
+            switch entry.content {
+            case .overview:
+                nowcastBlock(view, bars: 24)
+                hourStrip(view, count: entry.content.hours(large: true))
+                Divider()
+                dayRows(view.daily?.days ?? [], count: entry.content.days)
+            case .nextHour:
+                nowcastBlock(view, bars: 70, alwaysText: true)
+                // Without rain to draw, more hours fill the space.
+                hourRows(view, count: view.nowcast?.wet == true ? 2 : 6)
+            case .nextHours:
+                nowcastBlock(view, bars: 0)
+                let hours = entry.content.hours(large: true)
+                hourStrip(view, count: hours / 2, chance: true)
+                Divider()
+                hourStrip(view, count: hours / 2, chance: true, skip: hours / 2)
+            case .today:
+                if let day = view.daily?.days.first {
+                    if let text = day.outlook ?? view.summary {
+                        Text(text).font(.caption).foregroundStyle(.secondary).lineLimit(3)
+                    }
+                    facts(day)
                 }
-            }
-        }
-    }
-
-    /// A line of the core's text beside the place button.
-    private func lead(_ text: String?, lines: Int = 2, button: Bool = true) -> some View {
-        HStack(alignment: .top) {
-            if let text {
-                Text(text).font(.caption2).foregroundStyle(.secondary).lineLimit(lines)
+                Divider()
+                dayRows(Array((view.daily?.days ?? []).dropFirst()), count: entry.content.days - 1)
             }
             Spacer(minLength: 0)
-            if button { nextPlace }
+            credit(view)
         }
     }
 
-    /// One hour: its label, icon and temperature, and (`chance`) its chance of rain.
-    private func hourCell(
-        _ hour: ViewModel.Hour, size: CGFloat = 16, spacing: CGFloat = 4, chance: Bool = false
-    ) -> some View {
-        VStack(spacing: spacing) {
-            Text(hour.label).font(.caption2).foregroundStyle(.secondary)
+    /// One hour: its label, icon and temperature, and (`chance`) its chance of rain;
+    /// `compact` in the medium widget.
+    private func hourCell(_ hour: ViewModel.Hour, chance: Bool, compact: Bool) -> some View {
+        VStack(spacing: compact ? 2 : 4) {
+            Text(hour.label).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
                 .lineLimit(1).minimumScaleFactor(0.7)
-            ConditionIcon(icon: hour.icon, size: size)
-            Text(hour.temperature.text).font(.caption)
+            ConditionIcon(icon: hour.icon, size: compact ? 16 : 17).frame(height: compact ? 18 : 20)
+            Text(hour.temperature.text).font(.subheadline.weight(.medium))
             if chance {
                 Text(hour.precipProbability.map { $0 >= 10 ? chanceText(percent: $0) : "" } ?? "")
                     .font(.caption2).foregroundStyle(colors.rain).lineLimit(1)
@@ -131,13 +223,16 @@ struct WeatherWidgetView: View {
         .frame(maxWidth: .infinity)
     }
 
-    /// The hours after the current one, `count` of them in a row.
+    /// The hours after the current one, `count` of them across the widget, with
+    /// (`chance`) their chance of rain when one of them has a chance worth showing.
     private func hourStrip(
-        _ view: ViewModel, count: Int, chance: Bool = false, large: Bool = false, skip: Int = 0
+        _ view: ViewModel, count: Int, chance: Bool = false, skip: Int = 0, compact: Bool = false
     ) -> some View {
-        HStack(spacing: 0) {
-            ForEach(Array((view.hourly?.hours ?? []).dropFirst(1 + skip).prefix(count)), id: \.time) { hour in
-                hourCell(hour, size: large ? 15 : 16, spacing: large ? 3 : 4, chance: chance)
+        let hours = Array((view.hourly?.hours ?? []).dropFirst(1 + skip).prefix(count))
+        let chance = chance && hours.contains { ($0.precipProbability ?? 0) >= 10 }
+        return HStack(spacing: 0) {
+            ForEach(hours, id: \.time) { hour in
+                hourCell(hour, chance: chance, compact: compact)
             }
         }
     }
@@ -151,23 +246,7 @@ struct WeatherWidgetView: View {
             }
         } else {
             // Dry: the next two hours in words.
-            VStack(spacing: 6) { hourRows(view, count: 2) }
-        }
-    }
-
-    /// Today's high and low.
-    private func todayFigures(_ current: ViewModel.Current) -> some View {
-        HStack(spacing: 18) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("High").font(.caption2).foregroundStyle(.secondary)
-                Text(current.high.text).font(.system(size: 26, weight: .light))
-            }
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Low").font(.caption2).foregroundStyle(.secondary)
-                Text(current.low.text).font(.system(size: 26, weight: .light))
-            }
-            Spacer(minLength: 0)
-            nextPlace
+            VStack(spacing: 4) { hourRows(view, count: 2) }
         }
     }
 
@@ -189,52 +268,6 @@ struct WeatherWidgetView: View {
                 Label(items[i].1, systemImage: items[i].0)
                     .font(.caption2).lineLimit(1).minimumScaleFactor(0.8)
             }
-        }
-    }
-
-    /// Now, then what `entry.content` chooses for the rest of the widget.
-    private func large(_ view: ViewModel, _ current: ViewModel.Current) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(view.location.name).font(.headline).lineLimit(1)
-                    Text(current.temperature.text).font(.system(size: 44, weight: .thin))
-                    Text("\(current.conditionLabel) · \(highLow(current))").font(.caption)
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 8) {
-                    nextPlace
-                    ConditionIcon(icon: current.icon, size: 34)
-                }
-            }
-            switch entry.content {
-            case .overview:
-                nowcastBlock(view, bars: 28)
-                hourStrip(view, count: entry.content.hours(large: true), large: true)
-                Divider()
-                dayRows(view.daily?.days ?? [], count: 5)
-            case .nextHour:
-                nowcastBlock(view, bars: 70, alwaysText: true)
-                // Without rain to draw, more hours fill the space.
-                hourRows(view, count: view.nowcast?.wet == true ? 2 : 6)
-            case .nextHours:
-                nowcastBlock(view, bars: 0)
-                let hours = entry.content.hours(large: true)
-                hourStrip(view, count: hours / 2, chance: true, large: true)
-                Divider()
-                hourStrip(view, count: hours / 2, chance: true, large: true, skip: hours / 2)
-            case .today:
-                if let day = view.daily?.days.first {
-                    if let text = day.outlook ?? view.summary {
-                        Text(text).font(.caption).foregroundStyle(.secondary).lineLimit(3)
-                    }
-                    facts(day)
-                }
-                Divider()
-                dayRows(Array((view.daily?.days ?? []).dropFirst()), count: 5)
-            }
-            Spacer(minLength: 0)
-            credit(view)
         }
     }
 
@@ -274,46 +307,98 @@ struct WeatherWidgetView: View {
         }
     }
 
+    /// Days as rows: the day, its weather, its low and high, and between them its
+    /// span on the week's range (the core scales it to the days listed).
     private func dayRows(_ days: [ViewModel.Day], count: Int) -> some View {
-        ForEach(Array(days.prefix(count)), id: \.dateShort) { day in
-            HStack {
-                Text(day.label).font(.caption).frame(width: 74, alignment: .leading)
-                ConditionIcon(icon: day.icon, size: 15)
-                Spacer()
-                Text(day.low.text).font(.caption).foregroundStyle(.secondary)
-                Text(day.high.text).font(.caption).frame(width: 34, alignment: .trailing)
+        VStack(spacing: 6) {
+            ForEach(Array(days.prefix(count)), id: \.dateShort) { day in
+                HStack(spacing: 8) {
+                    Text(day.label).font(.subheadline.weight(.medium)).lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .frame(width: 76, alignment: .leading)
+                    ConditionIcon(icon: day.icon, size: 16).frame(width: 24)
+                    Text(day.precipProbability.map { $0 >= 10 ? chanceText(percent: $0) : "" } ?? "")
+                        .font(.caption2).foregroundStyle(colors.rain).lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .frame(width: 28, alignment: .leading)
+                    Text(day.low.text).font(.subheadline).foregroundStyle(.secondary)
+                        .frame(width: 36, alignment: .trailing)
+                    if day.range.count == 2 {
+                        RangeBar(low: day.range[0], high: day.range[1]).frame(height: 5)
+                            // A faint track: the sky's stronger secondary text would brighten it.
+                            .foregroundStyle(Color.primary)
+                    } else {
+                        Spacer(minLength: 0)
+                    }
+                    Text(day.high.text).font(.subheadline.weight(.medium))
+                        .frame(width: 36, alignment: .leading)
+                }
+                .monospacedDigit()
             }
-            .monospacedDigit()
         }
     }
 
-    private func rectangular(_ view: ViewModel, _ current: ViewModel.Current) -> some View {
+    // MARK: Lock Screen
+
+    private func rectangular(_ view: ViewModel, _ now: WidgetNow) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: WeatherSymbols.symbol(current.icon)).font(.title2)
+            Image(systemName: WeatherSymbols.symbol(now.icon)).font(.title2)
             VStack(alignment: .leading, spacing: 0) {
-                Text("\(current.temperature.text) \(current.conditionLabel)")
+                Text("\(now.temperature.text) \(now.conditionLabel)")
                     .font(.headline).lineLimit(1)
-                Text(highLow(current)).font(.caption)
-                Text(view.location.name).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                Text(highLow(now)).font(.caption)
+                name(view, font: .caption2).foregroundStyle(.secondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func circular(_ current: ViewModel.Current) -> some View {
-        ZStack {
-            AccessoryWidgetBackground()
-            VStack(spacing: 0) {
-                Image(systemName: WeatherSymbols.symbol(current.icon)).font(.caption)
-                Text(current.temperature.text).font(.title3.weight(.medium))
+    /// Today's low to high, with the temperature now on it.
+    @ViewBuilder private func circular(_ now: WidgetNow) -> some View {
+        if let value = now.temperature.value, let low = now.low.value, let high = now.high.value {
+            let range = WidgetData.gaugeRange(value: value, low: low, high: high)
+            Gauge(value: value, in: range) {
+                Image(systemName: WeatherSymbols.symbol(now.icon))
+            } currentValueLabel: {
+                Text(now.temperature.text)
+            } minimumValueLabel: {
+                Text(now.low.text)
+            } maximumValueLabel: {
+                Text(now.high.text)
+            }
+            .gaugeStyle(.accessoryCircular)
+        } else {
+            ZStack {
+                AccessoryWidgetBackground()
+                VStack(spacing: 0) {
+                    Image(systemName: WeatherSymbols.symbol(now.icon)).font(.caption)
+                    Text(now.temperature.text).font(.title3.weight(.medium))
+                }
             }
         }
     }
 
-    private func inline(_ current: ViewModel.Current) -> some View {
+    private func inline(_ now: WidgetNow) -> some View {
         Label(
-            "\(current.temperature.text) \(current.conditionLabel)",
-            systemImage: WeatherSymbols.symbol(current.icon))
+            "\(now.temperature.text) \(now.conditionLabel)",
+            systemImage: WeatherSymbols.symbol(now.icon))
+    }
+}
+
+/// Behind a Home Screen widget: the sky for what it leads with (still, without
+/// the app's motion), a little deeper in dark mode, or the plain system background.
+struct WidgetBackground: View {
+    let entry: WeatherWidgetEntry
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        if entry.backdrop == .sky, let sky = entry.now?.sky {
+            let (top, bottom) = entry.colorTheme.sky(sky)
+            LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom)
+                .overlay(scheme == .dark ? Color.black.opacity(0.2) : .clear)
+        } else {
+            Color(.systemBackground)
+        }
     }
 }
 

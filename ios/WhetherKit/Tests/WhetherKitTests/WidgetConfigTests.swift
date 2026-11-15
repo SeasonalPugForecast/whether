@@ -87,8 +87,8 @@ final class WidgetConfigTests: XCTestCase {
     // MARK: Content
 
     func testTheDefaultContentIsTodaysWidget() {
-        // 5 hours in the medium widget, 6 in the large one (and, large, rain and five days).
-        XCTAssertEqual(WidgetContent.overview.hours(large: false), 5)
+        // 6 hours across either widget (and, large, rain and five days).
+        XCTAssertEqual(WidgetContent.overview.hours(large: false), 6)
         XCTAssertEqual(WidgetContent.overview.hours(large: true), 6)
     }
 

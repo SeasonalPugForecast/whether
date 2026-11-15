@@ -76,11 +76,41 @@ extension WidgetData {
         return min(max(stale, soonest), now.addingTimeInterval(TimeInterval(freshFor)))
     }
 
-    /// The core's settings for a widget's view: the app's, with only what a
-    /// widget shows (the next 12 hours, `content`'s days without their hours, no
-    /// history), which keeps the view small. Fetches use the app's settings as they are.
-    static func viewSettings(_ app: Settings, content: WidgetContent) -> Settings {
+    /// Whether an entry at `date` leads with the hour's forecast: the observation
+    /// in a forecast from `dataAt` is an hour old or more by then.
+    static func leadsWithHour(at date: Date, dataAt: Int64?) -> Bool {
+        dataAt.map { date.timeIntervalSince1970 - TimeInterval($0) >= 3600 } ?? false
+    }
+
+    /// The Lock Screen gauge's scale: today's low to high, stretched to the
+    /// temperature now when it is outside them, never empty.
+    static func gaugeRange(value: Float, low: Float, high: Float) -> ClosedRange<Float> {
+        let lowest = min(low, high, value), highest = max(low, high, value)
+        return lowest < highest ? lowest...highest : lowest...(lowest + 1)
+    }
+
+    /// The sky for an hour (a core icon name), as the core chooses one for the
+    /// current conditions: storms, snow, rain and fog first, then cloud, day or night.
+    static func sky(icon: String, isDay: Bool) -> String {
+        switch WeatherSymbols.group(icon) {
+        case .storm: "storm"
+        case .snow: "snow"
+        case .drizzle, .rain, .heavyRain: "rain"
+        case .fog: "fog"
+        case .cloudy: isDay ? "cloudy_day" : "cloudy_night"
+        case .clear, .partlyCloudy, .other: isDay ? "clear_day" : "clear_night"
+        }
+    }
+
+    /// The core's settings for a widget's view: the app's, leading with the
+    /// temperature `temperature` chooses, and only what a widget shows (the
+    /// next 12 hours, `content`'s days without their hours, no history), which
+    /// keeps the view small. Fetches use the app's settings as they are.
+    static func viewSettings(
+        _ app: Settings, content: WidgetContent, temperature: WidgetTemperature
+    ) -> Settings {
         var s = app
+        s.feelsLike = temperature.feelsLike(app: app.feelsLike)
         // Now and the 12 hours after it (the large widget's next hours).
         s.hourlyHours = 13
         // Today (its high and low) at least.
@@ -89,5 +119,36 @@ extension WidgetData {
         s.precipHours = 1
         s.history = false
         return s
+    }
+}
+
+/// What a widget leads with at one moment: the current conditions, or (an hour
+/// or more after they were observed) the current hour's forecast. The core's
+/// texts either way.
+struct WidgetNow: Equatable, Sendable {
+    var temperature: ViewModel.Quantity
+    var conditionLabel: String
+    var icon: String
+    var high: ViewModel.Quantity
+    var low: ViewModel.Quantity
+    /// The sky behind (`ViewModel.theme`'s names).
+    var sky: String
+
+    /// `nil` without current conditions (nothing to show yet).
+    init?(_ view: ViewModel, fromHour: Bool) {
+        guard let current = view.current else { return nil }
+        high = current.high
+        low = current.low
+        if fromHour, let hour = view.hourly?.hours.first {
+            temperature = hour.temperature
+            conditionLabel = hour.conditionLabel
+            icon = hour.icon
+            sky = WidgetData.sky(icon: hour.icon, isDay: hour.isDay)
+        } else {
+            temperature = current.temperature
+            conditionLabel = current.conditionLabel
+            icon = current.icon
+            sky = view.theme
+        }
     }
 }

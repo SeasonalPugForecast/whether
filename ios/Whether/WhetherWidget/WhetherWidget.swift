@@ -33,7 +33,7 @@ struct WeatherWidget: Widget {
             WidgetBody(entry: entry)
         }
         .configurationDisplayName("Weather")
-        .description("Now, today's high and low, and the next hours. Touch and hold to choose the place and what it shows.")
+        .description("Now, today's high and low, the next hours and the days. Touch and hold to choose the place, what it shows and its background.")
         .supportedFamilies([
             .systemSmall, .systemMedium, .systemLarge, .accessoryRectangular, .accessoryCircular,
             .accessoryInline,
@@ -48,7 +48,8 @@ struct WidgetBody: View {
 
     var body: some View {
         WeatherWidgetView(entry: entry, family: family)
-            .containerBackground(for: .widget) { Color(.systemBackground) }
+            // The system leaves it out in StandBy and on a tinted Home Screen.
+            .containerBackground(for: .widget) { WidgetBackground(entry: entry) }
             // The app's colors, from the shared preferences (resolved with the entry).
             .environment(\.colorTheme, entry.colorTheme)
     }

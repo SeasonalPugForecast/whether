@@ -2,7 +2,7 @@ import XCTest
 
 @testable import WhetherKit
 
-/// The widget's forecast choice, its own kept forecast, its timeline and its view.
+/// The widget's forecast choice, its own kept forecast, its timeline and its options.
 final class WidgetTimelineTests: XCTestCase {
     private let place = AppPlace(
         id: "a", name: "A", detail: nil, latitude: 40.75, longitude: -73.99, timeZone: "America/New_York")
@@ -98,21 +98,88 @@ final class WidgetTimelineTests: XCTestCase {
         }
     }
 
-    // MARK: The widget's view
+    func testTheHoursForecastLeadsOnceTheObservationIsAnHourOld() {
+        XCTAssertFalse(WidgetData.leadsWithHour(at: date(t0 + 3599), dataAt: t0))
+        XCTAssertTrue(WidgetData.leadsWithHour(at: date(t0 + 3600), dataAt: t0))
+        XCTAssertFalse(WidgetData.leadsWithHour(at: date(t0), dataAt: nil))
+    }
+
+    func testAnHoursSkyFollowsItsWeatherAndTheSun() {
+        XCTAssertEqual(WidgetData.sky(icon: "clear_day", isDay: true), "clear_day")
+        XCTAssertEqual(WidgetData.sky(icon: "partly_cloudy_night", isDay: false), "clear_night")
+        XCTAssertEqual(WidgetData.sky(icon: "overcast_day", isDay: true), "cloudy_day")
+        XCTAssertEqual(WidgetData.sky(icon: "cloudy", isDay: false), "cloudy_night")
+        XCTAssertEqual(WidgetData.sky(icon: "showers_night", isDay: false), "rain")
+        XCTAssertEqual(WidgetData.sky(icon: "snow_showers_day", isDay: true), "snow")
+        XCTAssertEqual(WidgetData.sky(icon: "thunderstorms_rain", isDay: true), "storm")
+        XCTAssertEqual(WidgetData.sky(icon: "fog_day", isDay: true), "fog")
+        XCTAssertEqual(WidgetData.sky(icon: "something_new", isDay: false), "clear_night")
+        // Every sky has the theme's colors.
+        for icon in ["clear_day", "cloudy", "rain", "snow", "fog_day", "thunderstorms_day"] {
+            for isDay in [true, false] {
+                let sky = WidgetData.sky(icon: icon, isDay: isDay)
+                XCTAssertNotNil(ColorRole(rawValue: "sky.\(sky).top"), sky)
+            }
+        }
+    }
+
+    func testTheGaugeRunsFromTodaysLowToHigh() {
+        XCTAssertEqual(WidgetData.gaugeRange(value: 60, low: 50, high: 70), 50...70)
+        XCTAssertEqual(WidgetData.gaugeRange(value: 75, low: 50, high: 70), 50...75, "warmer than the high")
+        XCTAssertEqual(WidgetData.gaugeRange(value: 40, low: 50, high: 70), 40...70)
+        XCTAssertEqual(WidgetData.gaugeRange(value: 50, low: 50, high: 50), 50...51, "never empty")
+    }
+
+    // MARK: What leads
+
+    func testTheObservationLeadsUntilTheHoursForecastTakesOver() throws {
+        let url = try XCTUnwrap(
+            Bundle.module.url(forResource: "sample-view", withExtension: "json", subdirectory: "Resources"))
+        let view = try ViewModel.decode(String(contentsOf: url, encoding: .utf8))
+        let current = try XCTUnwrap(view.current)
+        let hour = try XCTUnwrap(view.hourly?.hours.first)
+        let observed = try XCTUnwrap(WidgetNow(view, fromHour: false))
+        XCTAssertEqual(observed.temperature, current.temperature)
+        XCTAssertEqual(observed.icon, current.icon)
+        XCTAssertEqual(observed.sky, view.theme)
+        let forecast = try XCTUnwrap(WidgetNow(view, fromHour: true))
+        XCTAssertEqual(forecast.temperature, hour.temperature)
+        XCTAssertEqual(forecast.conditionLabel, hour.conditionLabel)
+        XCTAssertEqual(forecast.sky, WidgetData.sky(icon: hour.icon, isDay: hour.isDay))
+        XCTAssertEqual(forecast.high, current.high, "today's high and low either way")
+        var empty = view
+        empty.current = nil
+        XCTAssertNil(WidgetNow(empty, fromHour: true))
+    }
+
+    // MARK: Options
+
+    func testTheTemperatureOptionFollowsTheAppByDefault() {
+        XCTAssertTrue(WidgetTemperature.app.feelsLike(app: true))
+        XCTAssertFalse(WidgetTemperature.app.feelsLike(app: false))
+        XCTAssertFalse(WidgetTemperature.actual.feelsLike(app: true))
+        XCTAssertTrue(WidgetTemperature.feelsLike.feelsLike(app: false))
+    }
+
+    func testTheSavedNamesOfTheOptionsStayStable() {
+        XCTAssertEqual(WidgetBackdrop.allCases.map(\.rawValue), ["sky", "plain"])
+        XCTAssertEqual(WidgetTemperature.allCases.map(\.rawValue), ["app", "actual", "feelsLike"])
+    }
 
     func testAWidgetsViewHoldsOnlyWhatAWidgetShows() {
         var app = defaultSettings()
         app.feelsLike = true
         app.nowcastHours = 1
-        let overview = WidgetData.viewSettings(app, content: .overview)
-        XCTAssertTrue(overview.feelsLike, "the app's temperature")
+        let overview = WidgetData.viewSettings(app, content: .overview, temperature: .app)
+        XCTAssertTrue(overview.feelsLike)
         XCTAssertEqual(overview.hourlyHours, 13, "now and the large widget's 12 hours")
         XCTAssertEqual(overview.dailyDays, 5)
         XCTAssertFalse(overview.dayHours)
         XCTAssertFalse(overview.history)
         XCTAssertEqual(overview.nowcastHours, 1, "the app's rain graph")
-        XCTAssertEqual(WidgetData.viewSettings(app, content: .today).dailyDays, 6)
-        XCTAssertEqual(WidgetData.viewSettings(app, content: .nextHours).dailyDays, 1, "today's high and low")
+        XCTAssertEqual(WidgetData.viewSettings(app, content: .today, temperature: .app).dailyDays, 6)
+        XCTAssertEqual(WidgetData.viewSettings(app, content: .nextHours, temperature: .app).dailyDays, 1, "today's high and low")
+        XCTAssertFalse(WidgetData.viewSettings(app, content: .overview, temperature: .actual).feelsLike)
     }
 
     func testTheSlimViewStillListsEveryHourAndDayTheWidgetsShow() {
