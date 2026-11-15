@@ -317,6 +317,48 @@ pub fn deepest_low(outlook: &StormOutlook) -> Option<(String, f32, UnixTime)> {
         .map(|(p, hpa, t)| (p.model.clone(), hpa, t))
 }
 
+/// An event is significant when the models' mean snowfall reaches this, in
+/// cm.
+pub const SIGNIFICANT_SNOW_CM: f32 = 5.0;
+
+/// An event is significant when the models' mean precipitation reaches this,
+/// in mm.
+pub const SIGNIFICANT_PRECIP_MM: f32 = 25.0;
+
+/// An event is significant when the mean of the models' peak gusts reaches
+/// this, in km/h.
+pub const SIGNIFICANT_GUST_KMH: f32 = 60.0;
+
+/// Only events starting sooner than this from now are significant, in
+/// seconds: 5 days.
+pub const SIGNIFICANT_HORIZON_SECS: i64 = 5 * 24 * HOUR;
+
+/// The mean of the models' peak gusts over `event`, in km/h; `None` when no
+/// model has a gust in it.
+pub fn mean_peak_gust_kmh(event: &StormEvent) -> Option<f32> {
+    mean(event.models.iter().map(|m| m.peak_gust_kmh))
+}
+
+/// Whether `event` reaches any of [`SIGNIFICANT_SNOW_CM`],
+/// [`SIGNIFICANT_PRECIP_MM`] or [`SIGNIFICANT_GUST_KMH`], whenever it comes.
+pub fn is_significant(event: &StormEvent) -> bool {
+    event.mean_snow_cm >= SIGNIFICANT_SNOW_CM
+        || event.mean_total_mm >= SIGNIFICANT_PRECIP_MM
+        || mean_peak_gust_kmh(event).is_some_and(|g| g >= SIGNIFICANT_GUST_KMH)
+}
+
+/// The first event in `outlook` worth a warning at `now`: one that hasn't
+/// ended, starts within [`SIGNIFICANT_HORIZON_SECS`] and
+/// [`is_significant`]; `None` when there is none.
+///
+/// The events are those of [`find_events`], so an event is only considered
+/// when it is among the wettest kept there.
+pub fn significant_event(outlook: &StormOutlook, now: UnixTime) -> Option<StormEvent> {
+    find_events(outlook)
+        .into_iter()
+        .find(|e| e.end > now && e.start.0 < now.0 + SIGNIFICANT_HORIZON_SECS && is_significant(e))
+}
+
 /// Agreement on totals is High when their spread is under this.
 pub const SPREAD_HIGH_MAX: f32 = 0.35;
 
@@ -707,7 +749,9 @@ pub fn ensemble_stats(outlook: &StormOutlook, event: &StormEvent) -> Vec<Ensembl
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storm::testdata::{STORM_PEAK, STORM_START, dry_week, noreaster, noreaster_window};
+    use crate::storm::testdata::{
+        STORM_NOW, STORM_PEAK, STORM_START, dry_week, noreaster, noreaster_window,
+    };
     use alloc::string::ToString;
     use alloc::vec;
 
@@ -1181,5 +1225,68 @@ mod tests {
         // 30 members with a total: 29 zeros and one 3 mm.
         let p = spread.percentiles.unwrap();
         assert_eq!((p.p50, p.p90), (0.0, 0.0));
+    }
+
+    #[test]
+    fn the_noreaster_is_significant_until_it_ends() {
+        let outlook = noreaster();
+        let event = significant_event(&outlook, STORM_NOW).unwrap();
+        assert_eq!((event.start, event.end), noreaster_window());
+        assert!(event.mean_snow_cm >= SIGNIFICANT_SNOW_CM, "{event:?}");
+        // Still significant while it falls, not once it has ended.
+        assert!(significant_event(&outlook, STORM_PEAK).is_some());
+        assert_eq!(significant_event(&outlook, event.end), None);
+    }
+
+    #[test]
+    fn a_storm_more_than_five_days_away_is_not_significant_yet() {
+        let outlook = noreaster();
+        let (start, _) = noreaster_window();
+        let early = UnixTime(start.0 - SIGNIFICANT_HORIZON_SECS);
+        assert_eq!(significant_event(&outlook, early), None);
+        let within = UnixTime(early.0 + 1);
+        assert!(significant_event(&outlook, within).is_some());
+    }
+
+    #[test]
+    fn a_dry_week_has_nothing_significant() {
+        assert_eq!(significant_event(&dry_week(), STORM_NOW), None);
+        assert_eq!(significant_event(&StormOutlook::default(), STORM_NOW), None);
+    }
+
+    #[test]
+    fn heavy_rain_alone_is_significant() {
+        // 30 mm in five wet bins, no snow, 20 km/h gusts.
+        let wet = outlook(vec![series("a", wet_bins(&[4, 5, 6, 7, 8]))]);
+        let event = significant_event(&wet, STORM_START).unwrap();
+        assert_eq!(event.mean_total_mm, 30.0);
+        assert_eq!(event.mean_snow_cm, 0.0);
+        // 24 mm is not enough.
+        let light = outlook(vec![series("a", wet_bins(&[4, 5, 6, 7]))]);
+        assert_eq!(find_events(&light).len(), 1);
+        assert_eq!(significant_event(&light, STORM_START), None);
+    }
+
+    #[test]
+    fn strong_gusts_alone_are_significant() {
+        // 6 mm of rain, so there is an event, with the models' peak gusts
+        // averaging 70 km/h.
+        let windy = |gusts: [f32; 2]| {
+            let points = ["a", "b"]
+                .iter()
+                .zip(gusts)
+                .map(|(model, gust)| {
+                    let mut s = series(model, wet_bins(&[4]));
+                    s.gust_kmh[26] = Some(gust);
+                    s
+                })
+                .collect();
+            outlook(points)
+        };
+        let event = significant_event(&windy([80.0, 60.0]), STORM_START).unwrap();
+        assert_eq!(event.mean_total_mm, 6.0);
+        assert_eq!(mean_peak_gust_kmh(&event), Some(70.0));
+        // One model's strong gust alone is not.
+        assert_eq!(significant_event(&windy([80.0, 20.0]), STORM_START), None);
     }
 }
