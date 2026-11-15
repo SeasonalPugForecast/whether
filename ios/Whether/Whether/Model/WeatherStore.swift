@@ -735,6 +735,10 @@ final class WeatherStore {
         let moved = await located.value(within: Self.fixWait)
         // Joins the refresh of the others when it still runs.
         async let joined: Void = refresh(only: plan.afterFix(moved: moved), again: plan.moved(moved))
+        // The place shown has nothing to fetch: Apple's minutes may be due all the same.
+        if let shown = places.first(where: { $0.id == plan.shown }), !plan.fetches(shown.id, moved: moved) {
+            await minutesIfWanted(for: shown)
+        }
         if moved == nil {
             // The fix came late: the place moves now, and is fetched where the phone is.
             await refresh(only: plan.moved(await located.value))
@@ -2107,13 +2111,13 @@ final class WeatherStore {
     /// Places whose minutes are being fetched on their own (see `minutesIfWanted`).
     private var minutesFetching: Set<String> = []
 
-    /// A minutes-only fetch for `place` when its page comes on screen: the
-    /// forecast is cached, so only Apple is asked, and only if the same rules
-    /// as in a refresh allow it. Does nothing during a refresh, which handles
-    /// the place shown itself.
+    /// A minutes-only fetch for `place` when its page comes on screen (or the app
+    /// opens on it with nothing to fetch): the forecast is cached, so only Apple
+    /// is asked, and only if the same rules as in a refresh allow it. Does
+    /// nothing while a refresh fetches the place, which asks with its forecast.
     func minutesIfWanted(for place: AppPlace) async {
         let now = Int64(Date.now.timeIntervalSince1970)
-        guard !refreshing, !minutesFetching.contains(place.id),
+        guard queue?.willFetch(place.id) != true, !minutesFetching.contains(place.id),
             let cache = caches[place.id], shouldAskApple(place, cache: cache, now: now)
         else { return }
         minutesFetching.insert(place.id)

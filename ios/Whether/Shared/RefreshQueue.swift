@@ -7,7 +7,10 @@ import Foundation
 nonisolated struct RefreshQueue: Equatable {
     /// The ids to fetch; `nil` for every place.
     private(set) var only: Set<String>?
+    /// Fetched, or being fetched (`fetching`).
     private var fetched: Set<String> = []
+    /// The batch under way.
+    private var fetching: Set<String> = []
     private var requested: Set<String> = []
 
     init(only: Set<String>?) {
@@ -36,7 +39,14 @@ nonisolated struct RefreshQueue: Equatable {
         }
         requested = []
         fetched.formUnion(due)
+        fetching = Set(due)
         return due
+    }
+
+    /// Whether the place `id` is being fetched, or will be before the refresh
+    /// ends: what it asks of Apple then is asked with its forecast.
+    func willFetch(_ id: String) -> Bool {
+        fetching.contains(id) || requested.contains(id) || (!fetched.contains(id) && (only?.contains(id) ?? true))
     }
 }
 
@@ -63,6 +73,12 @@ nonisolated struct OpeningFetch: Equatable {
         var ids = waitsForFix ? due.subtracting(following.map { [$0] } ?? []) : []
         if let following, moved == true || due.contains(following) { ids.insert(following) }
         return ids
+    }
+
+    /// Whether opening fetches the place `id` (and asks Apple with its forecast),
+    /// the fix in or the wait over.
+    func fetches(_ id: String, moved: Bool?) -> Bool {
+        atOnce.contains(id) || afterFix(moved: moved).contains(id)
     }
 
     /// The following place when it `moved`: fetched again where the phone is

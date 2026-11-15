@@ -49,6 +49,31 @@ final class OpeningTests: XCTestCase {
         XCTAssertEqual(plan.moved(true), [])
     }
 
+    // MARK: Apple's minutes for the place shown
+
+    func testTheShownPlaceAsksAppleItselfWhenOpeningFetchesNothingForIt() {
+        let fresh = OpeningFetch(due: ["b"], following: nil, shown: "a")
+        XCTAssertFalse(fresh.fetches("a", moved: false), "a's forecast is fresh: minutes on their own")
+        XCTAssertTrue(fresh.fetches("b", moved: false))
+        let following = OpeningFetch(due: [], following: "me", shown: "me")
+        XCTAssertFalse(following.fetches("me", moved: false))
+        XCTAssertFalse(following.fetches("me", moved: nil))
+        XCTAssertTrue(following.fetches("me", moved: true), "moved: asked with its new forecast")
+    }
+
+    func testARunningRefreshSaysWhichPlacesItStillFetches() {
+        var queue = RefreshQueue(only: ["a", "b"])
+        XCTAssertTrue(queue.willFetch("a"))
+        XCTAssertFalse(queue.willFetch("c"))
+        XCTAssertEqual(queue.next(among: ["a", "b", "c"]), ["a", "b"])
+        XCTAssertTrue(queue.willFetch("a"), "being fetched")
+        queue.request(["c"])
+        XCTAssertTrue(queue.willFetch("c"), "joined")
+        XCTAssertEqual(queue.next(among: ["a", "b", "c"]), ["c"])
+        XCTAssertFalse(queue.willFetch("a"), "fetched: a page shown now asks on its own")
+        XCTAssertTrue(RefreshQueue(only: nil).willFetch("any"))
+    }
+
     @MainActor
     func testAFixAfterTheWaitStillComes() async {
         let slow = Task { () -> Int in
