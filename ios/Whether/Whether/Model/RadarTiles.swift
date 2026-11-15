@@ -5,38 +5,50 @@ import MapKit
 import UniformTypeIdentifiers
 import WhetherKit
 
-/// NEXRAD tiles repainted from a radar ramp (color vision): each tile is
-/// fetched as `MKTileOverlay` would, its n0q colors mapped back to their dBZ step
-/// (`RadarPalette`) and painted with the ramp's color for that step. Repainted tiles
-/// are kept in memory per ramp and URL while they are fresh (`RadarTileCache`), so
-/// stepping through the loop again is instant but a later visit fetches new echoes.
-nonisolated final class RecoloredTileOverlay: MKTileOverlay {
-    /// The five legend colors, light to heavy.
-    let ramp: [RGBA]
+/// Radar tiles fetched as `MKTileOverlay` would, but through the session for their URL
+/// (`URLSession.tiles(for:)`): NOAA's with a disk cache, OpenWeather's (whose URLs carry
+/// the user's key) with none, where MapKit's own loading could keep them.
+///
+/// With a `ramp` (color vision, or a theme's own radar colors), NEXRAD's n0q colors are
+/// mapped back to their dBZ step (`RadarPalette`) and painted with the ramp's color for
+/// that step. Repainted tiles are kept in memory per ramp and URL while they are fresh
+/// (`RadarTileCache`), so stepping through the loop again is instant.
+nonisolated final class RadarTileOverlay: MKTileOverlay {
+    /// The five legend colors, light to heavy, or `nil` to keep the tiles' own.
+    let ramp: [RGBA]?
     private let rampKey: String
 
     /// Repainted tiles by ramp and URL, while fresh.
     private static let cache = RadarTileCache()
 
-    init(urlTemplate: String?, ramp: [RGBA]) {
+    init(urlTemplate: String?, ramp: [RGBA]?) {
         self.ramp = ramp
-        rampKey = RadarPalette.key(ramp)
+        rampKey = ramp.map(RadarPalette.key) ?? ""
         super.init(urlTemplate: urlTemplate)
     }
 
     override func loadTile(at path: MKTileOverlayPath, result: @escaping (Data?, (any Error)?) -> Void) {
         let url = url(forTilePath: path)
+        let reply = TileReply(result: result)
         let key = "\(rampKey)|\(url.absoluteString)"
-        if let hit = Self.cache.tile(for: key, now: .now) {
-            result(hit, nil)
+        if ramp != nil, let hit = Self.cache.tile(for: key, now: .now) {
+            reply.send(hit, nil)
             return
         }
-        let reply = TileReply(send: result)
         let ramp = ramp
-        URLSession.noStore.dataTask(with: url) { data, response, error in
+        let session = URLSession.tiles(for: url)
+        let request = URLRequest(url: url)
+        session.dataTask(with: request) { data, response, error in
             let http = response as? HTTPURLResponse
             guard let data, error == nil, RadarTileCache.succeeded(status: http?.statusCode) else {
+                // Never kept: IEM marks even its 503 for a composite it doesn't have yet
+                // as fresh for days.
+                session.configuration.urlCache?.removeCachedResponse(for: request)
                 reply.send(nil, error ?? URLError(.badServerResponse))
+                return
+            }
+            guard let ramp else {
+                reply.send(data, nil)
                 return
             }
             // An error page or anything else that isn't an image is no tile: nothing
@@ -92,24 +104,12 @@ nonisolated final class RecoloredTileOverlay: MKTileOverlay {
     }
 }
 
-/// Tiles fetched as `MKTileOverlay` would, but through `URLSession.noStore`: OpenWeather's tile
-/// URLs carry the user's key, which MapKit's own loading could keep in the disk cache.
-nonisolated final class UncachedTileOverlay: MKTileOverlay {
-    override func loadTile(at path: MKTileOverlayPath, result: @escaping (Data?, (any Error)?) -> Void) {
-        let reply = TileReply(send: result)
-        URLSession.noStore.dataTask(with: url(forTilePath: path)) { data, response, error in
-            let status = (response as? HTTPURLResponse)?.statusCode
-            guard let data, error == nil, RadarTileCache.succeeded(status: status) else {
-                reply.send(nil, error ?? URLError(.badServerResponse))
-                return
-            }
-            reply.send(data, nil)
-        }.resume()
-    }
-}
-
 /// MapKit's tile callback, carried into URLSession's completion handler: MapKit
 /// accepts the call from any thread.
 nonisolated private struct TileReply: @unchecked Sendable {
-    let send: (Data?, (any Error)?) -> Void
+    let result: (Data?, (any Error)?) -> Void
+
+    func send(_ data: Data?, _ error: (any Error)?) {
+        result(data, error)
+    }
 }

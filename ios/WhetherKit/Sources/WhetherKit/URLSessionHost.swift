@@ -114,4 +114,31 @@ extension URLSession {
         configuration.urlCache = URLCache(memoryCapacity: 8 << 20, diskCapacity: 0)
         return URLSession(configuration: configuration)
     }()
+
+    /// The host of NOAA's radar tiles (the Iowa Environmental Mesonet).
+    static let radarTileHost = "mesonet.agron.iastate.edu"
+
+    /// The session for radar tiles that carry no key (NOAA's composite from IEM): a disk cache
+    /// in the app's Caches folder keeps them across launches for as long as IEM allows (14 days
+    /// for a past composite's tiles), and more of them load side by side than the default
+    /// allows (IEM speaks HTTP/1.1, one tile per connection at a time). No cookies or
+    /// credentials are kept.
+    public static let radarTiles: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        let folder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
+            .appending(path: "radar-tiles", directoryHint: .isDirectory)
+        configuration.urlCache = URLCache(memoryCapacity: 16 << 20, diskCapacity: 100 << 20, directory: folder)
+        configuration.requestCachePolicy = .useProtocolCachePolicy
+        configuration.httpMaximumConnectionsPerHost = 8
+        configuration.httpCookieStorage = nil
+        configuration.httpShouldSetCookies = false
+        configuration.urlCredentialStorage = nil
+        return URLSession(configuration: configuration)
+    }()
+
+    /// The session to fetch a map tile with: `radarTiles` for IEM's tiles, which carry no
+    /// secret, and `noStore` for anything else (OpenWeather's carry the user's key).
+    public static func tiles(for url: URL) -> URLSession {
+        url.host() == radarTileHost && url.query() == nil ? radarTiles : noStore
+    }
 }

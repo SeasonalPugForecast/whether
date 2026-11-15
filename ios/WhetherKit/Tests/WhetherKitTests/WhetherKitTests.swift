@@ -130,6 +130,27 @@ final class WhetherKitTests: XCTestCase {
         XCTAssertEqual(cache.diskCapacity, 0)
     }
 
+    /// NOAA's tiles carry no key and are kept on disk; OpenWeather's, with the key, are not.
+    func testOnlyKeylessRadarTilesAreKeptOnDisk() throws {
+        func tile(_ template: String) throws -> URL {
+            try XCTUnwrap(
+                URL(
+                    string: template.replacingOccurrences(of: "{z}", with: "7")
+                        .replacingOccurrences(of: "{x}", with: "37")
+                        .replacingOccurrences(of: "{y}", with: "48")))
+        }
+        let nexrad = try tile(XCTUnwrap(radarFrames(latest: 1_791_663_300).last).tileTemplate)
+        XCTAssertTrue(URLSession.tiles(for: nexrad) === URLSession.radarTiles)
+        let openWeather = try tile(XCTUnwrap(radarOpenweatherFrames(key: "k3y").first).tileTemplate)
+        XCTAssertTrue(URLSession.tiles(for: openWeather) === URLSession.noStore)
+        XCTAssertTrue(
+            URLSession.tiles(for: try tile("https://mesonet.agron.iastate.edu/x/{z}/{x}/{y}.png?appid=k"))
+                === URLSession.noStore, "a query might hold a key")
+        let cache = try XCTUnwrap(URLSession.radarTiles.configuration.urlCache)
+        XCTAssertGreaterThanOrEqual(cache.diskCapacity, 50 << 20)
+        XCTAssertGreaterThanOrEqual(URLSession.radarTiles.configuration.httpMaximumConnectionsPerHost, 6)
+    }
+
     /// One live fetch for New York from Open-Meteo (no key needed).
     func testLiveFetch() async throws {
         let ledger = FileManager.default.temporaryDirectory.appendingPathComponent("ledger.json")
