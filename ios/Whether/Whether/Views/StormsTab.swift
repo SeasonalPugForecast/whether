@@ -10,6 +10,8 @@ struct StormsTab: View {
     /// Closes the screen when it is shown full screen (from the Storm ahead card); `nil`
     /// in the Storms tab.
     var close: (() -> Void)?
+    /// The hurricane to frame on the map (the Storm ahead card's), by NHC id.
+    var focus: String?
     @State private var storms = StormsStore()
     @Environment(\.colorTheme) private var colors
 
@@ -25,7 +27,7 @@ struct StormsTab: View {
             if let view = storms.view {
                 StormsScreen(
                     view: view, stale: storms.stale, failure: storms.failure, loading: storms.loading,
-                    close: close
+                    close: close, focus: focus
                 ) { await storms.loadPastRuns(for: $0) }
             } else if let failure = storms.failure {
                 ContentUnavailableView {
@@ -105,10 +107,15 @@ private struct StormsScreen: View {
     let failure: String?
     let loading: Bool
     let close: (() -> Void)?
+    /// The hurricane to frame on the map, by NHC id.
+    let focus: String?
     let loadPastRuns: (StormsView.Event) async -> Void
     @Environment(\.colorTheme) private var colors
     /// The models the chips hide, by model id: for this screen only, never saved.
     @State private var hidden: Set<String> = []
+    /// The hurricanes the chips hide, by NHC id, and the guidance models, by aid code.
+    @State private var hiddenHurricanes: Set<String> = []
+    @State private var hiddenAids: Set<String> = []
     @State private var step = 0
     @State private var playing = false
     @State private var expanded = false
@@ -127,7 +134,8 @@ private struct StormsScreen: View {
             let large = max(peek, geo.size.height - chipsHeight - 16)
             ZStack(alignment: .bottom) {
                 StormsMap(
-                    view: view, step: step, hidden: hidden,
+                    view: view, step: step, hidden: hidden, hiddenHurricanes: hiddenHurricanes,
+                    hiddenAids: hiddenAids, focus: focus,
                     insets: UIEdgeInsets(
                         top: geo.safeAreaInsets.top + chipsHeight + 16, left: 24,
                         bottom: geo.safeAreaInsets.bottom + peek + scrubberHeight + 24, right: 24)
@@ -148,6 +156,10 @@ private struct StormsScreen: View {
             }
         }
         .task(id: view.steps.count) { await start() }
+        // The Storm ahead card opens a hurricane: it shows, whatever its chip said.
+        .onChange(of: focus, initial: true) {
+            if let focus { hiddenHurricanes.remove(focus) }
+        }
         .task(id: playing) {
             guard playing, view.steps.count > 1 else { return }
             while !Task.isCancelled {
@@ -176,20 +188,47 @@ private struct StormsScreen: View {
         step = StormMapRules.startStep(wanted, count: view.steps.count)
     }
 
-    /// The model chips (tap one to show or hide it) and, full screen, the close button.
+    /// The model chips (tap one to show or hide it), under them the hurricanes' chips and
+    /// their guidance models' chips, and, full screen, the close button.
     private var topRow: some View {
         HStack(alignment: .top, spacing: 8) {
-            // Every chip with its run when they fit, else without the runs, else scrolling.
-            ViewThatFits(in: .horizontal) {
-                chips(runs: true)
-                chips(runs: false)
-                ScrollView(.horizontal, showsIndicators: false) { chips(runs: false) }
-                    .scrollClipDisabled()
+            VStack(alignment: .leading, spacing: 6) {
+                if !view.models.isEmpty {
+                    // Every chip with its run when they fit, else without the runs, else scrolling.
+                    ViewThatFits(in: .horizontal) {
+                        chips(runs: true)
+                        chips(runs: false)
+                        ScrollView(.horizontal, showsIndicators: false) { chips(runs: false) }
+                            .scrollClipDisabled()
+                    }
+                }
+                if !view.hurricanes.isEmpty {
+                    hurricaneChips
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             CloseButton(close: close)
         }
         .padding(.top, 6)
+    }
+
+    /// A chip per hurricane (tap to show or hide it with its cone and tracks), then one
+    /// per guidance model (tap to show or hide that model's tracks), wrapping onto more
+    /// rows when they don't fit.
+    private var hurricaneChips: some View {
+        ChipFlow(spacing: 6) {
+            ForEach(view.hurricanes) { hurricane in
+                HurricaneToggle(hurricane: hurricane, shown: !hiddenHurricanes.contains(hurricane.id)) {
+                    withAnimation(.snappy) { hiddenHurricanes = StormMapRules.toggled(hiddenHurricanes, hurricane.id) }
+                }
+            }
+            ForEach(StormMapRules.aidChips(view.hurricanes)) { aid in
+                AidToggle(aid: aid, shown: !hiddenAids.contains(aid.aid)) {
+                    withAnimation(.snappy) { hiddenAids = StormMapRules.toggled(hiddenAids, aid.aid) }
+                }
+            }
+        }
+        .padding(.vertical, 2)
     }
 
     private func chips(runs: Bool) -> some View {
@@ -208,33 +247,9 @@ private struct StormsScreen: View {
     /// (Apple's map shows its own).
     private var scrubber: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 12) {
-                if view.steps.count > 1 {
-                    Button {
-                        playing.toggle()
-                    } label: {
-                        Image(systemName: playing ? "pause.fill" : "play.fill")
-                            .font(.title3)
-                            .frame(width: 26)
-                    }
-                    .accessibilityLabel(playing ? "Pause" : "Play")
-                }
-                Text(view.steps.indices.contains(step) ? view.steps[step].label : "")
-                    .font(.subheadline.weight(.semibold).monospacedDigit())
-                Spacer(minLength: 0)
-            }
-            if view.steps.count > 1 {
-                Slider(
-                    value: Binding(
-                        get: { Double(step) },
-                        set: {
-                            playing = false
-                            step = Int($0.rounded())
-                        }),
-                    in: 0...Double(view.steps.count - 1), step: 1
-                )
-                .accessibilityLabel("Time on the map")
-                .accessibilityValue(view.steps.indices.contains(step) ? view.steps[step].label : "")
+            // No steps (hurricanes alone, no model lows): only the credits.
+            if !view.steps.isEmpty {
+                stepRow
             }
             ForEach(view.attribution, id: \.self) { line in
                 Text(line)
@@ -247,6 +262,38 @@ private struct StormsScreen: View {
         .padding(.vertical, 10)
         .background(.regularMaterial, in: .rect(cornerRadius: 20))
         .sensoryFeedback(.selection, trigger: step) { _, _ in !playing }
+    }
+
+    /// Play, the step's time and the slider.
+    @ViewBuilder private var stepRow: some View {
+        HStack(spacing: 12) {
+            if view.steps.count > 1 {
+                Button {
+                    playing.toggle()
+                } label: {
+                    Image(systemName: playing ? "pause.fill" : "play.fill")
+                        .font(.title3)
+                        .frame(width: 26)
+                }
+                .accessibilityLabel(playing ? "Pause" : "Play")
+            }
+            Text(view.steps.indices.contains(step) ? view.steps[step].label : "")
+                .font(.subheadline.weight(.semibold).monospacedDigit())
+            Spacer(minLength: 0)
+        }
+        if view.steps.count > 1 {
+            Slider(
+                value: Binding(
+                    get: { Double(step) },
+                    set: {
+                        playing = false
+                        step = Int($0.rounded())
+                    }),
+                in: 0...Double(view.steps.count - 1), step: 1
+            )
+            .accessibilityLabel("Time on the map")
+            .accessibilityValue(view.steps.indices.contains(step) ? view.steps[step].label : "")
+        }
     }
 
     /// "At New York": the agreement card when small; drag it up (or tap the title) for
@@ -354,6 +401,109 @@ private struct ModelToggle: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(chip.label), \(chip.run) run")
+        .accessibilityValue(shown ? "On the map" : "Hidden")
+        .accessibilityAddTraits(shown ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+/// Chips in rows, left to right, starting a new row when the next doesn't fit.
+private struct ChipFlow: Layout {
+    var spacing: CGFloat = 6
+
+    /// Each chip's origin in a row layout `width` wide, and the size it all takes.
+    private func arrange(_ subviews: Subviews, width: CGFloat) -> (origins: [CGPoint], size: CGSize) {
+        var origins: [CGPoint] = []
+        var x: CGFloat = 0, y: CGFloat = 0, row: CGFloat = 0, widest: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > 0, x + size.width > width {
+                x = 0
+                y += row + spacing
+                row = 0
+            }
+            origins.append(CGPoint(x: x, y: y))
+            widest = max(widest, x + size.width)
+            x += size.width + spacing
+            row = max(row, size.height)
+        }
+        return (origins, CGSize(width: widest, height: y + row))
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        arrange(subviews, width: proposal.width ?? .infinity).size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let origins = arrange(subviews, width: bounds.width).origins
+        for (subview, origin) in zip(subviews, origins) {
+            subview.place(
+                at: CGPoint(x: bounds.minX + origin.x, y: bounds.minY + origin.y), proposal: .unspecified)
+        }
+    }
+}
+
+/// A hurricane's chip on the map: its symbol in its level's color and its name; tap to
+/// show or hide it with its cone and tracks.
+private struct HurricaneToggle: View {
+    let hurricane: StormsView.Hurricane
+    let shown: Bool
+    let toggle: () -> Void
+    @Environment(\.colorTheme) private var colors
+
+    var body: some View {
+        let color = colors.level(hurricane.level)
+        Button(action: toggle) {
+            HStack(spacing: 5) {
+                Image(systemName: "hurricane")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(color)
+                Text(hurricane.name).font(.caption.weight(.semibold))
+                if !shown {
+                    Image(systemName: "eye.slash").font(.caption2)
+                }
+            }
+            .opacity(shown ? 1 : 0.5)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 7)
+            .background(.regularMaterial, in: .capsule)
+            .overlay(Capsule().strokeBorder(color.opacity(shown ? 0.9 : 0.35), lineWidth: 1.5))
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(hurricane.title)
+        .accessibilityValue(shown ? "On the map" : "Hidden")
+        .accessibilityAddTraits(shown ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+/// A hurricane guidance model's chip: its band as the map draws it and its short name;
+/// tap to show or hide its tracks.
+private struct AidToggle: View {
+    let aid: StormsView.Aid
+    let shown: Bool
+    let toggle: () -> Void
+    @Environment(\.colorTheme) private var colors
+
+    var body: some View {
+        let color = colors.model(aid.role)
+        Button(action: toggle) {
+            HStack(spacing: 5) {
+                DashSample(role: aid.role, color: color)
+                    .frame(width: 22, height: 7)
+                Text(aid.short).font(.caption.weight(.semibold))
+                if !shown {
+                    Image(systemName: "eye.slash").font(.caption2)
+                }
+            }
+            .opacity(shown ? 1 : 0.5)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 7)
+            .background(.regularMaterial, in: .capsule)
+            .overlay(Capsule().strokeBorder(color.opacity(shown ? 0.9 : 0.35), lineWidth: 1.5))
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(aid.short) guidance")
         .accessibilityValue(shown ? "On the map" : "Hidden")
         .accessibilityAddTraits(shown ? [.isButton, .isSelected] : .isButton)
     }

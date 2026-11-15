@@ -84,4 +84,89 @@ enum StormMapRules {
         let i = ((index % 4) + 4) % 4
         return (right: i < 2, up: i % 2 == 0)
     }
+
+    // MARK: Hurricanes
+
+    /// A hurricane guidance model's band, edge to edge, in points: as narrow as a low
+    /// that isn't the storm.
+    nonisolated static let aidBandWidth = 6.0
+    /// NHC's official forecast track: a solid line this wide, in points, wider than a
+    /// band's edges.
+    nonisolated static let officialWidth = 3.5
+    /// The observed track: dots this wide, this far apart (on and off, in points).
+    nonisolated static let pastWidth = 2.5
+    nonisolated static let pastDash: [Double] = [0.01, 5]
+    /// The forecast cone: filled at this opacity of `hurricane.cone`, under a crisp edge
+    /// this wide in the full color.
+    nonisolated static let coneFillAlpha = 0.18
+    nonisolated static let coneEdgeWidth = 1.5
+    /// A hurricane is near when its cone or track comes within this of the place, in
+    /// meters: the map then frames it with the place.
+    static let nearWithin = 3_000_000.0
+
+    /// The official forecast points that get a labelled marker: one a day, every 24 hours
+    /// after the first (within an hour), so the labels don't crowd. The first is the
+    /// storm itself, marked with its name.
+    static func dayMarks(_ official: [StormsView.ForecastPoint]) -> [StormsView.ForecastPoint] {
+        guard let first = official.first else { return [] }
+        let day: Int64 = 86_400, slack: Int64 = 3_600
+        return official.filter { point in
+            let after = point.time - first.time
+            guard after >= day - slack else { return false }
+            let off = after % day
+            return off <= slack || off >= day - slack
+        }
+    }
+
+    /// The hurricanes to draw: those not hidden (by NHC id), each without the guidance
+    /// hidden (by aid code).
+    static func shown(
+        _ hurricanes: [StormsView.Hurricane], hidden: Set<String>, hiddenAids: Set<String>
+    ) -> [StormsView.Hurricane] {
+        hurricanes.filter { !hidden.contains($0.id) }.map { h in
+            var h = h
+            h.aids = h.aids.filter { !hiddenAids.contains($0.aid) }
+            return h
+        }
+    }
+
+    /// One chip per guidance model across the hurricanes, by aid code, in the core's order.
+    static func aidChips(_ hurricanes: [StormsView.Hurricane]) -> [StormsView.Aid] {
+        var seen: Set<String> = []
+        return hurricanes.flatMap(\.aids).filter { seen.insert($0.aid).inserted }
+    }
+
+    /// The great-circle distance between two points, in meters.
+    static func distance(_ a: (latitude: Double, longitude: Double), _ b: (latitude: Double, longitude: Double))
+        -> Double
+    {
+        let r = 6_371_000.0, rad = Double.pi / 180
+        let dLat = (b.latitude - a.latitude) * rad, dLon = (b.longitude - a.longitude) * rad
+        let h =
+            sin(dLat / 2) * sin(dLat / 2)
+            + cos(a.latitude * rad) * cos(b.latitude * rad) * sin(dLon / 2) * sin(dLon / 2)
+        return 2 * r * asin(min(1, h.squareRoot()))
+    }
+
+    /// Whether `hurricane`'s centre, official track or cone comes within `nearWithin`
+    /// of the place.
+    static func isNear(_ hurricane: StormsView.Hurricane, latitude: Double, longitude: Double) -> Bool {
+        let place = (latitude: latitude, longitude: longitude)
+        let points =
+            [(latitude: hurricane.latitude, longitude: hurricane.longitude)]
+            + hurricane.official.map { (latitude: $0.latitude, longitude: $0.longitude) }
+            + hurricane.cone.map { (latitude: $0.latitude, longitude: $0.longitude) }
+        return points.contains { distance($0, place) <= nearWithin }
+    }
+
+    /// What the map frames besides the place: the hurricane `focus` names alone (the
+    /// Storm ahead card opened it), else the near hurricanes and the models' tracks.
+    static func framing(
+        _ hurricanes: [StormsView.Hurricane], focus: String?, latitude: Double, longitude: Double
+    ) -> (hurricanes: [StormsView.Hurricane], tracks: Bool) {
+        if let focus, let focused = hurricanes.first(where: { $0.id == focus }) {
+            return ([focused], false)
+        }
+        return (hurricanes.filter { isNear($0, latitude: latitude, longitude: longitude) }, true)
+    }
 }

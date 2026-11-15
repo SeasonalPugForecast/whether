@@ -325,6 +325,68 @@ final class StormsTests: XCTestCase {
         XCTAssertEqual(StormMapRules.labelSlot(4).right, StormMapRules.labelSlot(0).right)
     }
 
+    // MARK: Hurricanes on the map
+
+    func testTheOfficialTrackIsMarkedOnceADay() throws {
+        let h = try XCTUnwrap(StormsView.decode(resource("storms-josephine-imperial")).hurricanes.first)
+        // Josephine's forecast runs 0, 3, 12, 24, 36, 48 and 60 hours out; the start is the storm itself.
+        XCTAssertEqual(StormMapRules.dayMarks(h.official).map(\.label), ["Fri 2 PM", "Sat 2 PM"])
+        XCTAssertEqual(StormMapRules.dayMarks([]), [])
+        XCTAssertEqual(StormMapRules.dayMarks(Array(h.official.prefix(1))), [])
+        // An hour off still counts as the day.
+        var late = h.official
+        late[3].time += 3_600
+        XCTAssertEqual(StormMapRules.dayMarks(late).map(\.label), ["Fri 2 PM", "Sat 2 PM"])
+        late[3].time += 1
+        XCTAssertEqual(StormMapRules.dayMarks(late).map(\.label), ["Sat 2 PM"])
+    }
+
+    func testTheHurricaneLayerIsDrawnAsDesigned() {
+        XCTAssertLessThan(StormMapRules.aidBandWidth, StormMapRules.bandWidth(isStorm: true))
+        XCTAssertGreaterThan(StormMapRules.aidBandWidth, 2 * StormMapRules.edgeWidth + 2)
+        XCTAssertGreaterThan(StormMapRules.officialWidth, StormMapRules.edgeWidth * 2, "thicker than a band's edge")
+        XCTAssertEqual(StormMapRules.coneFillAlpha, 0.18, accuracy: 0.03)
+        XCTAssertEqual(StormMapRules.coneEdgeWidth, 1.5)
+        XCTAssertLessThan(StormMapRules.pastDash[0], 0.1, "dots")
+        XCTAssertGreaterThan(StormMapRules.pastDash[1], StormMapRules.pastWidth)
+    }
+
+    func testChipsHideHurricanesAndTheirGuidance() throws {
+        let view = try StormsView.decode(resource("storms-josephine-imperial"))
+        XCTAssertEqual(StormMapRules.aidChips(view.hurricanes).map(\.aid), ["AVNI", "CMCI", "UKXI", "HFAI", "TVCN"])
+        XCTAssertEqual(StormMapRules.shown(view.hurricanes, hidden: [], hiddenAids: []), view.hurricanes)
+        XCTAssertEqual(StormMapRules.shown(view.hurricanes, hidden: ["al102026"], hiddenAids: []), [])
+        let shown = StormMapRules.shown(view.hurricanes, hidden: [], hiddenAids: ["UKXI", "TVCN"])
+        XCTAssertEqual(shown.first?.aids.map(\.short), ["GFS", "GEM", "HAFS"])
+        XCTAssertEqual(shown.first?.official, view.hurricanes.first?.official, "the official track stays")
+        // Two storms with the same guidance: one chip each.
+        var second = try XCTUnwrap(view.hurricanes.first)
+        second.id = "al112026"
+        XCTAssertEqual(StormMapRules.aidChips(view.hurricanes + [second]).count, 5)
+    }
+
+    func testANearHurricaneIsFramedWithThePlace() throws {
+        let view = try StormsView.decode(resource("storms-josephine-imperial"))
+        let h = try XCTUnwrap(view.hurricanes.first)
+        // New York to Josephine's centre: about 620 km.
+        let apart = StormMapRules.distance((view.latitude, view.longitude), (h.latitude, h.longitude))
+        XCTAssertEqual(apart, 625_000, accuracy: 25_000)
+        XCTAssertTrue(StormMapRules.isNear(h, latitude: view.latitude, longitude: view.longitude))
+        XCTAssertFalse(StormMapRules.isNear(h, latitude: 34.05, longitude: -118.24), "Los Angeles")
+        let near = StormMapRules.framing(view.hurricanes, focus: nil, latitude: view.latitude, longitude: view.longitude)
+        XCTAssertEqual(near.hurricanes.map(\.id), ["al102026"])
+        XCTAssertTrue(near.tracks)
+        let far = StormMapRules.framing(view.hurricanes, focus: nil, latitude: 34.05, longitude: -118.24)
+        XCTAssertEqual(far.hurricanes, [])
+        // The Storm ahead card's hurricane alone, near or not.
+        let focused = StormMapRules.framing(view.hurricanes, focus: "al102026", latitude: 34.05, longitude: -118.24)
+        XCTAssertEqual(focused.hurricanes.map(\.id), ["al102026"])
+        XCTAssertFalse(focused.tracks)
+        let gone = StormMapRules.framing(view.hurricanes, focus: "al992026", latitude: 34.05, longitude: -118.24)
+        XCTAssertEqual(gone.hurricanes, [])
+        XCTAssertTrue(gone.tracks)
+    }
+
     // MARK: Storm ahead
 
     func testTheStormAheadCardDecodes() throws {
