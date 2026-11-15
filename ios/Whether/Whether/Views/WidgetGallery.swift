@@ -63,7 +63,7 @@
             WeatherWidgetView(entry: entry, family: family)
                 .padding(16)
                 .frame(width: width, height: height)
-                .background(Color(.systemBackground), in: .rect(cornerRadius: 22))
+                .background { WidgetBackground(entry: entry).clipShape(.rect(cornerRadius: 22)) }
         }
 
         /// Lock screen widgets: monochrome on a dark wallpaper.
