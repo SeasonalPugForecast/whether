@@ -64,6 +64,10 @@ extension ThemeColor {
 extension ColorTheme {
     func color(_ role: ColorRole) -> Color { self[role].color }
 
+    /// A weather model's color by the core's role key (`ecmwf`, `gfs`, `gem`, `icon`);
+    /// gray for another model.
+    func model(_ role: String) -> Color { ColorRole.model(role).map(color) ?? .gray }
+
     /// The role for a timeline group.
     static func role(_ group: WeatherSymbols.Group) -> ColorRole {
         switch group {

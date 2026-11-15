@@ -265,6 +265,10 @@ nonisolated extension ColorRole {
         case .twilightNoon: "Solar noon"
         case .sunDisc: "The sun in the sky"
         case .accent: "Plan tab buttons"
+        case .modelECMWF: "ECMWF (European)"
+        case .modelGFS: "GFS (American)"
+        case .modelGEM: "GEM (Canadian)"
+        case .modelICON: "ICON (German)"
         default: rawValue
         }
     }

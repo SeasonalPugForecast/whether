@@ -55,6 +55,9 @@ nonisolated enum ColorRole: String, CaseIterable, Codable, Sendable {
     case sunDisc = "sun.disc"
     /// The Plan tab's buttons.
     case accent = "accent"
+    // Weather models on the Storms tab: each model's track, chip and charts.
+    case modelECMWF = "model.ecmwf", modelGFS = "model.gfs", modelGEM = "model.gem"
+    case modelICON = "model.icon"
 
     /// The editor's group for this role.
     var group: ColorRoleGroup {
@@ -67,12 +70,13 @@ nonisolated enum ColorRole: String, CaseIterable, Codable, Sendable {
         case "precip", "rain": .precipitation
         case "radar": .radar
         case "twilight", "sun": .sunAndMoon
+        case "model": .models
         default: .accent
         }
     }
 
     /// Whether the color carries meaning (severity, temperature, precipitation type,
-    /// radar intensity, condition groups, twilight kinds). Color vision replaces
+    /// radar intensity, condition groups, twilight kinds, weather models). Color vision replaces
     /// exactly these; the rest are decorative and stay the preset's.
     var isInformational: Bool {
         switch group {
@@ -83,7 +87,7 @@ nonisolated enum ColorRole: String, CaseIterable, Codable, Sendable {
                     .graphCloudy, .graphFog].contains(self)
         case .precipitation: self != .rain
         case .sunAndMoon: self != .sunDisc
-        case .temperature, .severity, .radar: true
+        case .temperature, .severity, .radar, .models: true
         }
     }
 
@@ -123,13 +127,22 @@ nonisolated enum ColorRole: String, CaseIterable, Codable, Sendable {
     static let twilightBar: [ColorRole] = [
         .twilightAstronomical, .twilightNautical, .twilightCivil, .twilightGolden, .twilightDay,
     ]
+    /// The weather models, by the core's role key (`ecmwf`, `gfs`, `gem`, `icon`).
+    static let models: [ColorRole] = [.modelECMWF, .modelGFS, .modelGEM, .modelICON]
+
+    /// The color for the core's model role key (`ecmwf`, …), or `nil` for another
+    /// model (`other`).
+    static func model(_ role: String) -> ColorRole? {
+        ColorRole(rawValue: "model.\(role)")
+    }
+
     /// Condition groups.
     static let conditions: [ColorRole] = allCases.filter { $0.rawValue.hasPrefix("condition.") }
 }
 
 /// The editor's groups (Settings → Display → Colors).
 nonisolated enum ColorRoleGroup: String, CaseIterable, Sendable {
-    case sky, weather, temperature, severity, precipitation, radar, sunAndMoon, accent
+    case sky, weather, temperature, severity, precipitation, radar, sunAndMoon, models, accent
 
     var title: String {
         switch self {
@@ -140,6 +153,7 @@ nonisolated enum ColorRoleGroup: String, CaseIterable, Sendable {
         case .precipitation: "Precipitation"
         case .radar: "Radar"
         case .sunAndMoon: "Sun & moon"
+        case .models: "Storm models"
         case .accent: "Accent"
         }
     }

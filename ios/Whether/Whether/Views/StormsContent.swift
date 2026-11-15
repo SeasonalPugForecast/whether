@@ -113,9 +113,10 @@ private struct Note: View {
 /// A model's chip: its short name and run, in its color.
 private struct ModelChipView: View {
     let chip: StormsView.ModelChip
+    @Environment(\.colorTheme) private var colors
 
     var body: some View {
-        let color = StormModelColors.color(chip.role)
+        let color = colors.model(chip.role)
         HStack(spacing: 5) {
             Circle().fill(color).frame(width: 8, height: 8)
             Text(chip.short).font(.caption.weight(.semibold))
@@ -262,10 +263,11 @@ private struct ModelTable: View {
 private struct ModelName: View {
     let short: String
     let role: String
+    @Environment(\.colorTheme) private var colors
 
     var body: some View {
         HStack(spacing: 5) {
-            Circle().fill(StormModelColors.color(role)).frame(width: 7, height: 7)
+            Circle().fill(colors.model(role)).frame(width: 7, height: 7)
             Text(short).fontWeight(.semibold)
         }
     }
@@ -275,6 +277,7 @@ private struct ModelName: View {
 /// median bold, on the core's axes.
 private struct PlumeCard: View {
     let ensemble: StormsView.Ensemble
+    @Environment(\.colorTheme) private var colors
 
     private struct Point: Identifiable {
         var time: Double
@@ -306,7 +309,7 @@ private struct PlumeCard: View {
     }
 
     var body: some View {
-        let color = StormModelColors.color(ensemble.role)
+        let color = colors.model(ensemble.role)
         VStack(alignment: .leading, spacing: 6) {
             SectionTitle(text: "\(ensemble.short) · \(plume.title)")
             Text(ensemble.text)
@@ -390,6 +393,7 @@ private struct PlumeCard: View {
 /// One model's totals over its recent runs, the current run's bar emphasised.
 private struct RunBars: View {
     let runs: StormsView.RunToRun
+    @Environment(\.colorTheme) private var colors
 
     private struct Bar: Identifiable {
         var index: Int
@@ -398,7 +402,7 @@ private struct RunBars: View {
     }
 
     var body: some View {
-        let color = StormModelColors.color(runs.role)
+        let color = colors.model(runs.role)
         let bars = runs.bars.enumerated().map { Bar(index: $0.offset, bar: $0.element) }
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 5) {

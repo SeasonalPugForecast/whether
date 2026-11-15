@@ -328,7 +328,7 @@ in Files), or use iCloud Drive.
   (`ios/Whether/Shared/ColorTheme.swift`): a named role (`sky.clear_day.top`, `level.poor`,
   `radar.3`, …) mapped to a light color and an optional dark one. Roles are **decorative** (skies,
   cards, accent, icon parts) or **informational** (severity, temperature, precipitation type,
-  radar steps, condition groups, twilight). The root view resolves the theme once from
+  radar steps, condition groups, twilight, the Storms tab's weather models). The root view resolves the theme once from
   `Preferences.colorTheme(now:)` and puts it in the environment (`\.colorTheme`); the widget and
   the Live Activity resolve the same theme from the shared preferences.
 - **Presets** (`Shared/ColorPresets.swift`, data only): Whether (the default, the colors from
@@ -352,7 +352,7 @@ in Files), or use iCloud Drive.
   never repainted.
 - **Your own colors.** "Customize…" on a preset (or touch and hold its card) makes "My <Preset>"
   and opens the editor: every role grouped as Sky, Weather, Temperature, Severity, Precipitation,
-  Radar, Sun & moon and Accent, with a `ColorPicker` (and a second one for dark where the role has
+  Radar, Sun & moon, Storm models and Accent, with a `ColorPicker` (and a second one for dark where the role has
   one), a reset per changed role and "Restore the defaults". The sample card on top can be
   previewed as protan, deutan, tritan or no color, and the contrast lines warn (never block) when
   white text on a sky drops below 4.5:1, a mark below 3:1 on its card, or two neighbouring steps

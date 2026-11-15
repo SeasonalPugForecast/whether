@@ -154,6 +154,9 @@ nonisolated enum ColorPresets {
             .sunDisc: c(0xFFCC47),
             // Accent
             .accent: c(0x4080F2),
+            // Storm models: blue, orange, green and purple, deep on light maps and light on dark ones
+            .modelECMWF: c(0x1F5FCC, 0x7FB8FF), .modelGFS: c(0xA34E00, 0xFFA552),
+            .modelGEM: c(0x1C7A35, 0x6EE08A), .modelICON: c(0x8A3DBF, 0xD9A3FF),
         ])
 
     /// Deep teal days and violet nights with an aurora glow on the horizon; green-to-magenta accents.
@@ -205,6 +208,9 @@ nonisolated enum ColorPresets {
             .twilightNoon: c(0xEDB417), .sunDisc: c(0xF8CA65),
             // Accent
             .accent: c(0x059583),
+            // Storm models
+            .modelECMWF: c(0x1F5FCC, 0x7FB8FF), .modelGFS: c(0xA34E00, 0xFFA552),
+            .modelGEM: c(0x1C7A35, 0x6EE08A), .modelICON: c(0x8A3DBF, 0xD9A3FF),
         ])
 
     /// Paper and ink: Prussian-blue and sepia skies, warm creams and muted print colors;
@@ -257,6 +263,9 @@ nonisolated enum ColorPresets {
             .twilightNoon: c(0xE0AE57), .sunDisc: c(0xEDC47D),
             // Accent
             .accent: c(0x8E4031, 0xDB997B),
+            // Storm models
+            .modelECMWF: c(0x1F5FCC, 0x7FB8FF), .modelGFS: c(0xA34E00, 0xFFA552),
+            .modelGEM: c(0x1C7A35, 0x6EE08A), .modelICON: c(0x8A3DBF, 0xD9A3FF),
         ])
 
     /// Soft pastels: periwinkle-to-orchid skies, mango dusk, mint to grape for severity.
@@ -308,6 +317,9 @@ nonisolated enum ColorPresets {
             .twilightNoon: c(0xEEBC4A), .sunDisc: c(0xFECE8C),
             // Accent
             .accent: c(0xB83B76, 0xEE83AF),
+            // Storm models
+            .modelECMWF: c(0x1F5FCC, 0x7FB8FF), .modelGFS: c(0xA34E00, 0xFFA552),
+            .modelGEM: c(0x1C7A35, 0x6EE08A), .modelICON: c(0x8A3DBF, 0xD9A3FF),
         ])
 
     /// Saturated colors on near-black skies, made for OLED at night.
@@ -359,6 +371,9 @@ nonisolated enum ColorPresets {
             .twilightNoon: c(0xFDCA0E), .sunDisc: c(0xFFD16B),
             // Accent
             .accent: c(0xC11A8E, 0xFE5EC3),
+            // Storm models
+            .modelECMWF: c(0x1F5FCC, 0x7FB8FF), .modelGFS: c(0xA34E00, 0xFFA552),
+            .modelGEM: c(0x1C7A35, 0x6EE08A), .modelICON: c(0x8A3DBF, 0xD9A3FF),
         ])
 
     /// Seasons, spring: blue skies over fresh green, lilac evenings, blossom-pink dusk.
@@ -410,6 +425,9 @@ nonisolated enum ColorPresets {
             .twilightNoon: c(0xF0B21B), .sunDisc: c(0xF0D777),
             // Accent
             .accent: c(0x277539, 0x73C881),
+            // Storm models
+            .modelECMWF: c(0x1F5FCC, 0x7FB8FF), .modelGFS: c(0xA34E00, 0xFFA552),
+            .modelGEM: c(0x1C7A35, 0x6EE08A), .modelICON: c(0x8A3DBF, 0xD9A3FF),
         ])
 
     /// Seasons, summer: deep azure, gold sun, warm orange dusk.
@@ -461,6 +479,9 @@ nonisolated enum ColorPresets {
             .twilightNoon: c(0xF0B21B), .sunDisc: c(0xFFD16B),
             // Accent
             .accent: c(0x965802, 0xF1BA4B),
+            // Storm models
+            .modelECMWF: c(0x1F5FCC, 0x7FB8FF), .modelGFS: c(0xA34E00, 0xFFA552),
+            .modelGEM: c(0x1C7A35, 0x6EE08A), .modelICON: c(0x8A3DBF, 0xD9A3FF),
         ])
 
     /// Seasons, fall: amber haze at the horizon, rust and plum, warm grays.
@@ -512,6 +533,9 @@ nonisolated enum ColorPresets {
             .twilightNoon: c(0xF0B21B), .sunDisc: c(0xFFBB69),
             // Accent
             .accent: c(0x9D4616, 0xF0995B),
+            // Storm models
+            .modelECMWF: c(0x1F5FCC, 0x7FB8FF), .modelGFS: c(0xA34E00, 0xFFA552),
+            .modelGEM: c(0x1C7A35, 0x6EE08A), .modelICON: c(0x8A3DBF, 0xD9A3FF),
         ])
 
     /// Seasons, winter: icy blues and slate, frosty pink twilight.
@@ -563,6 +587,9 @@ nonisolated enum ColorPresets {
             .twilightNoon: c(0xF0B21B), .sunDisc: c(0xF3DCA1),
             // Accent
             .accent: c(0x0F68A2, 0x82C7F0),
+            // Storm models
+            .modelECMWF: c(0x1F5FCC, 0x7FB8FF), .modelGFS: c(0xA34E00, 0xFFA552),
+            .modelGEM: c(0x1C7A35, 0x6EE08A), .modelICON: c(0x8A3DBF, 0xD9A3FF),
         ])
 
     /// Grayscale, with patterns and symbols always on: the look for achromatopsia.
@@ -614,6 +641,9 @@ nonisolated enum ColorPresets {
             .twilightNoon: c(0xDEDEDE), .sunDisc: c(0xE4E4E4),
             // Accent
             .accent: c(0x484848, 0xD7D7D7),
+            // Storm models: grays a step of lightness apart (the tracks' dashes tell them apart too)
+            .modelECMWF: c(0x303030, 0xFFFFFF), .modelGFS: c(0x464646, 0xDDDDDD),
+            .modelGEM: c(0x5C5C5C, 0xBBBBBB), .modelICON: c(0x727272, 0x9A9A9A),
         ], patterns: true)
 
     /// AAA text on every sky (7:1) and informational colors at 4.5:1 on their cards.
@@ -665,6 +695,9 @@ nonisolated enum ColorPresets {
             .twilightNoon: c(0xFEC848), .sunDisc: c(0xFFD988),
             // Accent
             .accent: c(0x004B96, 0x86CDFF),
+            // Storm models
+            .modelECMWF: c(0x0A4FB0, 0xA3CCFF), .modelGFS: c(0x8A3F00, 0xFFBE85),
+            .modelGEM: c(0x0F6428, 0x8FF0A8), .modelICON: c(0x6F2AA0, 0xE5C2FF),
         ])
 
     // MARK: - Color vision ramps
@@ -701,6 +734,9 @@ nonisolated enum ColorPresets {
         .twilightAstronomical: c(0x293871), .twilightNautical: c(0x196EA9), .twilightCivil: c(0xCD8643),
         .twilightGolden: c(0xE8C44E), .twilightDay: c(0xF7F1BB), .twilightSun: c(0xED9E2F),
         .twilightNoon: c(0xF2CF3B),
+        // Storm models: Okabe–Ito's blue, orange and reddish purple, and a neutral
+        .modelECMWF: c(0x004E8A, 0x62AEF0), .modelGFS: c(0x9E5A00, 0xF5C24A),
+        .modelGEM: c(0x333333, 0xEDEDED), .modelICON: c(0xA8507F, 0xFFBCD9),
     ]
 
     /// Blue–yellow readers (tritan): teal → cream → red/crimson ramps, off the blue–yellow axis.
@@ -734,6 +770,9 @@ nonisolated enum ColorPresets {
         .twilightAstronomical: c(0x004046), .twilightNautical: c(0x057176), .twilightCivil: c(0xDD766F),
         .twilightGolden: c(0xEFB696), .twilightDay: c(0xF6EED8), .twilightSun: c(0xF5886C),
         .twilightNoon: c(0xF9C59C),
+        // Storm models: teal, red, a neutral and magenta
+        .modelECMWF: c(0x00666E, 0x6FD8DC), .modelGFS: c(0xA8302F, 0xFF9C8E),
+        .modelGEM: c(0x4A4A4A, 0xF2F2F2), .modelICON: c(0x8A2E78, 0xF5B0E6),
     ]
 
     /// No color: OKLab lightness alone, at least 0.06 apart (patterns forced on).
@@ -767,5 +806,8 @@ nonisolated enum ColorPresets {
         .twilightAstronomical: c(0x2E2E2E), .twilightNautical: c(0x555555), .twilightCivil: c(0x868686),
         .twilightGolden: c(0xBEBEBE), .twilightDay: c(0xEEEEEE), .twilightSun: c(0xAEAEAE),
         .twilightNoon: c(0xD7D7D7),
+        // Storm models
+        .modelECMWF: c(0x303030, 0xFFFFFF), .modelGFS: c(0x464646, 0xDDDDDD),
+        .modelGEM: c(0x5C5C5C, 0xBBBBBB), .modelICON: c(0x727272, 0x9A9A9A),
     ]
 }

@@ -47,7 +47,7 @@ final class ColorThemeTests: XCTestCase {
 
     func testColorVisionReplacesExactlyTheInformationalRoles() {
         let informational = Set(ColorRole.allCases.filter(\.isInformational))
-        XCTAssertEqual(informational.count, 49)
+        XCTAssertEqual(informational.count, 53)
         XCTAssertTrue(ColorPresets.ramps(for: .typical).isEmpty)
         for vision in ColorVision.allCases where vision != .typical {
             XCTAssertEqual(Set(ColorPresets.ramps(for: vision).keys), informational, vision.rawValue)
@@ -116,6 +116,9 @@ final class ColorThemeTests: XCTestCase {
             .twilightCivil: (rgb(0.98, 0.55, 0.40), nil), .twilightGolden: (rgb(1.0, 0.78, 0.30), nil),
             .twilightDay: (rgb(1.0, 0.92, 0.55), nil), .twilightNoon: (rgb(0.93, 0.70, 0.08), nil),
             .sunDisc: (rgb(1.0, 0.80, 0.28), nil), .accent: (rgb(0.25, 0.50, 0.95), nil),
+            // The Storms tab's blue, orange, green and purple, deepened and lightened for the map.
+            .modelECMWF: (hex(0x1F5FCC), hex(0x7FB8FF)), .modelGFS: (hex(0xA34E00), hex(0xFFA552)),
+            .modelGEM: (hex(0x1C7A35), hex(0x6EE08A)), .modelICON: (hex(0x8A3DBF), hex(0xD9A3FF)),
         ]
         let skies: [String: (UInt32, UInt32)] = [
             "clear_day": (0x2F6FD0, 0x6FB3F2), "clear_night": (0x070E24, 0x1C2C55),
@@ -322,6 +325,63 @@ final class ColorThemeTests: XCTestCase {
         }
     }
 
+    // MARK: Storm models on the map
+
+    /// Apple's standard map as the Storms tab draws it (muted, realistic elevation),
+    /// zoomed out over the US Northeast, read off simulator screenshots (iOS 27): land
+    /// and ocean, in the light and the dark appearance.
+    private static let lightMap = [("light land", RGBA(rgb: 0xE6F4DB)), ("light ocean", RGBA(rgb: 0xB6E7FC))]
+    private static let darkMap = [("dark land", RGBA(rgb: 0x0A4851)), ("dark ocean", RGBA(rgb: 0x0D2251))]
+
+    /// Every model color in every preset and color vision ramp: light variants against
+    /// the light map, dark ones against the dark map (WCAG 1.4.11: 3:1 for a track).
+    func testModelColorsStandOffTheMap() {
+        var sets: [(String, [ColorRole: ThemeColor])] = ColorPresets.all.map { ($0.id, $0.colors) }
+        sets += ColorVision.allCases.filter { $0 != .typical }.map { ($0.rawValue, ColorPresets.ramps(for: $0)) }
+        for (label, colors) in sets {
+            for role in ColorRole.models {
+                guard let color = colors[role] else { return XCTFail("\(label) lacks \(role.rawValue)") }
+                for (name, base) in Self.lightMap {
+                    XCTAssertGreaterThanOrEqual(
+                        ColorMath.contrast(color.light, base), 3, "\(label) \(role.rawValue) on \(name)")
+                }
+                for (name, base) in Self.darkMap {
+                    XCTAssertGreaterThanOrEqual(
+                        ColorMath.contrast(color.resolved(dark: true), base), 3,
+                        "\(label) \(role.rawValue) on \(name)")
+                }
+            }
+        }
+    }
+
+    /// The models stay apart pairwise: in each preset for typical vision (Graphite as
+    /// an achromat), and in each color vision ramp for each reader it serves.
+    func testModelColorsStayApart() {
+        func check(_ colors: [ColorRole: ThemeColor], as deficiency: Deficiency?, label: String) {
+            let models = ColorRole.models
+            for dark in [false, true] {
+                for i in models.indices {
+                    for j in models.indices where j > i {
+                        guard let x = colors[models[i]]?.resolved(dark: dark),
+                            let y = colors[models[j]]?.resolved(dark: dark)
+                        else { return XCTFail("\(label) lacks a model color") }
+                        XCTAssertGreaterThanOrEqual(
+                            ColorMath.deltaE(x, y, as: deficiency), minimumDelta,
+                            "\(label) dark=\(dark): \(models[i].rawValue) ~ \(models[j].rawValue)")
+                    }
+                }
+            }
+        }
+        for theme in ColorPresets.all {
+            check(theme.colors, as: theme.id == "graphite" ? .achromat : nil, label: theme.id)
+        }
+        for vision in ColorVision.allCases where vision != .typical {
+            for deficiency in vision.deficiencies {
+                check(ColorPresets.ramps(for: vision), as: deficiency, label: "\(vision.rawValue) as \(deficiency.rawValue)")
+            }
+        }
+    }
+
     func testGraphiteIsGrayWithPatterns() {
         let graphite = ColorPresets.graphite
         XCTAssertTrue(graphite.patterns)
@@ -433,6 +493,11 @@ final class ColorThemeTests: XCTestCase {
         XCTAssertEqual(ColorRole.sunDisc.group, .sunAndMoon)
         XCTAssertEqual(ColorRole.accent.group, .accent)
         XCTAssertEqual(ColorRole.radar3.rawValue, "radar.3")
+        XCTAssertEqual(ColorRole.model("ecmwf"), .modelECMWF)
+        XCTAssertEqual(ColorRole.model("icon"), .modelICON)
+        XCTAssertNil(ColorRole.model("other"))
+        XCTAssertEqual(ColorRole.models.map(\.group), [.models, .models, .models, .models])
+        XCTAssertTrue(ColorRole.modelGFS.isInformational)
         XCTAssertEqual(Set(ColorRole.allCases.map(\.group)), Set(ColorRoleGroup.allCases))
     }
 
