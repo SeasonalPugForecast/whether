@@ -650,9 +650,15 @@ const SHOTS: &[(&str, &str)] = &[
         "-seed -tab plan -trip 2027-07-12:2027-07-19:30 -sharedPlan owner -unsentPlan",
     ),
     // The Storms tab with a built-in outlook at its own time (no request): the
-    // nor'easter on the sky, its plumes and run-to-run bars, then on the plain
-    // background dark and light, and the dry week.
+    // nor'easter's tracks on the map with the drawer small, the drawer open, the
+    // lows at the storm's peak (step 8), its plumes and run-to-run bars, then on
+    // the plain background dark and light, for a red-green reader, and the dry week.
     ("storms", "-seed -storms -show storms"),
+    (
+        "storms-sheet",
+        "-seed -storms -show storms -stormsheet large",
+    ),
+    ("storms-map-step", "-seed -storms -show storms -stormstep 8"),
     (
         "storms-charts",
         "-seed -storms -show storms -scrollTo storms-plumes",
@@ -664,6 +670,10 @@ const SHOTS: &[(&str, &str)] = &[
     (
         "storms-light",
         "-seed -storms -show storms -plain -appearance light",
+    ),
+    (
+        "storms-deutan",
+        "-seed -storms -show storms -stormstep 8 -vision red_green",
     ),
     ("storms-dry", "-seed -storms dry -show storms"),
     ("places", "-seed -show places -search Brooklyn"),
@@ -1841,9 +1851,12 @@ mod tests {
         let launch = |name: &str| SHOTS.iter().find(|(n, _)| *n == name).map(|(_, l)| *l);
         for name in [
             "storms",
+            "storms-sheet",
+            "storms-map-step",
             "storms-charts",
             "storms-dark",
             "storms-light",
+            "storms-deutan",
             "storms-dry",
         ] {
             let line = launch(name).unwrap_or_default();
@@ -1854,6 +1867,9 @@ mod tests {
         }
         assert!(launch("storms-dark").is_some_and(|l| l.contains("-appearance dark")));
         assert!(launch("storms-dry").is_some_and(|l| l.contains("-storms dry")));
+        assert!(launch("storms-sheet").is_some_and(|l| l.contains("-stormsheet large")));
+        assert!(launch("storms-map-step").is_some_and(|l| l.contains("-stormstep ")));
+        assert!(launch("storms-deutan").is_some_and(|l| l.contains("-vision red_green")));
     }
 
     #[test]
