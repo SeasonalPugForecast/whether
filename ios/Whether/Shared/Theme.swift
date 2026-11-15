@@ -1,4 +1,5 @@
 import SwiftUI
+import Synchronization
 import WhetherKit
 
 extension EnvironmentValues {
@@ -54,8 +55,28 @@ extension ThemeColor {
     var color: Color {
         if let system { return system.color }
         guard let dark, dark != light else { return Color(light) }
-        let l = UIColor(light), d = UIColor(dark)
-        return Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? d : l })
+        return DynamicColors.kept(self) {
+            let l = UIColor(light), d = UIColor(dark)
+            return Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? d : l })
+        }
+    }
+}
+
+/// The colors that follow light and dark mode, made once each: a new `UIColor`
+/// provider every time would be a new color to SwiftUI on every redraw, and the
+/// views painted with it would redraw too. Bounded, as a theme being edited
+/// makes a new pair at every step.
+private nonisolated enum DynamicColors {
+    private static let colors = Mutex<[AnyHashable: Color]>([:])
+
+    static func kept(_ key: some Hashable & Sendable, make: () -> Color) -> Color {
+        colors.withLock { kept in
+            if let color = kept[AnyHashable(key)] { return color }
+            let color = make()
+            if kept.count >= 512 { kept.removeAll() }
+            kept[AnyHashable(key)] = color
+            return color
+        }
     }
 }
 
@@ -98,8 +119,10 @@ extension ColorTheme {
         let role = ColorRole.condition(group)
         let light = timelineInk(role, dark: false), dark = timelineInk(role, dark: true)
         if light == dark { return light.color }
-        let l = light.uiColor, d = dark.uiColor
-        return Color(uiColor: UIColor { ($0.userInterfaceStyle == .dark ? d : l).resolvedColor(with: $0) })
+        return DynamicColors.kept("ink \(light) \(dark)") {
+            let l = light.uiColor, d = dark.uiColor
+            return Color(uiColor: UIColor { ($0.userInterfaceStyle == .dark ? d : l).resolvedColor(with: $0) })
+        }
     }
 
     /// A `Level` (good … extreme), or the secondary color for none.
