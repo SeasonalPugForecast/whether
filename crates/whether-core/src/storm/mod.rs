@@ -3,8 +3,9 @@
 //! A [`StormOutlook`] holds, per model, the place's hourly series, ensemble
 //! members, a coarse pressure grid around the place for following lows, and
 //! earlier runs' totals. Each series is tagged with the [`ModelRun`] it comes
-//! from. Raw values stay in the units their field names say (mm, cm, km/h,
-//! hPa); only `view::storms` converts and formats them.
+//! from. Active tropical cyclones and their tracks ([`hurricane`]) can come
+//! with it. Raw values stay in the units their field names say (mm, cm, km/h,
+//! hPa, kt); only `view::storms` converts and formats them.
 
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -13,7 +14,10 @@ use crate::model::{OffsetChange, ResolvedLocation};
 use crate::scales::Level;
 use crate::time::{UnixTime, UtcOffset};
 
+pub use hurricane::{Basin, Hurricane, TrackFix};
+
 pub mod analysis;
+pub mod hurricane;
 #[cfg(any(test, feature = "testdata"))]
 pub mod testdata;
 pub mod track;
@@ -195,6 +199,13 @@ pub struct StormOutlook {
         serde(default, skip_serializing_if = "Vec::is_empty")
     )]
     pub past_runs: Vec<PastRun>,
+    /// Active tropical cyclones, in NHC's order; empty outside the hurricane
+    /// season or when none was fetched.
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Vec::is_empty")
+    )]
+    pub hurricanes: Vec<Hurricane>,
     /// When the data was received.
     pub fetched_at: UnixTime,
 }
@@ -229,6 +240,14 @@ pub enum ModelRole {
     Gem,
     /// DWD's ICON.
     Icon,
+    /// The UK Met Office's global model (hurricane guidance).
+    Ukmet,
+    /// NOAA's hurricane model, HAFS (hurricane guidance).
+    Hafs,
+    /// A consensus of several models' tracks (hurricane guidance).
+    Consensus,
+    /// The National Hurricane Center's official forecast.
+    Official,
     /// Any other model.
     Other,
 }
@@ -250,14 +269,47 @@ impl ModelRole {
         }
     }
 
-    /// The key displays use for theme roles: `ecmwf`, `gfs`, `gem`, `icon` or
-    /// `other`.
+    /// The role of an ATCF aid code in an NHC a-deck: `OFCL` is the
+    /// official forecast; GFS (`AVNI`, `AVNO`), GEM (`CMCI`, `CMC`), ECMWF
+    /// (`EMXI`, `EMX`), UKMET (`UKXI`, `UKX`), HAFS (`HFAI`, `HFSA`, `HFBI`,
+    /// `HFSB`) and the track consensus aids (`TVCN`, `TVCA`, `TVCE`, `TVCX`,
+    /// `HCCA`) have their families' roles. Everything else, ATCF's `ICON`
+    /// intensity consensus among them, is [`ModelRole::Other`].
+    pub fn of_aid(aid: &str) -> Self {
+        let any = |codes: &[&str]| codes.iter().any(|c| c.eq_ignore_ascii_case(aid));
+        if any(&["OFCL"]) {
+            Self::Official
+        } else if any(&["AVNI", "AVNO"]) {
+            Self::Gfs
+        } else if any(&["CMCI", "CMC"]) {
+            Self::Gem
+        } else if any(&["EMXI", "EMX"]) {
+            Self::Ecmwf
+        } else if any(&["UKXI", "UKX"]) {
+            Self::Ukmet
+        } else if any(&["HFAI", "HFSA", "HFBI", "HFSB"]) {
+            Self::Hafs
+        } else if any(&["TVCN", "TVCA", "TVCE", "TVCX", "HCCA"]) {
+            Self::Consensus
+        } else {
+            Self::Other
+        }
+    }
+
+    /// The key displays use for theme roles: `ecmwf`, `gfs`, `gem`, `icon`,
+    /// `ukmet`, `hafs`, `consensus`, `official` or `other`. Open-Meteo
+    /// models only take the first four; the others come from hurricane
+    /// guidance ([`ModelRole::of_aid`]).
     pub fn key(self) -> &'static str {
         match self {
             Self::Ecmwf => "ecmwf",
             Self::Gfs => "gfs",
             Self::Gem => "gem",
             Self::Icon => "icon",
+            Self::Ukmet => "ukmet",
+            Self::Hafs => "hafs",
+            Self::Consensus => "consensus",
+            Self::Official => "official",
             Self::Other => "other",
         }
     }
@@ -389,6 +441,33 @@ mod tests {
     }
 
     #[test]
+    fn roles_cover_hurricane_aids() {
+        for (aid, role) in [
+            ("OFCL", ModelRole::Official),
+            ("AVNI", ModelRole::Gfs),
+            ("CMCI", ModelRole::Gem),
+            ("EMXI", ModelRole::Ecmwf),
+            ("EMX", ModelRole::Ecmwf),
+            ("UKXI", ModelRole::Ukmet),
+            ("HFAI", ModelRole::Hafs),
+            ("TVCN", ModelRole::Consensus),
+            ("tvcn", ModelRole::Consensus),
+            // ATCF's ICON is an intensity consensus, not DWD's ICON.
+            ("ICON", ModelRole::Other),
+            ("IVCN", ModelRole::Other),
+            ("CARQ", ModelRole::Other),
+        ] {
+            assert_eq!(ModelRole::of_aid(aid), role, "{aid}");
+        }
+        assert_eq!(
+            hurricane::DRAWN_AIDS.map(|a| ModelRole::of_aid(a).key()),
+            ["gfs", "gem", "ecmwf", "ecmwf", "ukmet", "hafs", "consensus"]
+        );
+        // Open-Meteo ids never take the hurricane-only roles.
+        assert_eq!(ModelRole::of("ukmo_seamless"), ModelRole::Other);
+    }
+
+    #[test]
     fn agreement_maps_to_levels_in_order() {
         assert_eq!(Agreement::High.level(), Level::Good);
         assert_eq!(Agreement::Medium.level(), Level::Moderate);
@@ -446,8 +525,21 @@ mod tests {
             "tz_abbrev":null},"points":[],"ensembles":[],"grids":[],"fetched_at":5}"#;
         let outlook: StormOutlook = serde_json::from_str(json).unwrap();
         assert!(outlook.past_runs.is_empty() && outlook.offset_changes.is_empty());
+        assert_eq!(outlook.hurricanes, Vec::<Hurricane>::new());
         assert_eq!(outlook.fetched_at, UnixTime(5));
         let back = serde_json::to_string(&outlook).unwrap();
         assert!(!back.contains("past_runs") && !back.contains("offset_changes"));
+        assert!(!back.contains("hurricanes"));
+    }
+
+    /// Outlooks with hurricanes round-trip.
+    #[cfg(feature = "serde")]
+    #[test]
+    fn outlooks_keep_their_hurricanes() {
+        let outlook = testdata::with_hurricane(testdata::dry_week());
+        let json = serde_json::to_string(&outlook).unwrap();
+        assert!(json.contains(r#""hurricanes":[{"id":"al992027""#), "{json}");
+        let back: StormOutlook = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, outlook);
     }
 }

@@ -326,6 +326,7 @@ pub async fn fetch_storms(
         ensembles,
         grids,
         past_runs: Vec::new(),
+        hurricanes: Vec::new(),
         fetched_at: UnixTime(now),
     };
     Ok(StormsOutcome {
@@ -439,6 +440,7 @@ pub async fn storm_ahead(
         ensembles: Vec::new(),
         grids: Vec::new(),
         past_runs: Vec::new(),
+        hurricanes: Vec::new(),
         fetched_at: UnixTime(now),
     };
     Ok(StormAheadOutcome {

@@ -1204,7 +1204,12 @@ fn attribution(outlook: &StormOutlook) -> Vec<String> {
             ModelRole::Gfs => "NOAA GFS",
             ModelRole::Gem => "ECCC GEM",
             ModelRole::Icon => "DWD ICON",
-            ModelRole::Other => models::short_name(id),
+            // Open-Meteo ids never take the hurricane guidance roles.
+            ModelRole::Ukmet
+            | ModelRole::Hafs
+            | ModelRole::Consensus
+            | ModelRole::Official
+            | ModelRole::Other => models::short_name(id),
         })
         .collect();
     let line = if credits.is_empty() {

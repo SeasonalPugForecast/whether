@@ -15,8 +15,8 @@ use alloc::vec::Vec;
 
 use crate::model::ResolvedLocation;
 use crate::storm::{
-    DETERMINISTIC_MODELS, ENSEMBLE_MODELS, EnsembleSeries, ModelRun, PastRun, PointSeries,
-    PressureGrid, StormOutlook, grid_axes, wrap_longitude,
+    Basin, DETERMINISTIC_MODELS, ENSEMBLE_MODELS, EnsembleSeries, Hurricane, ModelRun, PastRun,
+    PointSeries, PressureGrid, StormOutlook, TrackFix, grid_axes, wrap_longitude,
 };
 use crate::time::{UnixTime, UtcOffset};
 
@@ -429,6 +429,7 @@ pub fn noreaster() -> StormOutlook {
         ensembles,
         grids,
         past_runs: Vec::new(),
+        hurricanes: Vec::new(),
         fetched_at: STORM_NOW,
     }
 }
@@ -556,6 +557,7 @@ pub fn dry_week() -> StormOutlook {
         ensembles,
         grids,
         past_runs: Vec::new(),
+        hurricanes: Vec::new(),
         fetched_at: STORM_NOW,
     }
 }
@@ -563,6 +565,103 @@ pub fn dry_week() -> StormOutlook {
 /// The model ids of an outlook's point series, in order.
 pub fn point_models(outlook: &StormOutlook) -> Vec<String> {
     outlook.points.iter().map(|p| p.model.clone()).collect()
+}
+
+/// The synthetic hurricane's advisory position time: 2027-01-15 18:00 UTC,
+/// an hour before [`STORM_NOW`].
+pub const HURRICANE_START: UnixTime = UnixTime(STORM_NOW.0 - HOUR);
+
+/// Fixes at `hours` after [`HURRICANE_START`] at `points`, with `winds` (kt).
+fn fixes(hours: &[i64], points: &[(f64, f64)], winds: &[u16]) -> Vec<TrackFix> {
+    hours
+        .iter()
+        .zip(points)
+        .zip(
+            winds
+                .iter()
+                .map(|w| Some(*w))
+                .chain(core::iter::repeat(None)),
+        )
+        .map(|((h, (lat, lon)), wind)| TrackFix {
+            time: UnixTime(HURRICANE_START.0 + h * HOUR),
+            latitude: *lat,
+            longitude: *lon,
+            wind_kt: wind,
+            pressure_hpa: None,
+        })
+        .collect()
+}
+
+/// A made-up Category 2 hurricane, "Sample" (`al992027`), heading north
+/// off the coast to pass New York about 60 hours after [`HURRICANE_START`]:
+/// the official track to 120 h, GFS, GEM and consensus tracks that spread
+/// east and west of it, and an 18-hour past track.
+pub fn hurricane() -> Hurricane {
+    const HOURS: [i64; 9] = [0, 12, 24, 36, 48, 60, 72, 96, 120];
+    let mut official = fixes(
+        &HOURS,
+        &[
+            (31.0, -75.0),
+            (32.6, -74.8),
+            (34.3, -74.6),
+            (36.1, -74.4),
+            (38.0, -74.2),
+            (40.0, -74.0),
+            (42.2, -73.2),
+            (46.5, -69.5),
+            (50.5, -63.0),
+        ],
+        &[90, 95, 100, 100, 95, 85, 70, 55, 45],
+    );
+    if let Some(f) = official.first_mut() {
+        f.pressure_hpa = Some(965.0);
+    }
+    // Each aid as the official track shifted by a growing amount of
+    // longitude (degrees per 12 hours).
+    let shifted = |drift: f64| -> Vec<TrackFix> {
+        official
+            .iter()
+            .zip(HOURS)
+            .take(8)
+            .map(|(f, h)| TrackFix {
+                longitude: f.longitude + drift * h as f64 / 12.0,
+                pressure_hpa: None,
+                ..f.clone()
+            })
+            .collect()
+    };
+    Hurricane {
+        id: "al992027".to_string(),
+        name: "Sample".to_string(),
+        classification: "HU".to_string(),
+        basin: Basin::Atlantic,
+        wind_kt: Some(90),
+        pressure_hpa: Some(965.0),
+        latitude: 31.0,
+        longitude: -75.0,
+        movement_deg: Some(355.0),
+        movement_kt: Some(8.0),
+        advisory_time: UnixTime(HURRICANE_START.0 + 3 * HOUR),
+        advisory_url: Some("https://www.nhc.noaa.gov/text/MIATCPAT1.shtml".to_string()),
+        aids: [("AVNI", 0.6), ("CMCI", -0.7), ("TVCN", 0.1)]
+            .into_iter()
+            .map(|(aid, drift)| (aid.to_string(), shifted(drift)))
+            .collect(),
+        official,
+        past: fixes(
+            &[-18, -12, -6, 0],
+            &[(28.4, -74.1), (29.3, -74.5), (30.2, -74.8), (31.0, -75.0)],
+            &[75, 80, 85, 90],
+        ),
+    }
+}
+
+/// `outlook` with [`hurricane`] added.
+pub fn with_hurricane(outlook: StormOutlook) -> StormOutlook {
+    StormOutlook {
+        hurricanes: alloc::vec![hurricane()],
+        ..outlook
+    }
 }
 
 #[cfg(test)]
