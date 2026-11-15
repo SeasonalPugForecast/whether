@@ -25,7 +25,7 @@ mod view;
 pub use alerts::{AlertSeverity, ExternalAlert, with_alerts};
 pub use fetch::{
     AttemptInfo, Cached, FetchHost, FetchOutcome, Header, HostError, HostMethod, HostRequest,
-    HostResponse, fetch,
+    HostResponse, fetch, fetch_metered,
 };
 pub use history::{
     HistoryOutcome, Trip, fetch_climate, fetch_history, history_due, plan_view, trip_problem,

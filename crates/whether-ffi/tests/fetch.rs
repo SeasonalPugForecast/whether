@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 
 use whether_ffi::{
     Cached, FetchHost, HostError, HostRequest, HostResponse, LocationEntry, Place, Settings, Units,
-    WhetherError, default_settings, fetch, view_model, view_models,
+    WhetherError, default_settings, fetch, fetch_metered, view_model, view_models,
 };
 
 const FORECAST: &str =
@@ -164,6 +164,37 @@ fn metered_requests_wait_for_the_ledger() {
     );
     let ledger: serde_json::Value = serde_json::from_str(&saved[0]).unwrap();
     assert!(ledger.is_object(), "{ledger}");
+}
+
+#[test]
+fn only_fetches_that_can_spend_calls_are_metered() {
+    assert!(
+        !fetch_metered(new_york(), us_settings()),
+        "Open-Meteo and the NWS"
+    );
+    let key = Settings {
+        openweather_key: Some("KEY".into()),
+        ..us_settings()
+    };
+    assert!(
+        !fetch_metered(new_york(), key.clone()),
+        "OpenWeather's free calls"
+    );
+    let one_call = Settings {
+        one_call: true,
+        ..key
+    };
+    assert!(fetch_metered(new_york(), one_call.clone()));
+    assert!(
+        !fetch_metered(
+            new_york(),
+            Settings {
+                openweather_key: None,
+                ..one_call
+            }
+        ),
+        "One Call without a key"
+    );
 }
 
 #[test]

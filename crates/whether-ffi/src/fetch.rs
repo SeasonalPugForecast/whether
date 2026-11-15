@@ -199,10 +199,7 @@ pub async fn fetch(
         None => Vec::new(),
     };
     let (primary, supplements) = settings.providers(&place);
-    let metered = primary
-        .iter()
-        .chain(&supplements)
-        .any(|p| p.budget().is_some());
+    let metered = spends_calls(&primary, &supplements);
     let ledger = match (&cached.usage_json, metered) {
         (_, false) => None,
         (Some(json), true) => Some(from_json::<UsageLedger>("call ledger", json)?),
@@ -271,6 +268,24 @@ pub async fn fetch(
         }
     }
     outcome(session.finish(UnixTime(now)), &place, last_modified)
+}
+
+/// Whether a [`fetch`] of `place` with `settings` may spend metered calls (One
+/// Call, Pirate Weather). Those fetches share the call ledger: the app runs them
+/// one at a time, each passing the ledger the one before saved, or two side by
+/// side would count from the same copy and the last to save would win.
+#[uniffi::export]
+#[allow(clippy::needless_pass_by_value)] // UniFFI passes arguments by value
+pub fn fetch_metered(place: Place, settings: Settings) -> bool {
+    let (primary, supplements) = settings.providers(&place);
+    spends_calls(&primary, &supplements)
+}
+
+fn spends_calls(primary: &[Box<dyn Provider>], supplements: &[Box<dyn Provider>]) -> bool {
+    primary
+        .iter()
+        .chain(supplements)
+        .any(|p| p.budget().is_some())
 }
 
 /// The request as the app sees it.
