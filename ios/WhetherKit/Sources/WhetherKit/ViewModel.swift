@@ -35,9 +35,27 @@ public struct ViewModel: Decodable, Sendable, Hashable {
 
     /// Decodes the core's JSON.
     public static func decode(_ json: String) throws -> ViewModel {
+        try decoder().decode(ViewModel.self, from: Data(json.utf8))
+    }
+
+    private static func decoder() -> JSONDecoder {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return try decoder.decode(ViewModel.self, from: Data(json.utf8))
+        return decoder
+    }
+
+    /// Builds and decodes the views for `locations` showing each of `indices` (every
+    /// place when `nil`), in that order: what `build` gives for each, with every
+    /// snapshot read once. Slow with many places: call it off the main actor.
+    public static func buildAll(
+        locations: [LocationEntry], indices: [Int]? = nil, settings: Settings, now: Date = .now
+    ) throws -> [ViewModel] {
+        let jsons = try viewModels(
+            locations: locations,
+            indices: (indices ?? Array(locations.indices)).map { UInt32(clamping: $0) },
+            settings: settings, now: Int64(now.timeIntervalSince1970))
+        let decoder = decoder()
+        return try jsons.map { try decoder.decode(ViewModel.self, from: Data($0.utf8)) }
     }
 
     /// Builds and decodes the view for `locations`, showing `active`.

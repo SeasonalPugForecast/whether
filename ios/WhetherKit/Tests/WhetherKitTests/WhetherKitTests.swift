@@ -9,6 +9,33 @@ final class WhetherKitTests: XCTestCase {
         XCTAssertEqual(radarFrames(latest: 1_791_663_300).count, 6)
     }
 
+    /// Every place's view from one call is the view each would get on its own.
+    func testEveryViewAtOnceMatchesOneBuildPerView() throws {
+        let place = { (name: String, units: Units?) in
+            Place(
+                name: name, latitude: 40.7, longitude: -74, units: units, utcOffsetSeconds: -18_000,
+                offsetChanges: [])
+        }
+        let entries = [
+            LocationEntry(
+                place: place("New York", nil), snapshotJson: nil, lastSuccess: nil, error: nil,
+                refreshing: true),
+            LocationEntry(
+                place: place("Abroad", .metric), snapshotJson: nil, lastSuccess: 1_793_637_000,
+                error: "No connection", refreshing: false),
+        ]
+        let settings = defaultSettings()
+        let now = Date(timeIntervalSince1970: 1_793_637_060)
+        let all = try ViewModel.buildAll(locations: entries, settings: settings, now: now)
+        let each = try entries.indices.map {
+            try ViewModel.build(locations: entries, active: $0, settings: settings, now: now)
+        }
+        XCTAssertEqual(all, each)
+        XCTAssertEqual(all.map(\.location.name), ["New York", "Abroad"])
+        XCTAssertEqual(
+            try ViewModel.buildAll(locations: entries, indices: [1], settings: settings, now: now), [each[1]])
+    }
+
     /// The sample the Rust test `sample.rs` writes: every field decodes.
     func testTheSampleViewDecodes() throws {
         let url = try XCTUnwrap(

@@ -9,7 +9,7 @@ import WhetherKit
 import WidgetKit
 
 /// What the app keeps per place between launches.
-struct PlaceCache: Codable, Sendable {
+nonisolated struct PlaceCache: Codable, Sendable, Equatable {
     /// The core's snapshot JSON.
     var snapshotJson: String?
     /// `Last-Modified` for the next conditional request.
@@ -63,10 +63,21 @@ final class WeatherStore {
     var active: Int {
         didSet {
             SharedContainer.defaults.set(active, forKey: "active")
+            // Shown now, a page left behind by the minute's rebuild catches up.
+            if let id = shownPlaceID, behind.contains(id) { rebuild(only: [id]) }
         }
     }
-    /// One view per place, rebuilt after every fetch, every minute and every change.
+    /// One view per place, in the places' order, rebuilt after every fetch, every
+    /// minute and every change.
     private(set) var views: [ViewModel] = []
+    /// The place each of `views` is for.
+    @ObservationIgnored private var viewIDs: [String] = []
+    /// The views to build next, asked for while a build runs.
+    @ObservationIgnored private var wantedViews: ViewRequest?
+    /// The build running, which also builds what is asked for meanwhile.
+    @ObservationIgnored private var building: Task<Void, Never>?
+    /// Places off screen whose views the minute's rebuild left out.
+    @ObservationIgnored private var behind: Set<String> = []
     private(set) var refreshing = false
     /// Why the views could not be built, in words, and the raw text behind it.
     private(set) var failure: String?
@@ -305,7 +316,8 @@ final class WeatherStore {
                 }
             }
         #endif
-        rebuild()
+        // Every view at once, before the first frame.
+        alignViews()
         #if DEBUG
             if args.contains("-stormahead") { Task { await seedStormAhead() } }
         #endif
@@ -595,28 +607,113 @@ final class WeatherStore {
         return Date.now.timeIntervalSince1970 - Double(last) > preferences.fetchDueAfter
     }
 
-    /// Rebuilds every view, so relative times ("Updated 3 min ago") move on.
-    func rebuild() {
-        // Views need no key (this runs often: no Keychain reads).
-        let settings = preferences.settings(withKey: false)
-        let entries = places.map { place in
-            let cache = caches[place.id] ?? PlaceCache()
+    /// Rebuilds the views of every place (or of the places `only`) off the main
+    /// actor; each shows when built. Asked for again meanwhile, the newer request
+    /// wins. The task ends once the views are current.
+    @discardableResult
+    func rebuild(only ids: Set<String>? = nil) -> Task<Void, Never> {
+        alignViews()
+        wantedViews = (ids.map(ViewRequest.places) ?? .all).merged(with: wantedViews)
+        if let building { return building }
+        let task = Task { await buildWantedViews() }
+        building = task
+        return task
+    }
+
+    /// Every minute, so relative times ("Updated 3 min ago") move on: the place
+    /// shown is rebuilt, and the others when they are shown.
+    func tick() {
+        guard let id = shownPlaceID else { return }
+        behind.formUnion(viewIDs)
+        rebuild(only: [id])
+    }
+
+    /// Builds what is asked for until nothing is.
+    private func buildWantedViews() async {
+        while let request = wantedViews {
+            wantedViews = nil
+            let ids = places.map(\.id)
+            let indices = request.indices(in: ids)
+            guard !indices.isEmpty else { continue }
+            let entries = entries()
+            // Views need no key (this runs often: no Keychain reads).
+            let settings = preferences.settings(withKey: false)
+            let built = await Task.detached(priority: .userInitiated) {
+                Result { try ViewModel.buildAll(locations: entries, indices: indices, settings: settings) }
+            }.value
+            publish(built, for: indices.map { ids[$0] })
+        }
+        building = nil
+    }
+
+    /// Shows the views built for the places `ids`, but none asked for again
+    /// meanwhile (the next build has newer data), and none that did not change.
+    private func publish(_ built: Result<[ViewModel], any Error>, for ids: [String]) {
+        switch built {
+        case .success(let built):
+            var views = views
+            var changed = false
+            for (id, view) in zip(ids, built) where wantedViews?.covers(id) != true {
+                guard let i = viewIDs.firstIndex(of: id), views.indices.contains(i) else { continue }
+                behind.remove(id)
+                if views[i] != view {
+                    views[i] = view
+                    changed = true
+                }
+            }
+            if changed { self.views = views }
+            if failure != nil {
+                failure = nil
+                failureDetail = nil
+            }
+        case .failure(let error):
+            show(error)
+        }
+    }
+
+    /// Keeps `views` in step with `places` at once: each view goes with its place,
+    /// and a place without one (just added) gets one now, from its own data only
+    /// (cheap: no other snapshot is read). Its tabs then lack the other places'
+    /// conditions, until the build that follows.
+    private func alignViews() {
+        let ids = places.map(\.id)
+        guard ids != viewIDs else { return }
+        var (aligned, missing) = ViewRequest.aligned(views, ids: viewIDs, to: ids)
+        if !missing.isEmpty {
+            let own = Set(missing.map { ids[$0] })
+            do {
+                let built = try ViewModel.buildAll(
+                    locations: entries(dataOf: own), indices: missing,
+                    settings: preferences.settings(withKey: false))
+                for (i, view) in zip(missing, built) { aligned[i] = view }
+            } catch {
+                show(error)
+                return
+            }
+            if own.count < ids.count {
+                wantedViews = ViewRequest.places(own).merged(with: wantedViews)
+            }
+        }
+        views = aligned.compactMap { $0 }
+        viewIDs = ids
+    }
+
+    /// What the core builds the views from: every place, with the cached data of
+    /// all of them (or of those in `dataOf` only).
+    private func entries(dataOf ids: Set<String>? = nil) -> [LocationEntry] {
+        places.map { place in
+            let cache = ids?.contains(place.id) == false ? PlaceCache() : caches[place.id] ?? PlaceCache()
             return LocationEntry(
                 place: place.corePlace(), snapshotJson: cache.snapshotJson,
                 lastSuccess: cache.lastSuccess, error: cache.error, refreshing: refreshing,
                 historyJson: cache.historyJson)
         }
-        do {
-            views = try places.indices.map {
-                try ViewModel.build(locations: entries, active: $0, settings: settings)
-            }
-            failure = nil
-            failureDetail = nil
-        } catch {
-            let message = userMessage(error)
-            failure = message.title
-            failureDetail = message.detail ?? String(describing: error)
-        }
+    }
+
+    private func show(_ error: any Error) {
+        let message = userMessage(error)
+        failure = message.title
+        failureDetail = message.detail ?? String(describing: error)
     }
 
     /// Fetches every place (or those whose ids are in `only`) side by side, keeping
@@ -630,8 +727,9 @@ final class WeatherStore {
             queue?.request(only)
             return
         }
+        // The pill says so at once (`refreshing`); the views say it with the first
+        // forecast that comes, as no screen reads it from them.
         refreshing = true
-        rebuild()
         // In the background some sources are left out (`Sources.foregroundOnly`).
         let settings = inBackground ? preferences.settings().forBackground() : preferences.settings()
         let host = URLSessionHost(ledgerURL: ledgerURL)
@@ -647,7 +745,8 @@ final class WeatherStore {
         }
         queue = nil
         refreshing = false
-        rebuild()
+        // The alerts to notify about are in the views.
+        await rebuild().value
         reloadWidgets()
         await notify(post: inBackground)
         await RainActivityController.update(
@@ -687,7 +786,8 @@ final class WeatherStore {
         // follow side by side.
         let nowSeconds = Int64(now.timeIntervalSince1970)
         applyAlerts(nil, asked: false, at: nowSeconds, for: place, to: &cache)
-        commit(cache, for: place)
+        // Written once, below, with the rest.
+        commit(cache, for: place, persist: false)
         #if DEBUG
             print("fetch \(place.name): forecast shown after \(Date.now.timeIntervalSince(now))s")
         #endif
@@ -716,7 +816,8 @@ final class WeatherStore {
             cache.normalsJson = kept.normalsJson
             cache.historyFailedAt = kept.failedAt
         }
-        commit(cache, for: place)
+        // Shown again only when the minutes, alerts or history changed something.
+        commit(cache, for: place, show: cache != fetched)
         #if DEBUG
             print(
                 "fetch \(place.name): minutes and history after \(Date.now.timeIntervalSince(now))s"
@@ -725,13 +826,15 @@ final class WeatherStore {
     }
 
     /// Keeps `cache` for `place` (unless the place was removed or moved meanwhile:
-    /// a forecast for the old coordinates would replace the reset cache) and
-    /// shows it.
-    private func commit(_ cache: PlaceCache, for place: AppPlace) {
+    /// a forecast for the old coordinates would replace the reset cache), writes
+    /// it unless `persist` is `false`, and shows it unless `show` is.
+    private func commit(_ cache: PlaceCache, for place: AppPlace, persist: Bool = true, show: Bool = true) {
         guard AppPlace.isCurrent(place, in: places) else { return }
         caches[place.id] = cache
-        save(place)
-        rebuild()
+        if persist { save(place) }
+        // The other places' views change only in their tabs, which the refresh's
+        // last rebuild brings up to date.
+        if show { rebuild(only: [place.id]) }
     }
 
     /// A place's history after a fetch: what to keep.

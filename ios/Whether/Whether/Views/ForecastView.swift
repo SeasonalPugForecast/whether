@@ -233,7 +233,7 @@ struct ForecastView: View {
             // Relative times ("Updated 3 min ago") move on.
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(60))
-                store.rebuild()
+                store.tick()
             }
         }
         .onChange(of: store.active) {
