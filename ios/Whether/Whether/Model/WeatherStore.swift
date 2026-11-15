@@ -1954,7 +1954,9 @@ final class WeatherStore {
             addMinutes(steps.map { MinuteStep(time: $0.time, mmPerHour: $0.mmPerHour) }, to: &cache)
         } else {
             cache.appleMinuteSteps = nil
-            addMinutes(nil, to: &cache)
+            // Only a snapshot holding Apple's minutes (kept when nothing changed) has
+            // any to clear: a fresh one never does.
+            if cache.appleMinutes == true { addMinutes(nil, to: &cache) }
         }
     }
 

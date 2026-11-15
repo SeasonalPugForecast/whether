@@ -790,6 +790,23 @@ final class AppLogicTests: XCTestCase {
         XCTAssertTrue(ask(last: now - 600), "asked ten minutes ago")
     }
 
+    func testTheSnapshotIsReadOnlyWhenACallIsOtherwiseDue() {
+        let now: Int64 = 100_000
+        var reads = 0
+        func wanted() -> Bool {
+            reads += 1
+            return true
+        }
+        func ask(shown: Bool, last: Int64?) -> Bool {
+            MinutesPolicy.shouldAsk(isShown: shown, onlyPlace: false, wanted: wanted(), lastAskedAt: last, now: now)
+        }
+        XCTAssertFalse(ask(shown: false, last: nil), "another page")
+        XCTAssertFalse(ask(shown: true, last: now - 60), "asked a minute ago")
+        XCTAssertEqual(reads, 0)
+        XCTAssertTrue(ask(shown: true, last: nil))
+        XCTAssertEqual(reads, 1)
+    }
+
     func testMinutesAreKeptForLessThanAnHour() {
         let now: Int64 = 100_000
         XCTAssertTrue(MinutesPolicy.keeps(askedAt: now - 3_599, now: now))
