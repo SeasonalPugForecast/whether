@@ -12,6 +12,15 @@ final class RadarLoopTests: XCTestCase {
         XCTAssertEqual(RadarLoopRules.deferred(count: 0, shown: 0), [], "no radar")
     }
 
+    func testTheFramesAreAskedForAgainOnceACompositeOld() {
+        let loaded = Date(timeIntervalSince1970: 1_800_000_000)
+        XCTAssertTrue(RadarLoopRules.isDue(loadedAt: nil, now: loaded), "never asked")
+        XCTAssertFalse(RadarLoopRules.isDue(loadedAt: loaded, now: loaded.addingTimeInterval(299)))
+        XCTAssertTrue(RadarLoopRules.isDue(loadedAt: loaded, now: loaded.addingTimeInterval(300)))
+        XCTAssertTrue(
+            RadarLoopRules.isDue(loadedAt: loaded, now: loaded.addingTimeInterval(3_600)), "back after an hour")
+    }
+
     /// Plays `ticks` steps from `step`: the frames shown.
     private func play(from step: Int, count: Int, ticks: Int) -> [Int] {
         var step = step

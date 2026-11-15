@@ -10,10 +10,27 @@ final class RadarLoop {
     private(set) var failure: String?
     /// The frame shown.
     var index = 0
+    /// When the frames were last asked for.
+    private var loadedAt: Date?
+
+    /// Asks for the frames again while the loop is on screen, after `load`: looking a
+    /// minute at a time, once they are `RadarLoopRules.refreshAfter` old (IEM makes a
+    /// composite every five minutes), so a loop left open, or the app opened again
+    /// later, ends at the latest composite. Runs until its task is cancelled.
+    func keepCurrent(place: AppPlace, settings: Settings) async {
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(60))
+            guard !Task.isCancelled else { return }
+            if RadarLoopRules.isDue(loadedAt: loadedAt, now: .now) {
+                await load(place: place, settings: settings)
+            }
+        }
+    }
 
     /// Loads the frames for the place's radar: the NEXRAD loop ending at the latest
     /// composite, OpenWeather's current frame with a key, or none.
     func load(place: AppPlace, settings: Settings) async {
+        loadedAt = .now
         switch settings.radarSource(for: place) {
         case .nexrad: await loadNexrad(place: place, settings: settings)
         case .openWeather: loadOpenWeather(settings: settings)
@@ -52,12 +69,19 @@ final class RadarLoop {
             let frames = radarFrames(latest: latest)
             labels = radarFrameLabels(
                 times: frames.map(\.valid), place: place.corePlace(), settings: settings)
+            failure = nil
+            // No new composite: the loop goes on where it is.
+            guard frames != self.frames else { return }
             self.frames = frames
             index = frames.count - 1
-            failure = nil
         } catch {
             failure = userMessage(error).title
         }
+    }
+
+    /// Shows the latest frame.
+    func showLatest() {
+        index = max(frames.count - 1, 0)
     }
 
     /// Steps the loop, holding the latest frame a little longer.

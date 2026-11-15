@@ -8,6 +8,15 @@ enum RadarLoopRules {
     static let latestWait: Duration = .seconds(2)
     /// How long the loop waits for the other frames' tiles before playing anyway.
     static let loopWait: Duration = .seconds(5)
+    /// How old the frames get before the loop asks for them again: IEM makes a
+    /// composite every five minutes.
+    static let refreshAfter: TimeInterval = 300
+
+    /// Whether frames asked for at `loadedAt` are due to be asked for again at `now`.
+    static func isDue(loadedAt: Date?, now: Date) -> Bool {
+        guard let loadedAt else { return true }
+        return now.timeIntervalSince(loadedAt) >= refreshAfter
+    }
 
     /// The frames added once frame `shown` of `count` is in, in order: the oldest first,
     /// as the loop plays them.

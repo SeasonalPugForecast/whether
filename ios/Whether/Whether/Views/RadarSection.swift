@@ -31,6 +31,8 @@ struct RadarSection: View {
                 }
             }
             Button {
+                // Opened again after playing: it starts from the latest frame, as the card shows.
+                loop.showLatest()
                 fullScreen = true
             } label: {
                 RadarMap(
@@ -81,6 +83,8 @@ struct RadarSection: View {
                     fullScreen = true
                 }
             #endif
+            // The card and its full screen share the loop: it stays current for both.
+            await loop.keepCurrent(place: place, settings: settings)
         }
         .fullScreenCover(isPresented: $fullScreen) {
             RadarScreen(place: place, loop: loop, source: source)

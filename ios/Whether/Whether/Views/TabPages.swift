@@ -91,6 +91,7 @@ struct RadarTab: View {
             .id(place)
             .task(id: RadarTaskKey(place: place, settings: settings)) {
                 await loop.load(place: place, settings: settings)
+                await loop.keepCurrent(place: place, settings: settings)
             }
         }
     }
