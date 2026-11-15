@@ -123,27 +123,35 @@ private struct SkyMotionView: View {
     }
 
     var body: some View {
-        if motion == .none {
-            Color.clear
-        } else {
-            let paused = paused
-            GeometryReader { geo in
-                // The banks are blurred once for the screen's size, then only moved.
-                let banks = SkyBanks.images(for: motion, size: geo.size)
-                TimelineView(.animation(minimumInterval: interval, paused: paused)) { context in
-                    Canvas { ctx, size in
-                        draw(&ctx, size, clock.time(at: context.date), banks: banks)
+        Group {
+            if motion == .none {
+                Color.clear
+            } else {
+                let paused = paused
+                GeometryReader { geo in
+                    // The banks are blurred once for the screen's size, then only moved.
+                    let banks = SkyBanks.images(for: motion, size: geo.size)
+                    TimelineView(.animation(minimumInterval: interval, paused: paused)) { context in
+                        Canvas { ctx, size in
+                            draw(&ctx, size, clock.time(at: context.date), banks: banks)
+                        }
                     }
                 }
+                .allowsHitTesting(false)
+                .onChange(of: paused, initial: true) { _, paused in clock.hold(paused) }
             }
-            .allowsHitTesting(false)
-            .onChange(of: paused, initial: true) { _, paused in clock.hold(paused) }
-            .onReceive(
-                NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)
-                    .receive(on: RunLoop.main)
-            ) { _ in
-                lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
-            }
+        }
+        // Heard whatever the sky (a clear day draws nothing but still follows Low Power
+        // Mode for the next one), and read again on coming back, in case the change
+        // came while the app was away.
+        .onReceive(
+            NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)
+                .receive(on: RunLoop.main)
+        ) { _ in
+            lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled }
         }
     }
 
