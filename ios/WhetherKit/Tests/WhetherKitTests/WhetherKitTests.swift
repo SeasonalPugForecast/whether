@@ -149,6 +149,19 @@ final class WhetherKitTests: XCTestCase {
         XCTAssertNil(URLSessionHost.unixTime("yesterday"))
     }
 
+    func testAFreshCopySkipsTheMemoryCache() {
+        XCTAssertEqual(URLSessionHost.cachePolicy(for: []), .useProtocolCachePolicy)
+        XCTAssertEqual(
+            URLSessionHost.cachePolicy(for: [Header(name: "Cache-Control", value: "no-cache")]),
+            .reloadIgnoringLocalCacheData)
+        XCTAssertEqual(
+            URLSessionHost.cachePolicy(for: [Header(name: "cache-control", value: "No-Cache")]),
+            .reloadIgnoringLocalCacheData)
+        XCTAssertEqual(
+            URLSessionHost.cachePolicy(for: [Header(name: "Accept", value: "application/json")]),
+            .useProtocolCachePolicy)
+    }
+
     /// Keys travel in URLs (OpenWeather's `appid`): the host's session keeps nothing on disk.
     func testTheHostWritesNoCacheToDisk() throws {
         let host = URLSessionHost(ledgerURL: FileManager.default.temporaryDirectory.appending(path: "l.json"))

@@ -47,6 +47,7 @@ public final class URLSessionHost: FetchHost, @unchecked Sendable {
         for header in request.headers {
             urlRequest.setValue(header.value, forHTTPHeaderField: header.name)
         }
+        urlRequest.cachePolicy = Self.cachePolicy(for: request.headers)
         // A service that asked for a wait (MET Norway: until `Expires`, an hour after a refusal)
         // is not asked before then.
         let waits = ServiceHold.applies(to: url)
@@ -92,6 +93,17 @@ public final class URLSessionHost: FetchHost, @unchecked Sendable {
         } catch {
             throw HostError.Failed(message: error.localizedDescription)
         }
+    }
+
+    /// The session's cache answers as HTTP allows, except for a request that asks for a fresh
+    /// copy (`Cache-Control: no-cache`, as NHC's track files do: they keep their URL from one
+    /// advisory to the next), which always goes to the server.
+    static func cachePolicy(for headers: [Header]) -> URLRequest.CachePolicy {
+        let fresh = headers.contains {
+            $0.name.caseInsensitiveCompare("Cache-Control") == .orderedSame
+                && $0.value.lowercased().contains("no-cache")
+        }
+        return fresh ? .reloadIgnoringLocalCacheData : .useProtocolCachePolicy
     }
 
     /// An HTTP date (`Sun, 11 Oct 2026 12:00:00 GMT`) as Unix seconds.
