@@ -169,6 +169,63 @@ final class StormsTests: XCTestCase {
         XCTAssertEqual(decoded?.compactMap { $0["a"] }, [1, 2, 3])
     }
 
+    // MARK: The map
+
+    func testEachModelHasItsOwnDash() {
+        let roles = ["ecmwf", "gfs", "gem", "icon", "other"]
+        let dashes = roles.map(StormMapRules.dash)
+        XCTAssertEqual(dashes.first, [], "ECMWF is solid")
+        XCTAssertEqual(Set(dashes.map { $0.map(String.init(describing:)).joined(separator: ",") }).count, roles.count)
+        for dash in dashes { XCTAssertEqual(dash.count % 2, 0, "on and off in pairs: \(dash)") }
+        XCTAssertGreaterThan(StormMapRules.lineWidth(isStorm: true), StormMapRules.lineWidth(isStorm: false))
+    }
+
+    func testALowMarksTheStepAtItsTimeOrTheNearestWithinThreeHours() throws {
+        let view = try StormsView.decode(resource("storms-noreaster-imperial"))
+        let track = try XCTUnwrap(view.tracks.first { $0.role == "ecmwf" && $0.isStorm })
+        let first = try XCTUnwrap(track.points.first)
+        let second = track.points[1]
+        XCTAssertEqual(StormMapRules.point(of: track, at: first.time), first)
+        XCTAssertEqual(StormMapRules.point(of: track, at: second.time - 2 * 3_600), second)
+        XCTAssertEqual(StormMapRules.point(of: track, at: first.time + 3 * 3_600), first, "a tie takes the earlier")
+        XCTAssertNil(StormMapRules.point(of: track, at: first.time - 4 * 3_600), "before the low forms")
+        let last = try XCTUnwrap(track.points.last)
+        XCTAssertNil(StormMapRules.point(of: track, at: last.time + 3 * 3_600 + 1), "after it is gone")
+        // Some step marks every storm track.
+        for storm in view.tracks where storm.isStorm {
+            XCTAssertTrue(view.steps.contains { StormMapRules.point(of: storm, at: $0.time) != nil }, storm.short)
+        }
+    }
+
+    func testChipsHideTracksAndTheirFamilysPlumes() throws {
+        let view = try StormsView.decode(resource("storms-noreaster-imperial"))
+        let event = try XCTUnwrap(view.events.first)
+        var hidden = StormMapRules.toggled([], "gfs_seamless")
+        XCTAssertEqual(hidden, ["gfs_seamless"])
+        XCTAssertFalse(StormMapRules.shown(view.tracks, hidden: hidden).contains { $0.role == "gfs" })
+        XCTAssertTrue(StormMapRules.shown(view.tracks, hidden: hidden).contains { $0.role == "ecmwf" })
+        XCTAssertEqual(
+            StormMapRules.shown(event.ensembles, hidden: hidden, chips: view.models).map(\.short), ["ECMWF ENS"])
+        hidden = StormMapRules.toggled(hidden, "gfs_seamless")
+        XCTAssertEqual(hidden, [])
+        XCTAssertEqual(StormMapRules.shown(view.tracks, hidden: hidden), view.tracks)
+        XCTAssertEqual(StormMapRules.shown(event.ensembles, hidden: hidden, chips: view.models), event.ensembles)
+    }
+
+    func testTheScrubberStartsAtTheFirstStepOrTheOneAsked() {
+        XCTAssertEqual(StormMapRules.startStep(nil, count: 37), 0)
+        XCTAssertEqual(StormMapRules.startStep(9, count: 37), 9)
+        XCTAssertEqual(StormMapRules.startStep(99, count: 37), 36)
+        XCTAssertEqual(StormMapRules.startStep(-3, count: 37), 0)
+        XCTAssertEqual(StormMapRules.startStep(4, count: 0), 0)
+    }
+
+    func testTheFourModelsLabelsGoFourWays() {
+        let slots = (0..<4).map(StormMapRules.labelSlot)
+        XCTAssertEqual(Set(slots.map { "\($0.right)\($0.up)" }).count, 4)
+        XCTAssertEqual(StormMapRules.labelSlot(4).right, StormMapRules.labelSlot(0).right)
+    }
+
     func testFileNamesAreSafe() {
         XCTAssertEqual(StormsRules.fileName("name:New York", prefix: "outlook"), "outlook-name_New_York.json")
         XCTAssertEqual(

@@ -2,17 +2,24 @@ import Charts
 import SwiftUI
 import WhetherKit
 
-/// The storms at one place: the models and their runs, then for the storm picked its
-/// agreement, each model's numbers, the ensembles' plumes and the run-to-run bars,
-/// and the data credits. Every text is the core's.
+/// The storms at one place, in the Storms drawer: for the storm picked its agreement,
+/// each model's numbers, the ensembles' plumes and the run-to-run bars, and the data
+/// credits. Every text is the core's.
 struct StormsContent: View {
     let view: StormsView
     let stale: Bool
     let failure: String?
-    let loading: Bool
+    /// The models the map's chips hide (by model id): their family's plumes go too.
+    let hidden: Set<String>
+    /// Takes the bottom of the agreement card (or of the summary) in this view: what the
+    /// drawer shows when small.
+    let peek: (CGFloat) -> Void
     /// Fetches the earlier runs for the storm shown.
     let loadPastRuns: (StormsView.Event) async -> Void
     @State private var picked = 0
+
+    /// The coordinate space `peek` measures in.
+    nonisolated static let space = "storms-content"
 
     /// What the earlier runs depend on: the storm's window and the runs shown.
     private struct PastRunsID: Hashable {
@@ -23,7 +30,6 @@ struct StormsContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            header
             if stale {
                 Note(symbol: "clock.badge.exclamationmark", text: "This outlook is over 12 hours old.")
             }
@@ -35,14 +41,19 @@ struct StormsContent: View {
                     Text(summary)
                         .font(.callout)
                         .glassCard()
+                        .modifier(PeekMark(peek: peek))
                 }
             } else {
                 if view.events.count > 1 { picker }
                 let event = view.events[min(picked, view.events.count - 1)]
-                EventDetail(event: event)
-                    .task(id: PastRunsID(start: event.start, end: event.end, runs: view.models.map(\.run))) {
-                        await loadPastRuns(event)
-                    }
+                EventDetail(
+                    event: event,
+                    ensembles: StormMapRules.shown(event.ensembles, hidden: hidden, chips: view.models),
+                    peek: peek
+                )
+                .task(id: PastRunsID(start: event.start, end: event.end, runs: view.models.map(\.run))) {
+                    await loadPastRuns(event)
+                }
             }
             VStack(alignment: .leading, spacing: 2) {
                 ForEach(view.attribution, id: \.self) { line in
@@ -54,23 +65,7 @@ struct StormsContent: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .id("storms-credits")
         }
-    }
-
-    /// The place and the models, each with its run.
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Text(view.place)
-                    .font(.title2.weight(.bold))
-                    .accessibilityAddTraits(.isHeader)
-                if loading { ProgressView().controlSize(.small) }
-            }
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(view.models) { ModelChipView(chip: $0) }
-                }
-            }
-        }
+        .coordinateSpace(.named(Self.space))
     }
 
     /// The storms, when there is more than one.
@@ -98,6 +93,19 @@ struct StormsContent: View {
     }
 }
 
+/// Reports the bottom of the view it marks, in the content's coordinate space.
+private struct PeekMark: ViewModifier {
+    let peek: (CGFloat) -> Void
+
+    func body(content: Content) -> some View {
+        content.onGeometryChange(for: CGFloat.self) {
+            $0.frame(in: .named(StormsContent.space)).maxY
+        } action: {
+            peek($0)
+        }
+    }
+}
+
 /// A line above the storms: the outlook is old, or couldn't be updated.
 private struct Note: View {
     let symbol: String
@@ -110,42 +118,27 @@ private struct Note: View {
     }
 }
 
-/// A model's chip: its short name and run, in its color.
-private struct ModelChipView: View {
-    let chip: StormsView.ModelChip
-    @Environment(\.colorTheme) private var colors
-
-    var body: some View {
-        let color = colors.model(chip.role)
-        HStack(spacing: 5) {
-            Circle().fill(color).frame(width: 8, height: 8)
-            Text(chip.short).font(.caption.weight(.semibold))
-            Text(chip.run).font(.caption).foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(color.opacity(0.15), in: .capsule)
-        .overlay(Capsule().strokeBorder(color.opacity(0.8), lineWidth: 1))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(chip.label), \(chip.run) run")
-    }
-}
-
 /// One storm: agreement, the models' numbers, the ensembles and the runs.
 private struct EventDetail: View {
     let event: StormsView.Event
+    /// The event's ensembles the chips leave shown.
+    let ensembles: [StormsView.Ensemble]
+    let peek: (CGFloat) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(event.title)
-                .font(.headline)
-                .accessibilityAddTraits(.isHeader)
             if let agreement = event.agreement {
-                AgreementCard(agreement: agreement)
+                VStack(alignment: .leading, spacing: 10) {
+                    title
+                    AgreementCard(agreement: agreement)
+                }
+                .modifier(PeekMark(peek: peek))
+            } else {
+                title.modifier(PeekMark(peek: peek))
             }
             ModelTable(rows: event.rows).glassCard()
             VStack(spacing: 14) {
-                ForEach(event.ensembles) { ensemble in
+                ForEach(ensembles) { ensemble in
                     PlumeCard(ensemble: ensemble).glassCard()
                 }
             }
@@ -159,6 +152,12 @@ private struct EventDetail: View {
                 .id("storms-runs")
             }
         }
+    }
+
+    private var title: some View {
+        Text(event.title)
+            .font(.headline)
+            .accessibilityAddTraits(.isHeader)
     }
 }
 
