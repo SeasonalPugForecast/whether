@@ -371,14 +371,89 @@ fn track_centre(fixes: &[((f64, f64), f64, UnixTime)]) -> (f64, f64) {
 
 /// The finest grid step the cone outline uses, in nautical miles.
 const MIN_CONE_STEP_NMI: f64 = 2.0;
-/// The coarsest grid step: no more than the start radius, so the narrow end
-/// of the cone keeps its shape.
-const MAX_CONE_STEP_NMI: f64 = CONE_START_RADIUS_NMI;
-/// About this many grid cells span the cone's longer side.
+/// About this many grid cells span the cone's longer side, so the grid
+/// stays near `CONE_CELLS²` nodes however long the track is.
 const CONE_CELLS: f64 = 160.0;
+/// Near the start the step is graded down to the start radius, so the
+/// narrow end keeps its shape on a coarse grid: it grows by one mile every
+/// this many miles from the advisory's position. Over the first 12 hours
+/// the radius grows from 10 to 25 n mi; a cyclone moving at 50 kt covers
+/// 600 n mi in that time, one mile of radius per 40 travelled, so the step
+/// stays within the cone's local radius and its narrow end is never missed
+/// between nodes.
+const CONE_STEP_GROWTH: f64 = 1.0 / 40.0;
+/// The fine zone around the start reaches no further than this, in
+/// nautical miles (the first 12 hours at 50 kt), so a very coarse grid
+/// gains only a few rows.
+const CONE_FINE_ZONE_NMI: f64 = 600.0;
 /// The outline is simplified until no dropped point is further than this
 /// from it, in nautical miles.
 const CONE_TOLERANCE_NMI: f64 = 1.0;
+
+/// The grid nodes along one axis, from below `lo` to past `hi`: spaced
+/// `coarse` apart, except within reach of `start`, where the spacing grows
+/// from `fine` at `start` to `coarse` (see [`CONE_STEP_GROWTH`]). Evenly
+/// spaced from `lo` when `fine` is not finer than `coarse`.
+fn cone_axis(lo: f64, hi: f64, start: f64, fine: f64, coarse: f64) -> Vec<f64> {
+    if fine >= coarse {
+        let n = ((hi - lo) / coarse) as usize + 2;
+        return (0..n).map(|i| lo + i as f64 * coarse).collect();
+    }
+    let growth = CONE_STEP_GROWTH.max((coarse - fine) / CONE_FINE_ZONE_NMI);
+    let step = |x: f64| (fine + growth * libm::fabs(x - start)).min(coarse);
+    let mut below = Vec::new();
+    let mut x = start;
+    while x > lo {
+        x -= step(x);
+        below.push(x);
+    }
+    let mut nodes: Vec<f64> = below.into_iter().rev().collect();
+    let mut x = start;
+    nodes.push(x);
+    while x < hi {
+        x += step(x);
+        nodes.push(x);
+    }
+    nodes
+}
+
+/// The grid the cone is outlined on: around the swept `segments` (whose
+/// largest radius is `r_max`) with a margin outside, graded finer around
+/// `start`, the advisory's position.
+fn cone_grid(segments: &[Swept], start: (f64, f64), r_max: f64) -> Grid {
+    let (mut x_lo, mut x_hi) = (f64::INFINITY, f64::NEG_INFINITY);
+    let (mut y_lo, mut y_hi) = (f64::INFINITY, f64::NEG_INFINITY);
+    for s in segments {
+        for p in [s.a, s.b] {
+            x_lo = x_lo.min(p.0);
+            x_hi = x_hi.max(p.0);
+            y_lo = y_lo.min(p.1);
+            y_hi = y_hi.max(p.1);
+        }
+    }
+    let span = (x_hi - x_lo).max(y_hi - y_lo) + 2.0 * r_max;
+    let coarse = (span / CONE_CELLS).max(MIN_CONE_STEP_NMI);
+    let fine = coarse.min(CONE_START_RADIUS_NMI);
+    let margin = r_max + 2.0 * coarse;
+    Grid {
+        xs: cone_axis(x_lo - margin, x_hi + margin, start.0, fine, coarse),
+        ys: cone_axis(y_lo - margin, y_hi + margin, start.1, fine, coarse),
+    }
+}
+
+/// The signed distance from `p` to the union of `segments` (negative
+/// inside). A segment whose bounding circle (`bounds`: centre and radius)
+/// is no nearer than the best so far can't lower it and is skipped.
+fn swept_distance(segments: &[Swept], bounds: &[((f64, f64), f64)], p: (f64, f64)) -> f64 {
+    let mut best = f64::INFINITY;
+    for (s, (centre, radius)) in segments.iter().zip(bounds) {
+        if libm::hypot(p.0 - centre.0, p.1 - centre.1) - radius >= best {
+            continue;
+        }
+        best = best.min(s.nearest(p).0);
+    }
+    best
+}
 
 /// NHC's forecast cone around the official track `official`: the outline of
 /// the area swept by circles centred on the track, with radii from
@@ -388,67 +463,54 @@ const CONE_TOLERANCE_NMI: f64 = 1.0;
 /// changes linearly, so each stretch sweeps the convex hull of its two end
 /// circles. The union is outlined on a grid in an azimuthal equidistant
 /// projection around the track (marching squares on the distance to the
-/// swept area), then simplified to within [`CONE_TOLERANCE_NMI`].
+/// swept area), then simplified to within [`CONE_TOLERANCE_NMI`]. The grid
+/// has about [`CONE_CELLS`] cells across, graded finer around the start.
 ///
 /// The ring is `(latitude, longitude)` points, counter-clockwise, not
 /// closed (the last point joins the first), with longitudes in
 /// `-180.0..180.0`. A track that loops back on itself can enclose a hole;
 /// only the outer outline is returned. Empty without fixes.
 pub fn cone(official: &[TrackFix], basin: Basin) -> Vec<(f64, f64)> {
+    cone_outline(official, basin).map_or_else(Vec::new, |(ring, _)| ring)
+}
+
+/// The cone and the grid it was outlined on; `None` without fixes or an
+/// outline.
+fn cone_outline(official: &[TrackFix], basin: Basin) -> Option<(Vec<(f64, f64)>, Grid)> {
     let fixes = cone_fixes(official, basin);
-    if fixes.is_empty() {
-        return Vec::new();
-    }
+    let first = fixes.first()?;
     let proj = Projection::new(track_centre(&fixes));
     let segments = swept_segments(&fixes, &proj);
     let r_max = fixes.iter().map(|f| f.1).fold(0.0, f64::max);
-    let (mut x_lo, mut x_hi) = (f64::INFINITY, f64::NEG_INFINITY);
-    let (mut y_lo, mut y_hi) = (f64::INFINITY, f64::NEG_INFINITY);
-    for s in &segments {
-        for p in [s.a, s.b] {
-            x_lo = x_lo.min(p.0);
-            x_hi = x_hi.max(p.0);
-            y_lo = y_lo.min(p.1);
-            y_hi = y_hi.max(p.1);
-        }
-    }
-    let span = (x_hi - x_lo).max(y_hi - y_lo) + 2.0 * r_max;
-    let step = (span / CONE_CELLS).clamp(MIN_CONE_STEP_NMI, MAX_CONE_STEP_NMI);
-    let margin = r_max + 2.0 * step;
-    let grid = Grid {
-        x0: x_lo - margin,
-        y0: y_lo - margin,
-        step,
-        nx: ((x_hi - x_lo + 2.0 * margin) / step) as usize + 2,
-        ny: ((y_hi - y_lo + 2.0 * margin) / step) as usize + 2,
-    };
-    let values: Vec<f64> = (0..grid.ny)
-        .flat_map(|j| (0..grid.nx).map(move |i| (i, j)))
-        .map(|(i, j)| {
-            let p = grid.point(i as f64, j as f64);
-            segments
-                .iter()
-                .map(|s| s.nearest(p).0)
-                .fold(f64::INFINITY, f64::min)
+    let grid = cone_grid(&segments, proj.forward(first.0), r_max);
+    let bounds: Vec<((f64, f64), f64)> = segments
+        .iter()
+        .map(|s| {
+            let centre = (f64::midpoint(s.a.0, s.b.0), f64::midpoint(s.a.1, s.b.1));
+            let half = libm::hypot(s.b.0 - s.a.0, s.b.1 - s.a.1) / 2.0;
+            (centre, half + s.ra.max(s.rb))
         })
         .collect();
-    let Some(outline) = grid.outer_contour(&values) else {
-        return Vec::new();
-    };
-    simplify_ring(&outline, CONE_TOLERANCE_NMI)
+    let values: Vec<f64> = grid
+        .ys
+        .iter()
+        .flat_map(|y| grid.xs.iter().map(move |x| (*x, *y)))
+        .map(|p| swept_distance(&segments, &bounds, p))
+        .collect();
+    let outline = grid.outer_contour(&values)?;
+    let ring = simplify_ring(&outline, CONE_TOLERANCE_NMI)
         .into_iter()
         .map(|p| proj.inverse(p))
-        .collect()
+        .collect();
+    Some((ring, grid))
 }
 
-/// A regular grid of nodes in the plane.
-#[derive(Clone, Copy, Debug)]
+/// A rectilinear grid of nodes in the plane: every `x` of `xs` with every
+/// `y` of `ys`, both ascending.
+#[derive(Clone, Debug)]
 struct Grid {
-    x0: f64,
-    y0: f64,
-    step: f64,
-    nx: usize,
-    ny: usize,
+    xs: Vec<f64>,
+    ys: Vec<f64>,
 }
 
 /// One cell edge of a [`Grid`]: horizontal from node `(i, j)` to `(i + 1,
@@ -460,19 +522,25 @@ enum Edge {
 }
 
 impl Grid {
-    fn point(&self, i: f64, j: f64) -> (f64, f64) {
-        (self.x0 + i * self.step, self.y0 + j * self.step)
+    /// Nodes along x.
+    fn nx(&self) -> usize {
+        self.xs.len()
+    }
+
+    /// Nodes along y.
+    fn ny(&self) -> usize {
+        self.ys.len()
     }
 
     fn id(&self, edge: Edge) -> usize {
         match edge {
-            Edge::Horizontal(i, j) => j * (self.nx - 1) + i,
-            Edge::Vertical(i, j) => (self.nx - 1) * self.ny + j * self.nx + i,
+            Edge::Horizontal(i, j) => j * (self.nx() - 1) + i,
+            Edge::Vertical(i, j) => (self.nx() - 1) * self.ny() + j * self.nx() + i,
         }
     }
 
     fn edge_count(&self) -> usize {
-        (self.nx - 1) * self.ny + self.nx * (self.ny - 1)
+        (self.nx() - 1) * self.ny() + self.nx() * (self.ny() - 1)
     }
 
     /// Where the zero of `values` lies on `edge`, by linear interpolation.
@@ -481,21 +549,24 @@ impl Grid {
             Edge::Horizontal(i, j) => ((i, j), (i + 1, j)),
             Edge::Vertical(i, j) => ((i, j), (i, j + 1)),
         };
-        let (v0, v1) = (values[j0 * self.nx + i0], values[j1 * self.nx + i1]);
+        let (v0, v1) = (values[j0 * self.nx() + i0], values[j1 * self.nx() + i1]);
         let t = if libm::fabs(v0 - v1) < 1e-12 {
             0.5
         } else {
             (v0 / (v0 - v1)).clamp(0.0, 1.0)
         };
-        let lerp = |a: usize, b: usize| a as f64 + t * (b as f64 - a as f64);
-        self.point(lerp(i0, i1), lerp(j0, j1))
+        let lerp = |a: f64, b: f64| a + t * (b - a);
+        (
+            lerp(self.xs[i0], self.xs[i1]),
+            lerp(self.ys[j0], self.ys[j1]),
+        )
     }
 
     /// The contour segments of cell `(i, j)` where `values` is negative
     /// inside, as pairs of edges (marching squares; a saddle is resolved by
     /// the mean of the four corners).
     fn cell_segments(&self, values: &[f64], i: usize, j: usize, out: &mut Vec<[Edge; 2]>) {
-        let v = |di: usize, dj: usize| values[(j + dj) * self.nx + i + di];
+        let v = |di: usize, dj: usize| values[(j + dj) * self.nx() + i + di];
         let corners = [v(0, 0), v(1, 0), v(1, 1), v(0, 1)];
         let inside = corners.map(|c| c < 0.0);
         let case = inside
@@ -538,12 +609,12 @@ impl Grid {
     /// are negative, counter-clockwise; `None` when nothing is inside. The
     /// grid's border must be outside.
     fn outer_contour(&self, values: &[f64]) -> Option<Vec<(f64, f64)>> {
-        if self.nx < 2 || self.ny < 2 || values.len() != self.nx * self.ny {
+        if self.nx() < 2 || self.ny() < 2 || values.len() != self.nx() * self.ny() {
             return None;
         }
         let mut segments: Vec<[Edge; 2]> = Vec::new();
-        for j in 0..self.ny - 1 {
-            for i in 0..self.nx - 1 {
+        for j in 0..self.ny() - 1 {
+            for i in 0..self.nx() - 1 {
                 self.cell_segments(values, i, j, &mut segments);
             }
         }
@@ -935,6 +1006,61 @@ mod tests {
             &ring,
             offset(track[8].position(), 0.0, 230.0)
         ));
+    }
+
+    /// A fast recurving track: 40 kt for 120 hours (4,800 n mi), turning
+    /// from west-northwest to northeast; each fix with its heading.
+    fn fast_recurving() -> Vec<(TrackFix, f64)> {
+        let hours = [0, 3, 12, 24, 36, 48, 60, 72, 96, 120];
+        let mut at = (15.0, -50.0);
+        let mut out = Vec::new();
+        for (k, h) in hours.iter().enumerate() {
+            let heading = 290.0 + 130.0 * *h as f64 / 120.0;
+            if k > 0 {
+                let dt = (h - hours[k - 1]) as f64;
+                at = offset(at, heading, 40.0 * dt);
+            }
+            out.push((
+                TrackFix {
+                    time: UnixTime(T0.0 + h * HOUR),
+                    latitude: at.0,
+                    longitude: at.1,
+                    ..TrackFix::default()
+                },
+                heading,
+            ));
+        }
+        out
+    }
+
+    #[test]
+    fn a_long_fast_track_keeps_the_grid_small() {
+        let fixes = fast_recurving();
+        let track: Vec<TrackFix> = fixes.iter().map(|(f, _)| f.clone()).collect();
+        let (ring, grid) = cone_outline(&track, Basin::Atlantic).unwrap();
+        let nodes = grid.nx() * grid.ny();
+        // A fixed 10 n mi step needed over 100,000 nodes here.
+        assert!(nodes < 40_000, "{} × {}", grid.nx(), grid.ny());
+        assert!(grid.xs.windows(2).all(|w| w[0] < w[1]));
+        assert!(grid.ys.windows(2).all(|w| w[0] < w[1]));
+        assert_eq!(ring, cone(&track, Basin::Atlantic));
+        for (fix, heading) in &fixes {
+            assert!(ring_contains(&ring, fix.position()), "{fix:?}");
+            // Inside the circle's edge beside the track, outside past it.
+            let hours = (fix.time.0 - T0.0) as f64 / 3_600.0;
+            let r = cone_radius_nmi(hours, Basin::Atlantic);
+            for side in [90.0, 270.0] {
+                let inside = offset(fix.position(), heading + side, 0.8 * r);
+                let outside = offset(fix.position(), heading + side, 1.3 * r + 10.0);
+                assert!(ring_contains(&ring, inside), "{hours} h, {side}");
+                assert!(!ring_contains(&ring, outside), "{hours} h, {side}");
+            }
+        }
+        // The narrow start keeps its shape: the cap is about 10 n mi.
+        let start = fixes[0].0.position();
+        let back = fixes[0].1 + 180.0;
+        assert!(ring_contains(&ring, offset(start, back, 7.0)));
+        assert!(!ring_contains(&ring, offset(start, back, 14.0)));
     }
 
     #[test]
