@@ -89,43 +89,41 @@ struct StormsMap: UIViewRepresentable {
             coordinator.lines = key
             map.removeOverlays(map.overlays)
             // The cones under everything, then the other lows under the storm, then each
-            // hurricane's observed track, its guidance and NHC's official track on top.
+            // hurricane's observed track, its guidance and NHC's official track on top. Each
+            // is drawn the short way across the antimeridian (`StormMapRules.mapPoints`).
             let cones: [MKOverlay] = hurricanes.compactMap { h in
-                let ring = h.cone.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+                let ring = StormMapRules.mapPoints(h.cone.map { ($0.latitude, $0.longitude) })
                 guard ring.count > 2 else { return nil }
-                let cone = ConeShape(coordinates: ring, count: ring.count)
+                let cone = ConeShape(points: ring, count: ring.count)
                 cone.color = color("cone")
                 return cone
             }
             let ordered = tracks.filter { !$0.isStorm } + tracks.filter(\.isStorm)
             let lows: [MKOverlay] = ordered.compactMap { track in
                 band(
-                    track.points.map {
-                        CLLocationCoordinate2D(latitude: Double($0.latitude), longitude: Double($0.longitude))
-                    }, role: track.role, color: color(track.role),
+                    StormMapRules.mapPoints(track.points.map { (Double($0.latitude), Double($0.longitude)) }),
+                    role: track.role, color: color(track.role),
                     width: StormMapRules.bandWidth(isStorm: track.isStorm))
             }
             var storms: [MKOverlay] = []
             for h in hurricanes {
-                let past = h.past.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+                let past = StormMapRules.mapPoints(h.past.map { ($0.latitude, $0.longitude) })
                 if past.count > 1 {
-                    let line = PlainLine(coordinates: past, count: past.count)
+                    let line = PlainLine(points: past, count: past.count)
                     line.color = color("official").withAlphaComponent(0.85)
                     line.width = StormMapRules.pastWidth
                     line.dash = StormMapRules.pastDash
                     storms.append(line)
                 }
                 for aid in h.aids {
-                    let points = aid.points.map {
-                        CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
-                    }
+                    let points = StormMapRules.mapPoints(aid.points.map { ($0.latitude, $0.longitude) })
                     if let line = band(points, role: aid.role, color: color(aid.role), width: StormMapRules.aidBandWidth) {
                         storms.append(line)
                     }
                 }
-                let official = h.official.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+                let official = StormMapRules.mapPoints(h.official.map { ($0.latitude, $0.longitude) })
                 if official.count > 1 {
-                    let line = PlainLine(coordinates: official, count: official.count)
+                    let line = PlainLine(points: official, count: official.count)
                     line.color = color("official")
                     line.width = StormMapRules.officialWidth
                     storms.append(line)
@@ -187,21 +185,16 @@ struct StormsMap: UIViewRepresentable {
             coordinator.focus = focus
             let framing = StormMapRules.framing(
                 view.hurricanes, focus: focus, latitude: view.latitude, longitude: view.longitude)
-            var points = [MKMapPoint(center)]
+            var positions: [(latitude: Double, longitude: Double)] = [(view.latitude, view.longitude)]
             if framing.tracks {
-                points += tracks.flatMap(\.points).map {
-                    MKMapPoint(CLLocationCoordinate2D(latitude: Double($0.latitude), longitude: Double($0.longitude)))
-                }
+                positions += tracks.flatMap(\.points).map { (Double($0.latitude), Double($0.longitude)) }
             }
             for h in framing.hurricanes {
-                points += h.cone.map { MKMapPoint(CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)) }
-                points += h.official.map {
-                    MKMapPoint(CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude))
-                }
+                positions += h.cone.map { ($0.latitude, $0.longitude) }
+                positions += h.official.map { ($0.latitude, $0.longitude) }
             }
-            let rect = points.reduce(MKMapRect.null) {
-                $0.union(MKMapRect(origin: $1, size: MKMapSize(width: 1, height: 1)))
-            }
+            // The short way round from the place, across the antimeridian if need be.
+            let rect = StormMapRules.frame(positions, around: view.longitude)
             // At least about 1,200 km across, so a lone low or a calm week still shows the region.
             let minimum = MKMapPointsPerMeterAtLatitude(center.latitude) * 1_200_000
             let grown = rect.insetBy(
@@ -212,11 +205,9 @@ struct StormsMap: UIViewRepresentable {
     }
 
     /// A track as a band in its model's color and dash, or `nil` for fewer than two points.
-    private func band(_ coordinates: [CLLocationCoordinate2D], role: String, color: UIColor, width: Double)
-        -> TrackLine?
-    {
-        guard coordinates.count > 1 else { return nil }
-        let line = TrackLine(coordinates: coordinates, count: coordinates.count)
+    private func band(_ points: [MKMapPoint], role: String, color: UIColor, width: Double) -> TrackLine? {
+        guard points.count > 1 else { return nil }
+        let line = TrackLine(points: points, count: points.count)
         line.color = color
         line.dash = StormMapRules.dash(role)
         line.width = width

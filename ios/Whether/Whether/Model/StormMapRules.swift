@@ -1,4 +1,5 @@
 import Foundation
+import MapKit
 import WhetherKit
 
 /// How the Storms map draws the models: each model's dash, so color is never the only
@@ -157,6 +158,61 @@ enum StormMapRules {
             + hurricane.official.map { (latitude: $0.latitude, longitude: $0.longitude) }
             + hurricane.cone.map { (latitude: $0.latitude, longitude: $0.longitude) }
         return points.contains { distance($0, place) <= nearWithin }
+    }
+
+    // MARK: Across the antimeridian
+
+    /// `longitude` moved by whole turns to within 180° of `reference`.
+    static func longitude(_ longitude: Double, near reference: Double) -> Double {
+        longitude - 360 * ((longitude - reference) / 360).rounded()
+    }
+
+    /// `longitudes` as one continuous run, each within 180° of the one before (the first as
+    /// it is): a track from 179° E to 179° W goes on to 181° instead of back across the world.
+    /// The core gives longitudes in -180..<180, so a cone or track across the antimeridian
+    /// jumps by 360° there.
+    static func continuous(_ longitudes: [Double]) -> [Double] {
+        var out: [Double] = []
+        out.reserveCapacity(longitudes.count)
+        for lon in longitudes {
+            out.append(out.last.map { longitude(lon, near: $0) } ?? lon)
+        }
+        return out
+    }
+
+    /// The map points of positions whose longitudes are already continuous (beyond ±180° where
+    /// they cross the antimeridian), all moved by the same whole turns so the westernmost lies
+    /// in the world map: those east of 180° get an `x` past `MKMapSize.world.width`. MapKit
+    /// takes such a shape as one that spans the 180th meridian (`MKMapRect.spans180thMeridian`,
+    /// whose part past the edge it wraps to the other side, `MKMapRect.remainder`) and draws it
+    /// the short way.
+    static func mapPoints(unwrapped positions: [(latitude: Double, longitude: Double)]) -> [MKMapPoint] {
+        guard let west = positions.map(\.longitude).min() else { return [] }
+        let turns = ((west + 180) / 360).rounded(.down)
+        let world = MKMapSize.world.width
+        return positions.map { position in
+            let shifted = position.longitude - 360 * turns
+            let wrapped = longitude(shifted, near: 0)
+            var point = MKMapPoint(CLLocationCoordinate2D(latitude: position.latitude, longitude: wrapped))
+            point.x += (shifted - wrapped) / 360 * world
+            return point
+        }
+    }
+
+    /// The map points of a line or ring, drawn the short way across the antimeridian.
+    static func mapPoints(_ positions: [(latitude: Double, longitude: Double)]) -> [MKMapPoint] {
+        let longitudes = continuous(positions.map(\.longitude))
+        return mapPoints(unwrapped: zip(positions, longitudes).map { (latitude: $0.latitude, longitude: $1) })
+    }
+
+    /// The smallest map rect around `positions` the short way round from `reference` (the
+    /// place's longitude): each taken within 180° of it, so a storm across the antimeridian
+    /// from the place is framed beside it, not across the world.
+    static func frame(_ positions: [(latitude: Double, longitude: Double)], around reference: Double) -> MKMapRect {
+        let near = positions.map { (latitude: $0.latitude, longitude: longitude($0.longitude, near: reference)) }
+        return mapPoints(unwrapped: near).reduce(MKMapRect.null) {
+            $0.union(MKMapRect(origin: $1, size: MKMapSize(width: 1, height: 1)))
+        }
     }
 
     /// What the map frames besides the place: the hurricane `focus` names alone (the

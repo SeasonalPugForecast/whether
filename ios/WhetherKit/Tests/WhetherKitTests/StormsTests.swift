@@ -1,3 +1,4 @@
+import MapKit
 import XCTest
 
 @testable import WhetherKit
@@ -397,6 +398,78 @@ final class StormsTests: XCTestCase {
         let gone = StormMapRules.framing(view.hurricanes, focus: "al992026", latitude: 34.05, longitude: -118.24)
         XCTAssertEqual(gone.hurricanes, [])
         XCTAssertTrue(gone.tracks)
+    }
+
+    // MARK: Across the antimeridian
+
+    /// A made-up Central Pacific cone and track crossing 180°, as the core gives them
+    /// (longitudes in -180..<180).
+    private let acrossCone: [(latitude: Double, longitude: Double)] = [
+        (15.0, -176.5), (15.5, -179.0), (16.5, 178.0), (18.0, 174.5), (18.5, 175.5), (17.0, 179.5),
+        (16.0, -178.0), (15.5, -175.5),
+    ]
+    private let acrossTrack: [(latitude: Double, longitude: Double)] = [
+        (15.0, -176.0), (16.0, -179.0), (17.0, 178.0), (18.0, 175.0),
+    ]
+
+    func testLongitudesRunOnAcrossTheAntimeridian() {
+        XCTAssertEqual(StormMapRules.continuous(acrossTrack.map(\.longitude)), [-176, -179, -182, -185])
+        XCTAssertEqual(StormMapRules.continuous([179, -179, -177]), [179, 181, 183])
+        XCTAssertEqual(StormMapRules.continuous([-70, -60, -50]), [-70, -60, -50], "no crossing: unchanged")
+        XCTAssertEqual(StormMapRules.continuous([]), [])
+        XCTAssertEqual(StormMapRules.longitude(175, near: -157.9), -185)
+        XCTAssertEqual(StormMapRules.longitude(-74, near: -157.9), -74)
+    }
+
+    func testAShapeAcrossTheAntimeridianIsDrawnTheShortWay() {
+        let world = MKMapSize.world.width
+        for shape in [acrossCone, acrossTrack] {
+            let points = StormMapRules.mapPoints(shape)
+            XCTAssertEqual(points.count, shape.count)
+            let xs = points.map(\.x)
+            let (west, east) = (xs.min() ?? 0, xs.max() ?? 0)
+            // Passed as they are, the points span most of the world.
+            let naive = shape.map { MKMapPoint(CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)).x }
+            XCTAssertGreaterThan((naive.max() ?? 0) - (naive.min() ?? 0), world * 0.9)
+            XCTAssertLessThan(east - west, world / 20, "about ten degrees across")
+            XCTAssertTrue(west >= 0 && west < world, "starts in the world map")
+            XCTAssertGreaterThan(east, world, "and runs on past its east edge")
+            let line = MKPolyline(points: points, count: points.count)
+            XCTAssertTrue(line.boundingMapRect.spans180thMeridian)
+            // The same places: each point is its position, a whole world over at most.
+            for (point, position) in zip(points, shape) {
+                let plain = MKMapPoint(CLLocationCoordinate2D(latitude: position.latitude, longitude: position.longitude))
+                XCTAssertEqual(point.y, plain.y, accuracy: 1e-6)
+                let turns = (point.x - plain.x) / world
+                XCTAssertEqual(turns, turns.rounded(), accuracy: 1e-9)
+            }
+        }
+    }
+
+    func testAShapeAwayFromTheAntimeridianKeepsItsPoints() throws {
+        let h = try XCTUnwrap(StormsView.decode(resource("storms-josephine-imperial")).hurricanes.first)
+        let points = StormMapRules.mapPoints(h.cone.map { ($0.latitude, $0.longitude) })
+        let plain = h.cone.map { MKMapPoint(CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)) }
+        XCTAssertEqual(points.map(\.x), plain.map(\.x))
+        XCTAssertEqual(points.map(\.y), plain.map(\.y))
+    }
+
+    func testAStormAcrossTheAntimeridianIsFramedBesideThePlace() {
+        let world = MKMapSize.world.width
+        // Honolulu, with a storm west of the antimeridian.
+        let honolulu = (latitude: 21.31, longitude: -157.86)
+        let rect = StormMapRules.frame([honolulu] + acrossCone + acrossTrack, around: honolulu.longitude)
+        XCTAssertLessThan(rect.width, world / 10, "about 30 degrees, not the whole world")
+        XCTAssertTrue(rect.spans180thMeridian)
+        XCTAssertTrue(rect.minX >= 0 && rect.minX < world)
+        // Near New York nothing moves.
+        let ny = (latitude: 40.71, longitude: -74.01)
+        let josephine = (latitude: 39.5, longitude: -66.8)
+        let plain = [ny, josephine].map { MKMapPoint(CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)) }
+        let framed = StormMapRules.frame([ny, josephine], around: ny.longitude)
+        XCTAssertEqual(framed.minX, plain.map(\.x).min() ?? 0, accuracy: 1e-6)
+        XCTAssertEqual(framed.maxX, (plain.map(\.x).max() ?? 0) + 1, accuracy: 1e-6)
+        XCTAssertFalse(framed.spans180thMeridian)
     }
 
     // MARK: Storm ahead
