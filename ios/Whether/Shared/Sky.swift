@@ -361,4 +361,14 @@ extension View {
     func glassCard(_ on: Bool = true, padding: CGFloat = 16) -> some View {
         modifier(GlassCard(on: on, padding: padding))
     }
+
+    /// Glass cards side by side drawn together (iOS 26), at less cost than one by one;
+    /// with no spacing they never run into each other.
+    @ViewBuilder func glassCardGroup() -> some View {
+        if #available(iOS 26.0, *) {
+            GlassEffectContainer(spacing: 0) { self }
+        } else {
+            self
+        }
+    }
 }

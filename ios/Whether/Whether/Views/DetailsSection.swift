@@ -140,6 +140,7 @@ struct DetailsSection: View {
             ) { choice in
                 if let d = detail(choice.kind) { card(d) }
             }
+            .glassCardGroup()
         }
         // Cards the core gains later are offered in the Add row.
         .onChange(of: details.map(\.kind), initial: true) { _, kinds in
