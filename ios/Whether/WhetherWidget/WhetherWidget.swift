@@ -6,7 +6,8 @@ import WhetherKit
 /// the same forecast, so the hours move on without a reload; it asks for a new
 /// one when the forecast turns old (`WidgetData.reloadDate`), and the app reloads
 /// it after each refresh. A widget placed before a choice existed gets the
-/// intent's default for it, which is what it always showed.
+/// intent's default for it (`WeatherWidgetIntent`): the app's place and
+/// temperature, the overview, and the sky behind.
 struct WeatherProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> WeatherWidgetEntry {
         WeatherWidgetEntry(date: .now, view: nil)
