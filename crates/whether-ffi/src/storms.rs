@@ -10,8 +10,10 @@
 //! cyclones (one small file, the same for every place). For each cyclone
 //! that comes within [`HURRICANE_RANGE_KM`] of the place, its guidance and
 //! official tracks (the a-deck) and its observed track (the b-deck) are
-//! read, once per advisory: a cyclone whose advisory is already in the
-//! cached outlook keeps its tracks.
+//! read once per forecast advisory (the official track changes only then):
+//! a cyclone whose tracks in the cached outlook are that advisory's keeps
+//! them. Tracks from an earlier run (NHC had not published the new one yet)
+//! are kept and drawn but read again on the next refresh.
 //!
 //! The "Storm ahead" check is lighter: it asks only for the models' hours at
 //! the place, plus the active cyclones and the a-deck of each near one, and
@@ -22,7 +24,7 @@ use std::sync::Arc;
 
 use whether_core::model::{ProviderId, ResolvedLocation};
 use whether_core::storm::analysis::{distance_km, window_totals};
-use whether_core::storm::hurricane::DRAWN_AIDS;
+use whether_core::storm::hurricane::{DRAWN_AIDS, OFFICIAL_LEAD_SECS};
 use whether_core::storm::{
     DETERMINISTIC_MODELS, ENSEMBLE_MODELS, Hurricane, ModelRun, PastRun, StormOutlook, TrackFix,
 };
@@ -173,11 +175,15 @@ enum Decks {
 /// point of its official forecast in `known` (the cached cyclones, from
 /// any advisory), is within [`HURRICANE_RANGE_KM`]; only near ones get
 /// their decks read, and only near ones (by the fresh forecast) are kept.
-/// A cyclone whose advisory is in `known` keeps its tracks from there; a
-/// track missing there (its deck failed or was not read) is read again.
-/// A deck that fails leaves its tracks out, so a cyclone without its
-/// a-deck has no cone. When the active storms can't be read, the near
-/// cyclones in `known` are kept. Cyclones no longer active are dropped.
+///
+/// A cyclone in `known` keeps the tracks it has there while they are its
+/// current forecast advisory's ([`Hurricane::official_is_current`]; for the
+/// observed track, [`past_is_current`]); others are read again. A deck that
+/// fails, or answers with an older run than `known` has, leaves the known
+/// tracks in place, even from an earlier advisory, so the cone stays; they
+/// are read again on the next refresh. A cyclone with no known tracks and
+/// a failed a-deck has no cone. When the active storms can't be read, the
+/// near cyclones in `known` are kept. Cyclones no longer active are dropped.
 async fn hurricanes(
     host: &Arc<dyn FetchHost>,
     place: &Place,
@@ -225,17 +231,13 @@ async fn hurricane(
     if !comes_near(place, (storm.latitude, storm.longitude), known_track) {
         return None;
     }
-    let advisory_time = storm
-        .hurricane(ForecastTracks::default(), Vec::new())
-        .advisory_time;
-    let same = earlier.filter(|h| h.advisory_time == advisory_time);
-    let forecast = match same.filter(|h| !h.official.is_empty()) {
-        Some(h) => ForecastTracks {
-            official: h.official.clone(),
-            official_init: h.official_init,
-            aids: h.aids.clone(),
-        },
-        None => exchange_with(
+    let forecast_time = storm.forecast_time();
+    let current = earlier
+        .filter(|h| h.forecast_advisory_time == Some(forecast_time) && h.official_is_current());
+    let forecast = if let Some(h) = current {
+        forecast_of(h)
+    } else {
+        let read = exchange_with(
             host,
             adeck_request(&storm.id),
             NHC,
@@ -243,12 +245,13 @@ async fn hurricane(
             attempts,
             |b| parse_adeck(b, &DRAWN_AIDS),
         )
-        .await
-        .unwrap_or_default(),
+        .await;
+        newer_forecast(read, earlier)
     };
-    let past = match same.filter(|h| !h.past.is_empty()) {
+    let past = match earlier.filter(|h| past_is_current(&h.past, forecast_time)) {
         Some(h) => h.past.clone(),
-        None if decks == Decks::Forecast => Vec::new(),
+        // Not read for the card; an older one stays until the Storms screen reads it.
+        None if decks == Decks::Forecast => earlier.map_or_else(Vec::new, |h| h.past.clone()),
         None => exchange_with(
             host,
             bdeck_request(&storm.id),
@@ -258,10 +261,40 @@ async fn hurricane(
             parse_bdeck,
         )
         .await
+        .or_else(|| earlier.map(|h| h.past.clone()))
         .unwrap_or_default(),
     };
     let h = storm.hurricane(forecast, past);
     comes_near(place, (h.latitude, h.longitude), &h.official).then_some(h)
+}
+
+/// The forecast tracks of `h`.
+fn forecast_of(h: &Hurricane) -> ForecastTracks {
+    ForecastTracks {
+        official: h.official.clone(),
+        official_init: h.official_init,
+        aids: h.aids.clone(),
+    }
+}
+
+/// The tracks to keep from an a-deck `read` (`None` when it failed) and
+/// the cyclone's `earlier` ones: the read ones, unless they failed or
+/// their official run is older than the earlier one (an old copy).
+fn newer_forecast(read: Option<ForecastTracks>, earlier: Option<&Hurricane>) -> ForecastTracks {
+    match (read, earlier) {
+        (Some(read), Some(h)) if h.official_init > read.official_init => forecast_of(h),
+        (Some(read), _) => read,
+        (None, Some(h)) => forecast_of(h),
+        (None, None) => ForecastTracks::default(),
+    }
+}
+
+/// Whether the observed track `past` is the one of the forecast advisory
+/// issued at `forecast_time`: it reaches the synoptic hour before it (the
+/// b-deck gains a position each six hours, with the advisories).
+fn past_is_current(past: &[TrackFix], forecast_time: UnixTime) -> bool {
+    past.last()
+        .is_some_and(|f| f.time.0 + OFFICIAL_LEAD_SECS >= forecast_time.0)
 }
 
 /// The latest run of every domain whose `meta.json` answered.
@@ -422,7 +455,8 @@ fn failed(attempts: &[AttemptInfo]) -> WhetherError {
 /// outlook younger than six hours is used, else the data is fetched.
 ///
 /// Either way NHC's active storms are read, then the decks of each cyclone
-/// that comes near and whose advisory is not in the cache yet. With
+/// that comes near and whose forecast advisory's tracks are not in the
+/// cache yet (see [`hurricanes`]). With
 /// nothing active that is one small request; a current cache with known
 /// advisories gets only its hurricanes replaced, never the models' data.
 /// The hurricane requests never fail the outlook: without the active
@@ -583,18 +617,20 @@ fn ahead_view(
 /// `cached_json` is the newer of the outlooks kept for the place: the last
 /// [`StormAheadOutcome::outlook_json`] or the last
 /// [`StormsOutcome::outlook_json`], whichever was fetched later.
-/// When it is for the place, holds the models' hours there and is younger than
-/// [`STORM_AHEAD_MAX_AGE_SECS`], the card is built from it with no request.
+/// When it is for the place, holds the models' hours there, is younger than
+/// [`STORM_AHEAD_MAX_AGE_SECS`] and every cyclone in it has its forecast
+/// advisory's official track, the card is built from it with no request.
 /// Otherwise only the models' hours at the place are fetched (no run times,
 /// ensembles or pressure grid), and the agreement comes from their totals.
 /// It is an error when that request fails.
 ///
 /// The card also warns of a hurricane whose forecast cone reaches the
 /// place: a cached outlook carries its cyclones, and a fetch reads NHC's
-/// active storms and the a-deck of each near cyclone whose advisory is not
-/// in `cached_json` (no observed tracks), with the same failure rules as
-/// [`fetch_storms`]. So a check costs one point request, one active storms
-/// request and one a-deck per near cyclone, at most every three hours.
+/// active storms and the a-deck of each near cyclone whose forecast
+/// advisory's tracks are not in `cached_json` (no observed tracks), with
+/// the same failure rules as [`fetch_storms`]. So a check costs one point
+/// request, one active storms request and one a-deck per near cyclone, at
+/// most every three hours while the a-decks answer.
 #[uniffi::export]
 #[allow(clippy::needless_pass_by_value)] // UniFFI passes arguments by value
 pub async fn storm_ahead(
@@ -609,10 +645,13 @@ pub async fn storm_ahead(
         let outlook = from_json::<StormOutlook>("cached storm outlook", &json).ok()?;
         Some((json, outlook))
     });
+    // A near cyclone without its forecast advisory's official track (its
+    // a-deck failed or was not out yet) is read again on the next check.
     let young = |o: &StormOutlook| {
         same_place(o, &place)
             && !o.points.is_empty()
             && (0..STORM_AHEAD_MAX_AGE_SECS).contains(&(now - o.fetched_at.0))
+            && o.hurricanes.iter().all(Hurricane::official_is_current)
     };
     let known = match cached {
         Some((json, outlook)) if young(&outlook) => {
@@ -857,6 +896,9 @@ mod tests {
         rejected: Vec<&'static str>,
         /// NHC's active storms; none when `None`, as in the live file.
         storms: Option<String>,
+        /// Josephine's a-deck and b-deck in place of the recorded ones.
+        adeck: Option<Vec<u8>>,
+        bdeck: Option<Vec<u8>>,
     }
 
     impl Recorded {
@@ -869,8 +911,12 @@ mod tests {
                 "https://www.nhc.noaa.gov/CurrentStorms.json" => {
                     Some(self.storms.as_ref().map_or(NO_STORMS, |s| s.as_bytes()))
                 }
-                "https://ftp.nhc.noaa.gov/atcf/aid_public/aal102026.dat.gz" => Some(ADECK),
-                "https://ftp.nhc.noaa.gov/atcf/btk/bal102026.dat" => Some(BDECK),
+                "https://ftp.nhc.noaa.gov/atcf/aid_public/aal102026.dat.gz" => {
+                    Some(self.adeck.as_deref().unwrap_or(ADECK))
+                }
+                "https://ftp.nhc.noaa.gov/atcf/btk/bal102026.dat" => {
+                    Some(self.bdeck.as_deref().unwrap_or(BDECK))
+                }
                 _ => None,
             };
             if let Some(body) = nhc {
@@ -1531,25 +1577,182 @@ mod tests {
         assert_eq!(again.outlook_json, first.outlook_json);
     }
 
+    /// `deck` (plain text) with the rows of the run that started at
+    /// 2026-10-22 18 UTC (only `aid`'s, when given) added again as a run six
+    /// hours later, as the decks are once her next advisory is out.
+    fn with_next_run(deck: &[u8], aid: Option<&str>) -> Vec<u8> {
+        let text = String::from_utf8(deck.to_vec()).unwrap();
+        let next: String = text
+            .lines()
+            .filter(|l| l.contains("2026102218") && aid.is_none_or(|a| l.contains(a)))
+            .map(|l| l.replace("2026102218", "2026102300") + "\n")
+            .collect();
+        (text + &next).into_bytes()
+    }
+
+    /// NHC at Josephine's next advisory, with decks that have its run.
+    fn next_advisory() -> Arc<Recorded> {
+        let adeck =
+            whether_providers::nhc::gunzip(ADECK, whether_providers::nhc::MAX_DECK_BYTES).unwrap();
+        Arc::new(Recorded {
+            storms: Some(josephine_next()),
+            adeck: Some(with_next_run(&adeck, Some("OFCL"))),
+            bdeck: Some(with_next_run(BDECK, None)),
+            ..Recorded::default()
+        })
+    }
+
     #[test]
     fn a_new_advisory_reads_the_decks_and_keeps_the_models() {
         let first = fetch_at(&with_storms(josephine()), on_the_track(), None, NOW);
-        let net = with_storms(josephine_next());
+        let net = next_advisory();
         let cached = Some(first.outlook_json.clone());
         let again = fetch_at(&net, on_the_track(), cached, NOW + HOUR);
         // The models' runs are current: none of their data is asked for.
         assert!(!again.refreshed);
         assert_eq!(after_runs(&net), [CURRENT_STORMS, ADECK_PATH, BDECK_PATH]);
         let (before, after) = (outlook(&first), outlook(&again));
-        assert_eq!(after.hurricanes[0].advisory_time, UnixTime(NEXT_ADVISORY));
+        let h = &after.hurricanes[0];
+        assert_eq!(h.advisory_time, UnixTime(NEXT_ADVISORY));
+        assert_eq!(h.official_init, Some(UnixTime(NEXT_ADVISORY - 3 * HOUR)));
+        assert!(h.official_is_current());
+        assert_eq!(h.past.last().unwrap().time.0, NEXT_ADVISORY - 3 * HOUR);
         assert_eq!(
             StormOutlook {
                 hurricanes: before.hurricanes.clone(),
-                ..after
+                ..after.clone()
             },
             before
         );
         assert_ne!(again.outlook_json, first.outlook_json);
+        // Its tracks are this advisory's: the next refresh reads no deck.
+        let net = next_advisory();
+        let cached = Some(again.outlook_json.clone());
+        let later = fetch_at(&net, on_the_track(), cached, NOW + 2 * HOUR);
+        assert_eq!(after_runs(&net), [CURRENT_STORMS]);
+        assert_eq!(later.outlook_json, again.outlook_json);
+    }
+
+    #[test]
+    fn an_earlier_run_for_a_new_advisory_is_read_again() {
+        // NHC lists the next advisory before its decks have the new run.
+        let first = fetch_at(&with_storms(josephine()), on_the_track(), None, NOW);
+        let net = with_storms(josephine_next());
+        let cached = Some(first.outlook_json.clone());
+        let early = fetch_at(&net, on_the_track(), cached, NOW + HOUR);
+        assert_eq!(after_runs(&net), [CURRENT_STORMS, ADECK_PATH, BDECK_PATH]);
+        let h = &outlook(&early).hurricanes[0];
+        // Drawn meanwhile, but not taken for the new advisory's.
+        assert_eq!(h.official, outlook(&first).hurricanes[0].official);
+        assert_eq!(h.official_init, Some(UnixTime(ADVISORY - 3 * HOUR)));
+        assert!(!h.official_is_current());
+        // So the next refresh reads both decks again and takes the new run.
+        let net = next_advisory();
+        let cached = Some(early.outlook_json.clone());
+        let fresh = fetch_at(&net, on_the_track(), cached, NOW + 2 * HOUR);
+        assert_eq!(after_runs(&net), [CURRENT_STORMS, ADECK_PATH, BDECK_PATH]);
+        assert!(outlook(&fresh).hurricanes[0].official_is_current());
+    }
+
+    #[test]
+    fn an_intermediate_advisory_reads_no_decks() {
+        let first = fetch_at(&with_storms(josephine()), on_the_track(), None, NOW);
+        // Advisory 5A three hours on: a public advisory, the same forecast.
+        let summary =
+            josephine().replacen("2026-10-22T21:00:00.000Z", "2026-10-23T00:00:00.000Z", 2);
+        let net = with_storms(summary);
+        let cached = Some(first.outlook_json.clone());
+        let again = fetch_at(&net, on_the_track(), cached, NOW + HOUR);
+        assert_eq!(after_runs(&net), [CURRENT_STORMS]);
+        let (before, after) = (outlook(&first), outlook(&again));
+        let (b, a) = (&before.hurricanes[0], &after.hurricanes[0]);
+        assert_eq!(a.advisory_time, UnixTime(ADVISORY + 3 * HOUR));
+        assert_eq!(a.forecast_advisory_time, Some(UnixTime(ADVISORY)));
+        assert_eq!(
+            (&a.official, &a.aids, &a.past),
+            (&b.official, &b.aids, &b.past)
+        );
+    }
+
+    #[test]
+    fn failed_decks_keep_the_earlier_tracks() {
+        let first = fetch_at(&with_storms(josephine()), on_the_track(), None, NOW);
+        let net = Arc::new(Recorded {
+            storms: Some(josephine_next()),
+            down: vec!["aid_public", "atcf/btk"],
+            ..Recorded::default()
+        });
+        let cached = Some(first.outlook_json.clone());
+        let again = fetch_at(&net, on_the_track(), cached, NOW + HOUR);
+        assert_eq!(
+            nhc_attempts(&again),
+            [
+                ("current storms", None),
+                ("adeck al102026", Some("HTTP 503")),
+                ("bdeck al102026", Some("HTTP 503"))
+            ]
+        );
+        let (before, after) = (outlook(&first), outlook(&again));
+        let (b, a) = (&before.hurricanes[0], &after.hurricanes[0]);
+        assert_eq!(a.advisory_time, UnixTime(NEXT_ADVISORY));
+        assert_eq!(
+            (&a.official, &a.aids, &a.past),
+            (&b.official, &b.aids, &b.past)
+        );
+        // The cone stays while they are an earlier advisory's.
+        let vm: serde_json::Value = serde_json::from_str(&again.view_json).unwrap();
+        assert_ne!(vm["hurricanes"][0]["cone"], serde_json::json!([]));
+        // And both are read again on the next refresh.
+        let net = with_storms(josephine_next());
+        let cached = Some(again.outlook_json.clone());
+        fetch_at(&net, on_the_track(), cached, NOW + 2 * HOUR);
+        assert_eq!(after_runs(&net), [CURRENT_STORMS, ADECK_PATH, BDECK_PATH]);
+    }
+
+    #[test]
+    fn an_older_copy_of_the_adeck_keeps_the_newer_tracks() {
+        let tracks = |init: Option<i64>| ForecastTracks {
+            official: init
+                .map(|i| {
+                    vec![TrackFix {
+                        time: UnixTime(i),
+                        ..TrackFix::default()
+                    }]
+                })
+                .unwrap_or_default(),
+            official_init: init.map(UnixTime),
+            aids: BTreeMap::new(),
+        };
+        let newer = tracks(Some(200));
+        let earlier = Hurricane {
+            official: newer.official.clone(),
+            official_init: newer.official_init,
+            ..Hurricane::default()
+        };
+        assert_eq!(
+            newer_forecast(Some(tracks(Some(100))), Some(&earlier)),
+            newer
+        );
+        assert_eq!(newer_forecast(Some(tracks(None)), Some(&earlier)), newer);
+        assert_eq!(newer_forecast(None, Some(&earlier)), newer);
+        assert_eq!(
+            newer_forecast(Some(tracks(Some(300))), Some(&earlier)),
+            tracks(Some(300))
+        );
+        assert_eq!(newer_forecast(Some(tracks(None)), None), tracks(None));
+        assert_eq!(newer_forecast(None, None), ForecastTracks::default());
+    }
+
+    #[test]
+    fn the_observed_track_is_current_to_the_synoptic_hour() {
+        let at = |t: i64| TrackFix {
+            time: UnixTime(t),
+            ..TrackFix::default()
+        };
+        let forecast = UnixTime(ADVISORY);
+        assert!(past_is_current(&[at(ADVISORY - 3 * HOUR)], forecast));
+        assert!(!past_is_current(&[at(ADVISORY - 9 * HOUR)], forecast));
+        assert!(!past_is_current(&[], forecast));
     }
 
     #[test]
@@ -1874,6 +2077,17 @@ mod tests {
         assert_eq!(outcome.view_json, None);
         let o: StormOutlook = serde_json::from_str(&outcome.outlook_json).unwrap();
         assert_eq!(o.hurricanes.len(), 1);
+        // A check without her track is not reused: the next one reads it.
+        let net = with_storms(josephine());
+        let cached = Some(outcome.outlook_json);
+        let again = check_at(&net, on_the_track(), cached, JOSEPHINE_NOW + HOUR);
+        let asked = net.asked();
+        let paths: Vec<&str> = asked.iter().map(|u| host_path(u)).collect();
+        assert_eq!(
+            paths,
+            ["api.open-meteo.com/v1/forecast", CURRENT_STORMS, ADECK_PATH]
+        );
+        assert!(again.view_json.unwrap().contains("al102026"));
     }
 
     #[test]
