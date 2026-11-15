@@ -310,7 +310,7 @@ pub fn build_storms(
     now: UnixTime,
 ) -> StormsVm {
     let f = Formatter::new(presentation, strings);
-    let events = analysis::find_events(outlook);
+    let events = analysis::find_events(outlook, now);
     let found: Vec<Vec<Track>> = outlook.grids.iter().map(track::track_lows).collect();
     StormsVm {
         place: outlook.place.name.clone(),
@@ -1236,6 +1236,24 @@ mod tests {
             &Strings::default(),
             STORM_NOW,
         )
+    }
+
+    #[test]
+    fn an_ended_storm_is_not_shown() {
+        let (_, end) = crate::storm::testdata::noreaster_window();
+        let at = |now: UnixTime| {
+            build_storms(
+                &noreaster(),
+                &noreaster_past_runs(),
+                &PresentationConfig::default(),
+                &Strings::default(),
+                now,
+            )
+        };
+        assert_eq!(at(UnixTime(end.0 - 1)).events.len(), 1);
+        let after = at(end);
+        assert_eq!(after.events, []);
+        assert!(after.summary.is_some(), "{after:?}");
     }
 
     #[test]

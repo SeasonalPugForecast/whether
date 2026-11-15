@@ -227,16 +227,15 @@ fn data_extent(outlook: &StormOutlook) -> Option<(i64, i64)> {
     Some((firsts.min()?.0 - HOUR, lasts.max()?.0))
 }
 
-/// The coming storms in `outlook`, in time order.
+/// Every storm in `outlook`, in time order, including any that have ended.
 ///
 /// The models' mean precipitation and snowfall are taken in 6-hour bins
 /// aligned to 00, 06, 12 and 18 UTC, each over the point series with a value
 /// in the bin. A bin is wet when its mean reaches [`EVENT_MIN_BIN_MM`] or
 /// [`EVENT_MIN_BIN_SNOW_CM`]. Runs of wet bins less than
 /// [`EVENT_MERGE_GAP_SECS`] apart join, and each run is widened by
-/// [`EVENT_PAD_SECS`] on both sides, within the data. The [`MAX_EVENTS`]
-/// events with the largest mean total are kept (the earlier one on a tie).
-pub fn find_events(outlook: &StormOutlook) -> Vec<StormEvent> {
+/// [`EVENT_PAD_SECS`] on both sides, within the data.
+pub fn all_events(outlook: &StormOutlook) -> Vec<StormEvent> {
     let Some((first, last)) = data_extent(outlook) else {
         return Vec::new();
     };
@@ -263,8 +262,7 @@ pub fn find_events(outlook: &StormOutlook) -> Vec<StormEvent> {
         }
     }
 
-    let mut events: Vec<StormEvent> = runs
-        .into_iter()
+    runs.into_iter()
         .map(|(start, end)| {
             let start = UnixTime((start - EVENT_PAD_SECS).max(first));
             let end = UnixTime((end + EVENT_PAD_SECS).min(last));
@@ -281,7 +279,15 @@ pub fn find_events(outlook: &StormOutlook) -> Vec<StormEvent> {
                 models,
             }
         })
-        .collect();
+        .collect()
+}
+
+/// The coming storms in `outlook` at `now`, in time order: those of
+/// [`all_events`] that haven't ended, of which the [`MAX_EVENTS`] with the
+/// largest mean total are kept (the earlier one on a tie). An ended storm
+/// never takes a place.
+pub fn find_events(outlook: &StormOutlook, now: UnixTime) -> Vec<StormEvent> {
+    let mut events = coming(all_events(outlook), now);
     // A stable sort keeps the earlier event first on a tie.
     events.sort_by(|a, b| b.mean_total_mm.total_cmp(&a.mean_total_mm));
     events.truncate(MAX_EVENTS);
@@ -289,10 +295,16 @@ pub fn find_events(outlook: &StormOutlook) -> Vec<StormEvent> {
     events
 }
 
+/// The events that haven't ended at `now`.
+fn coming(mut events: Vec<StormEvent>, now: UnixTime) -> Vec<StormEvent> {
+    events.retain(|e| e.end > now);
+    events
+}
+
 /// The lowest sea-level pressure at the place in any point series: the model,
 /// the pressure in hPa and its time (the first model and time on a tie).
 ///
-/// When [`find_events`] finds nothing, this is the strongest pressure dip to
+/// When [`all_events`] finds nothing, this is the strongest pressure dip to
 /// mention instead.
 pub fn deepest_low(outlook: &StormOutlook) -> Option<(String, f32, UnixTime)> {
     outlook
@@ -351,12 +363,13 @@ pub fn is_significant(event: &StormEvent) -> bool {
 /// ended, starts within [`SIGNIFICANT_HORIZON_SECS`] and
 /// [`is_significant`]; `None` when there is none.
 ///
-/// The events are those of [`find_events`], so an event is only considered
-/// when it is among the wettest kept there.
+/// Every event of [`all_events`] is considered, not only the wettest that
+/// [`find_events`] keeps, so a snowstorm is found even when wetter storms
+/// follow it.
 pub fn significant_event(outlook: &StormOutlook, now: UnixTime) -> Option<StormEvent> {
-    find_events(outlook)
+    coming(all_events(outlook), now)
         .into_iter()
-        .find(|e| e.end > now && e.start.0 < now.0 + SIGNIFICANT_HORIZON_SECS && is_significant(e))
+        .find(|e| e.start.0 < now.0 + SIGNIFICANT_HORIZON_SECS && is_significant(e))
 }
 
 /// Agreement on totals is High when their spread is under this.
@@ -797,7 +810,7 @@ mod tests {
 
     #[test]
     fn the_noreaster_is_one_event_from_saturday_to_monday() {
-        let events = find_events(&noreaster());
+        let events = all_events(&noreaster());
         assert_eq!(events.len(), 1, "{events:?}");
         let event = &events[0];
         // Saturday 18:00 UTC (1 PM EST) to Monday 12:00 UTC (7 AM EST).
@@ -828,7 +841,7 @@ mod tests {
     #[test]
     fn a_dry_week_has_no_events_but_a_deepest_low() {
         let outlook = dry_week();
-        assert_eq!(find_events(&outlook), []);
+        assert_eq!(all_events(&outlook), []);
         let (model, hpa, at) = deepest_low(&outlook).unwrap();
         let lowest = outlook
             .points
@@ -853,7 +866,7 @@ mod tests {
     #[test]
     fn wet_bins_a_short_gap_apart_join() {
         // Bins 4 and 6: one dry bin (6 h) between them.
-        let events = find_events(&outlook(vec![series("a", wet_bins(&[4, 6]))]));
+        let events = all_events(&outlook(vec![series("a", wet_bins(&[4, 6]))]));
         assert_eq!(events.len(), 1, "{events:?}");
         assert_eq!((events[0].start, events[0].end), (bin(3), bin(8)));
         assert_eq!(events[0].mean_total_mm, 12.0);
@@ -863,17 +876,17 @@ mod tests {
     #[test]
     fn wet_bins_a_long_gap_apart_stay_apart() {
         // Bins 4 and 8: three dry bins (18 h) between them.
-        let events = find_events(&outlook(vec![series("a", wet_bins(&[4, 8]))]));
+        let events = all_events(&outlook(vec![series("a", wet_bins(&[4, 8]))]));
         let windows: Vec<_> = events.iter().map(|e| (e.start, e.end)).collect();
         assert_eq!(windows, [(bin(3), bin(6)), (bin(7), bin(10))]);
         // Exactly 12 hours apart is not under the merge gap.
-        let events = find_events(&outlook(vec![series("a", wet_bins(&[4, 7]))]));
+        let events = all_events(&outlook(vec![series("a", wet_bins(&[4, 7]))]));
         assert_eq!(events.len(), 2, "{events:?}");
     }
 
     #[test]
     fn padding_stays_within_the_data() {
-        let events = find_events(&outlook(vec![series("a", wet_bins(&[0, 15]))]));
+        let events = all_events(&outlook(vec![series("a", wet_bins(&[0, 15]))]));
         let windows: Vec<_> = events.iter().map(|e| (e.start, e.end)).collect();
         assert_eq!(windows, [(bin(0), bin(2)), (bin(14), bin(16))]);
     }
@@ -887,9 +900,48 @@ mod tests {
                 *v = Some(2.0);
             }
         }
-        let events = find_events(&outlook(vec![series("a", mm)]));
+        let outlook = outlook(vec![series("a", mm)]);
+        assert_eq!(all_events(&outlook).len(), 4);
+        let events = find_events(&outlook, STORM_START);
         let starts: Vec<UnixTime> = events.iter().map(|e| e.start).collect();
         assert_eq!(starts, [bin(0), bin(4), bin(12)]);
+    }
+
+    #[test]
+    fn an_ended_event_is_left_out_and_takes_no_place() {
+        let mut mm = wet_bins(&[1, 5, 9, 13]);
+        // The bin-1 storm is the wettest: 3 mm an hour, 1 mm in the others.
+        for (h, v) in mm.iter_mut().enumerate() {
+            if h / 6 == 1 {
+                *v = Some(3.0);
+            }
+        }
+        let outlook = outlook(vec![series("a", mm)]);
+        let starts = |now: UnixTime| -> Vec<UnixTime> {
+            find_events(&outlook, now).iter().map(|e| e.start).collect()
+        };
+        // Its window is [bin 0, bin 3): while it lasts it keeps its place.
+        assert_eq!(starts(UnixTime(bin(3).0 - 1)), [bin(0), bin(4), bin(8)]);
+        // Once it has ended, the three after it are all shown.
+        assert_eq!(starts(bin(3)), [bin(4), bin(8), bin(12)]);
+    }
+
+    #[test]
+    fn a_snowstorm_is_significant_behind_three_wetter_storms() {
+        // Bin 1: 0.5 mm and 1 cm of snow an hour, so 3 mm and 6 cm. Bins 5,
+        // 9 and 13: 6 mm of rain each, wetter but not significant.
+        let mut s = series("a", wet_bins(&[5, 9, 13]));
+        for h in 6..12 {
+            s.precipitation_mm[h] = Some(0.5);
+            s.snowfall_cm[h] = Some(1.0);
+        }
+        let outlook = outlook(vec![s]);
+        let shown = find_events(&outlook, STORM_START);
+        assert_eq!(shown.len(), 3);
+        assert!(shown.iter().all(|e| e.start != bin(0)), "{shown:?}");
+        let event = significant_event(&outlook, STORM_START).unwrap();
+        assert_eq!((event.start, event.end), (bin(0), bin(3)));
+        assert!(event.mean_snow_cm >= SIGNIFICANT_SNOW_CM, "{event:?}");
     }
 
     #[test]
@@ -898,7 +950,7 @@ mod tests {
         s.snowfall_cm = (0..48)
             .map(|h| Some(if h / 6 == 3 { 0.2 } else { 0.0 }))
             .collect();
-        let events = find_events(&outlook(vec![s]));
+        let events = all_events(&outlook(vec![s]));
         assert_eq!(events.len(), 1, "{events:?}");
         assert!((events[0].mean_snow_cm - 1.2).abs() < 1e-4);
         assert!(events[0].has_snow());
@@ -921,7 +973,7 @@ mod tests {
                 }
             })
             .collect();
-        let events = find_events(&outlook(vec![a, series("b", b_mm)]));
+        let events = all_events(&outlook(vec![a, series("b", b_mm)]));
         assert_eq!(events.len(), 1, "{events:?}");
         assert_eq!((events[0].start, events[0].end), (bin(3), bin(6)));
         assert_eq!(events[0].models[1].total_mm, Some(0.0));
@@ -979,7 +1031,7 @@ mod tests {
         assert_eq!(bin_of(UnixTime(SATURDAY + 6 * HOUR)), SATURDAY);
         assert_eq!(bin_of(UnixTime(SATURDAY + 7 * HOUR)), SATURDAY + BIN_SECS);
         assert_eq!(bin_of(UnixTime(SATURDAY)), SATURDAY - BIN_SECS);
-        assert_eq!(find_events(&StormOutlook::default()), []);
+        assert_eq!(all_events(&StormOutlook::default()), []);
     }
 
     /// New York (Manhattan).
@@ -1033,7 +1085,7 @@ mod tests {
     #[test]
     fn the_noreaster_models_disagree() {
         let outlook = noreaster();
-        let events = find_events(&outlook);
+        let events = all_events(&outlook);
         let place = &outlook.place;
         let result = agreement(&events[0].models, &[], place.latitude, place.longitude);
         assert_eq!(result.verdict, Some(Agreement::Low));
@@ -1155,7 +1207,7 @@ mod tests {
     #[test]
     fn the_noreaster_ensembles_spread_around_their_controls() {
         let outlook = noreaster();
-        let event = &find_events(&outlook)[0];
+        let event = &all_events(&outlook)[0];
         let stats = ensemble_stats(&outlook, event);
         let models: Vec<(&str, usize)> = stats
             .iter()
@@ -1263,7 +1315,7 @@ mod tests {
         assert_eq!(event.mean_snow_cm, 0.0);
         // 24 mm is not enough.
         let light = outlook(vec![series("a", wet_bins(&[4, 5, 6, 7]))]);
-        assert_eq!(find_events(&light).len(), 1);
+        assert_eq!(all_events(&light).len(), 1);
         assert_eq!(significant_event(&light, STORM_START), None);
     }
 

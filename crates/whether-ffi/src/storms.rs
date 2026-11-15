@@ -1117,7 +1117,7 @@ mod tests {
         // The recorded ten days in New York are dry (under 1 mm from any
         // model, gusts under 50 km/h): no event, so no card.
         assert_eq!(outcome.view_json, None);
-        assert_eq!(whether_core::storm::analysis::find_events(&o), []);
+        assert_eq!(whether_core::storm::analysis::all_events(&o), []);
     }
 
     #[test]
