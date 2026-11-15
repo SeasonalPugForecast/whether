@@ -54,20 +54,30 @@ enum GraphMeasure: String, CaseIterable, Identifiable {
 
     /// Its value at an hour for a label on the line, as the core wrote it:
     /// "40°", "8 mph", "30%" (each reads as its own measure).
-    func label(_ h: ViewModel.Hour) -> String { value(h).1 }
-
-    /// Its value at an hour (display units) and its text, as the core wrote it.
-    func value(_ h: ViewModel.Hour) -> (Double?, String) {
+    func label(_ h: ViewModel.Hour) -> String {
         switch self {
-        case .temperature: (h.temperature.value.map(Double.init), h.temperature.text)
-        case .actual: (h.actual.value.map(Double.init), h.actual.text)
-        case .rain:
-            (h.precipProbability.map(Double.init), h.precipProbability.map { chanceText(percent: $0) } ?? "–")
-        case .wind: (h.wind.speed.value.map(Double.init), h.wind.speed.text)
-        case .gusts: (h.wind.gust.value.map(Double.init), h.wind.gust.text)
-        case .humidity: (h.humidity.map(Double.init), h.humidityText ?? "–")
-        case .uv: (h.uv.map(Double.init), h.uvText ?? "–")
-        case .pressure: (h.pressure.value.map(Double.init), h.pressure.text)
+        case .temperature: h.temperature.text
+        case .actual: h.actual.text
+        case .rain: h.precipProbability.map { chanceText(percent: $0) } ?? "–"
+        case .wind: h.wind.speed.text
+        case .gusts: h.wind.gust.text
+        case .humidity: h.humidityText ?? "–"
+        case .uv: h.uvText ?? "–"
+        case .pressure: h.pressure.text
+        }
+    }
+
+    /// Its value at an hour, in display units, to draw with (no text is made).
+    func number(_ h: ViewModel.Hour) -> Double? {
+        switch self {
+        case .temperature: h.temperature.value.map(Double.init)
+        case .actual: h.actual.value.map(Double.init)
+        case .rain: h.precipProbability.map(Double.init)
+        case .wind: h.wind.speed.value.map(Double.init)
+        case .gusts: h.wind.gust.value.map(Double.init)
+        case .humidity: h.humidity.map(Double.init)
+        case .uv: h.uv.map(Double.init)
+        case .pressure: h.pressure.value.map(Double.init)
         }
     }
 }
@@ -128,6 +138,9 @@ struct HourlyDetailPage: View {
     /// Its value labels and scales (Settings → Display → Hourly graph).
     @Binding var options: GraphOptions
 
+    /// The hours and series from the last forecast and measures drawn.
+    @State private var cache = HourlyGraphCache()
+
     /// Every hour from the current one, with the label of its day.
     private var hours: [(day: String, hour: ViewModel.Hour)] {
         let now = view.hourly?.hours.first?.time ?? 0
@@ -137,11 +150,19 @@ struct HourlyDetailPage: View {
     }
 
     // The hours and series are built here, once per forecast or choice of
-    // measures; the page below re-renders as the needle moves without them.
+    // measures (kept in `cache` until either changes); the page below
+    // re-renders as the needle moves without them.
     var body: some View {
-        let hours = hours
+        let chosen = GraphMeasure.chosen(measures)
+        let key = HourlyGraphCache.Key(
+            hours: view.hourly?.hours, days: view.daily?.days, measures: chosen,
+            sharedScales: options.sharedScales)
+        let graph = cache.graph(for: key) {
+            let hours = self.hours
+            return (hours, series(hours, chosen))
+        }
         HourlyGraphPage(
-            hours: hours, series: series(hours, GraphMeasure.chosen(measures)), cards: cards,
+            hours: graph.hours, series: graph.series, cards: cards,
             sun: view.sun, moon: view.moon, tiles: $tiles, measures: $measures, options: $options
         )
         .onAppear {
@@ -162,7 +183,7 @@ struct HourlyDetailPage: View {
         _ hours: [(day: String, hour: ViewModel.Hour)], _ chosen: [GraphMeasure]
     ) -> [GraphSeries] {
         let values = Dictionary(
-            uniqueKeysWithValues: chosen.map { m in (m, hours.map { m.value($0.hour).0 }) })
+            uniqueKeysWithValues: chosen.map { m in (m, hours.map { m.number($0.hour) }) })
         func range(_ m: GraphMeasure) -> ClosedRange<Double> {
             switch m {
             case .rain, .humidity: return 0...100
@@ -178,20 +199,49 @@ struct HourlyDetailPage: View {
                 return (m == .uv ? 0 : low - pad)...(high + pad * 2)
             }
         }
+        let ranges = Dictionary(chosen.map { ($0, range($0)) }, uniquingKeysWith: { a, _ in a })
         // One band per scale (wind and gusts share one), the first at the bottom.
         var scales: [ClosedRange<Double>] = []
-        for m in chosen where !scales.contains(range(m)) {
-            scales.append(range(m))
+        for m in chosen {
+            guard let r = ranges[m], !scales.contains(r) else { continue }
+            scales.append(r)
         }
         let n = Double(scales.count)
         return chosen.enumerated().map { i, m in
-            let g = Double(scales.firstIndex(of: range(m)) ?? 0)
+            let r = ranges[m] ?? 0...1
+            let g = Double(scales.firstIndex(of: r) ?? 0)
             let band = n > 1 ? ((n - 1 - g) / n)...((n - g) / n - 0.04) : 0...1
-            return GraphSeries(
-                measure: m, values: values[m] ?? [], range: range(m), primary: i == 0, band: band)
+            return GraphSeries(measure: m, values: values[m] ?? [], range: r, primary: i == 0, band: band)
         }
     }
 
+}
+
+/// The hourly graph's hours and series, kept between redraws: they walk every
+/// hour ahead, so they are built again only when the forecast or the measures
+/// change. Comparing the forecast is cheap while it is the same one (its arrays
+/// share their storage).
+final class HourlyGraphCache {
+    struct Key: Equatable {
+        var hours: [ViewModel.Hour]?
+        var days: [ViewModel.Day]?
+        var measures: [GraphMeasure]
+        var sharedScales: Bool
+    }
+
+    typealias Graph = (hours: [(day: String, hour: ViewModel.Hour)], series: [GraphSeries])
+
+    private var key: Key?
+    private var built: Graph = ([], [])
+
+    /// The graph for `key`: the one kept, or `build`'s.
+    func graph(for key: Key, build: () -> Graph) -> Graph {
+        if key != self.key {
+            built = build()
+            self.key = key
+        }
+        return built
+    }
 }
 
 /// The hourly page as the needle moves: the measures' menu and legend, the
@@ -369,7 +419,7 @@ struct HourlyGraphPage: View {
                                     }
                                 }
                             Text(s.measure.title(feelsLeads: feelsLeads)).foregroundStyle(.secondary)
-                            Text(hours.indices.contains(index) ? s.measure.value(hours[index].hour).1 : "–")
+                            Text(hours.indices.contains(index) ? s.measure.label(hours[index].hour) : "–")
                                 .monospacedDigit()
                         }
                         .font(.caption2)

@@ -97,7 +97,7 @@ struct HourlySection: View {
             row { hour, _ in ConditionIcon(icon: hour.icon, size: 18) }
             ForEach(Array(chosen.enumerated()), id: \.element) { i, measure in
                 row { hour, _ in
-                    Text(measure.value(hour).1)
+                    Text(measure.label(hour))
                         .font(i == 0 ? .callout : .caption)
                         .foregroundStyle(i == 0 ? AnyShapeStyle(.primary) : AnyShapeStyle(measure.color(colors)))
                         .monospacedDigit()
@@ -149,7 +149,7 @@ struct HourlySection: View {
     private var accessibilityValue: String {
         guard hours.indices.contains(selected) else { return "" }
         let hour = hours[selected]
-        return ([hour.label, spanLabel(selected)] + chosen.map { "\($0.title(feelsLeads: feelsLeads)) \($0.value(hour).1)" })
+        return ([hour.label, spanLabel(selected)] + chosen.map { "\($0.title(feelsLeads: feelsLeads)) \($0.label(hour))" })
             .compactMap { $0 }.joined(separator: ", ")
     }
 
