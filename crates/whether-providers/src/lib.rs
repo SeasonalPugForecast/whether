@@ -12,6 +12,7 @@ pub mod geocode;
 pub mod history;
 pub mod http;
 pub mod met_norway;
+pub mod nhc;
 pub mod nws;
 pub mod open_meteo;
 pub mod openweather;

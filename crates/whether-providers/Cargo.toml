@@ -17,6 +17,7 @@ percent-encoding.workspace = true
 thiserror.workspace = true
 bitflags.workspace = true
 libm.workspace = true
+miniz_oxide.workspace = true
 
 [dev-dependencies]
 whether-core = { workspace = true, features = ["testdata"] }
