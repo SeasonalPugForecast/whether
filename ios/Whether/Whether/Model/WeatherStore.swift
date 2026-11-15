@@ -182,6 +182,8 @@ final class WeatherStore {
     /// iCloud was asked for shared plans although none is on this device (this launch): the
     /// check that finds an owner's plans on a second device.
     @ObservationIgnored private var checkedICloud = false
+    /// That check is under way.
+    @ObservationIgnored private var checkingICloud = false
     /// Why the last sync failed (`nil` after one that worked).
     @ObservationIgnored private var lastSyncError: Error?
     /// The headline of what went wrong with a shared plan in the sync running now (an edit
@@ -1686,7 +1688,10 @@ final class WeatherStore {
         guard PlanCloud.isAvailable else { return }
         if hasSharedPlans || syncPending || !endedSharing.isEmpty {
             await syncSharedPlans(force: true)
-        } else if !checkedICloud {
+        } else if !checkedICloud, !checkingICloud {
+            // Launch and becoming active both ask at once: one check is enough.
+            checkingICloud = true
+            defer { checkingICloud = false }
             await syncSharedPlans(force: true, quiet: true)
             // iCloud's answer, "no account" included, is final for this launch; being offline
             // is asked again at the next activation.
