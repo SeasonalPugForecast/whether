@@ -200,3 +200,36 @@ extension StormsView {
         public var label: String
     }
 }
+
+/// The Now tab's "Storm ahead" card from the Rust core (`whether_core::view::StormAheadVm`),
+/// as `stormAhead(...)` returns it in `viewJson`: a significant storm coming within days.
+/// Every text is already formatted.
+public struct StormAhead: Decodable, Sendable, Hashable {
+    /// "Storm ahead · Sat night – Sun night".
+    public var title: String
+    /// "Up to 14 in of snow · models disagree".
+    public var line: String
+    /// The core's `Level` (the agreement's), to color the card: `poor`, …
+    public var level: String
+    /// "Low agreement"; `nil` when fewer than two models can be compared.
+    public var agreement: String?
+    /// The storm's window, Unix seconds.
+    public var start: Int64
+    public var end: Int64
+
+    public init(title: String, line: String, level: String, agreement: String?, start: Int64, end: Int64) {
+        self.title = title
+        self.line = line
+        self.level = level
+        self.agreement = agreement
+        self.start = start
+        self.end = end
+    }
+
+    /// Decodes the core's JSON.
+    public static func decode(_ json: String) throws -> StormAhead {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try decoder.decode(StormAhead.self, from: Data(json.utf8))
+    }
+}

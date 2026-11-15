@@ -104,6 +104,17 @@ enum StormsRules {
         return bodies.isEmpty ? nil : "[" + bodies.joined(separator: ",") + "]"
     }
 
+    /// Where the outlooks and earlier runs are kept: the shared caches directory.
+    static var directory: URL {
+        SharedContainer.cachesDirectory.appending(path: "storms", directoryHint: .isDirectory)
+    }
+
+    /// The file `placeID`'s outlook is kept in, under `directory`. The Storms tab and the
+    /// check for a storm ahead share it: whichever fetched last, the other starts from it.
+    static func outlookURL(_ placeID: String, in directory: URL = StormsRules.directory) -> URL {
+        directory.appending(path: fileName(placeID, prefix: "outlook"))
+    }
+
     /// A file name for `key`: letters, digits, `_` and `-`, everything else `_`.
     static func fileName(_ key: String, prefix: String) -> String {
         let safe = String(

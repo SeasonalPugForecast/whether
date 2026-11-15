@@ -44,22 +44,31 @@ fn the_app_storm_samples_are_current() {
     check(&path(APP, "storms-dry-week.json"), &compact(&dry_week()));
 }
 
+/// The JSON of the core's insta snapshot `name` of the storms view.
+fn snapshot_body(name: &str) -> String {
+    let snapshot = std::fs::read_to_string(path(
+        SNAPSHOTS,
+        &format!("whether_core__view__storms__tests__{name}.snap"),
+    ))
+    .unwrap();
+    // `---`, the header, `---`, then the JSON.
+    snapshot.splitn(3, "---\n").nth(2).unwrap().to_string()
+}
+
 #[test]
 fn the_swift_storms_views_are_the_core_snapshots() {
     for name in ["noreaster_imperial", "noreaster_metric", "dry_week"] {
-        let snapshot = std::fs::read_to_string(path(
-            SNAPSHOTS,
-            &format!("whether_core__view__storms__tests__{name}.snap"),
-        ))
-        .unwrap();
-        // `---`, the header, `---`, then the JSON.
-        let body = snapshot.splitn(3, "---\n").nth(2).unwrap();
         check(
             &path(
                 SWIFT_TESTS,
                 &format!("storms-{}.json", name.replace('_', "-")),
             ),
-            body,
+            &snapshot_body(name),
         );
     }
+    // The Now tab's "Storm ahead" card for the nor'easter.
+    check(
+        &path(SWIFT_TESTS, "storm-ahead-noreaster-imperial.json"),
+        &snapshot_body("storm_ahead_noreaster_imperial"),
+    );
 }

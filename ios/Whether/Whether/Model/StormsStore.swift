@@ -48,7 +48,7 @@ final class StormsStore {
     #endif
 
     init(
-        directory: URL = SharedContainer.cachesDirectory.appending(path: "storms", directoryHint: .isDirectory),
+        directory: URL = StormsRules.directory,
         ledgerURL: URL = SharedContainer.directory.appending(path: "ledger.json")
     ) {
         self.directory = directory
@@ -189,7 +189,7 @@ final class StormsStore {
     }
 
     private func outlookURL(_ place: AppPlace) -> URL {
-        directory.appending(path: StormsRules.fileName(place.id, prefix: "outlook"))
+        StormsRules.outlookURL(place.id, in: directory)
     }
 
     private func pastRunsURL(_ key: String) -> URL {

@@ -226,6 +226,63 @@ final class StormsTests: XCTestCase {
         XCTAssertEqual(StormMapRules.labelSlot(4).right, StormMapRules.labelSlot(0).right)
     }
 
+    // MARK: Storm ahead
+
+    func testTheStormAheadCardDecodes() throws {
+        let card = try StormAhead.decode(resource("storm-ahead-noreaster-imperial"))
+        XCTAssertEqual(card.title, "Storm ahead · Sat night – Sun night")
+        XCTAssertEqual(card.line, "Up to 14 in of snow · models disagree")
+        XCTAssertEqual(card.level, "poor")
+        XCTAssertEqual(card.agreement, "Low agreement")
+        XCTAssertEqual(card.start, 1_800_122_400)
+        XCTAssertEqual(card.end, 1_800_273_600)
+        let alone = try StormAhead.decode(
+            #"{"title":"Storm ahead · Mon","line":"Gusts to 52 mph","level":"moderate","agreement":null,"start":1,"end":2}"#)
+        XCTAssertNil(alone.agreement)
+    }
+
+    func testTheCardGoesOnceItsStormHasEnded() throws {
+        let json = try resource("storm-ahead-noreaster-imperial")
+        let card = try StormAhead.decode(json)
+        XCTAssertEqual(StormAheadRules.shown(card, now: card.start - 86_400), card, "before it")
+        XCTAssertEqual(StormAheadRules.shown(card, now: card.start + 3_600), card, "during it")
+        XCTAssertNil(StormAheadRules.shown(card, now: card.end), "over")
+        XCTAssertNil(StormAheadRules.shown(card, now: card.end + 1))
+        XCTAssertEqual(StormAheadRules.shown(json: json, now: card.start), card)
+        XCTAssertNil(StormAheadRules.shown(json: nil, now: card.start))
+        XCTAssertNil(StormAheadRules.shown(json: "not json", now: card.start))
+    }
+
+    func testAFailedCheckKeepsTheLastCardAndAnAnswerReplacesIt() {
+        XCTAssertEqual(StormAheadRules.kept("old", after: .unanswered), "old")
+        XCTAssertNil(StormAheadRules.kept(nil, after: .unanswered))
+        XCTAssertEqual(StormAheadRules.kept("old", after: .answered("new")), "new")
+        XCTAssertNil(StormAheadRules.kept("old", after: .answered(nil)), "no storm now: the card goes")
+    }
+
+    func testOnlyThePlaceShownIsChecked() {
+        XCTAssertTrue(StormAheadRules.checks("name:New York", shown: "name:New York"))
+        XCTAssertFalse(StormAheadRules.checks("name:Brooklyn", shown: "name:New York"))
+        XCTAssertFalse(StormAheadRules.checks("name:New York", shown: nil))
+    }
+
+    func testTheCardOpensTheTabWhenShownElseTheScreen() {
+        XCTAssertTrue(StormAheadRules.opensTab(visible: [.hourly, .storms]))
+        XCTAssertFalse(StormAheadRules.opensTab(visible: [.hourly, .days, .radar, .plan]))
+    }
+
+    func testEachLevelHasItsOwnSymbol() {
+        let levels = ["good", "fair", "moderate", "poor", "very_poor"]
+        XCTAssertEqual(Set(levels.map(StormAheadRules.symbol)).count, levels.count)
+        XCTAssertEqual(StormAheadRules.symbol("dire"), "hurricane")
+    }
+
+    func testTheOutlookFileIsSharedByPlace() {
+        let dir = URL(fileURLWithPath: "/tmp/storms", isDirectory: true)
+        XCTAssertEqual(StormsRules.outlookURL("name:New York", in: dir).lastPathComponent, "outlook-name_New_York.json")
+        XCTAssertEqual(StormsRules.outlookURL("name:New York", in: dir), StormsRules.outlookURL("name:New York", in: dir))
+    }
+
     func testFileNamesAreSafe() {
         XCTAssertEqual(StormsRules.fileName("name:New York", prefix: "outlook"), "outlook-name_New_York.json")
         XCTAssertEqual(

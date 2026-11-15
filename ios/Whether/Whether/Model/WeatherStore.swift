@@ -48,6 +48,9 @@ struct PlaceCache: Codable, Sendable {
     var keyProblem: String?
     /// The OpenWeather attempts behind `keyProblem`, for a "Details" disclosure.
     var keyProblemDetail: String?
+    /// The "Storm ahead" card (`StormAhead` JSON) from the last check that answered;
+    /// `nil` when nothing significant is coming, or never checked (older caches).
+    var stormAheadJson: String?
 }
 
 /// The forecast state: the saved places, their cached snapshots, the settings,
@@ -164,6 +167,12 @@ final class WeatherStore {
     private(set) var locationOff = false
     /// A location read is under way (one at a time).
     @ObservationIgnored private var followingNow = false
+
+    #if DEBUG
+        /// The card `-stormahead` shows, and the time it is shown at.
+        private var sampleStormAhead: String?
+        @ObservationIgnored private var sampleStormAheadNow: Int64 = 0
+    #endif
 
     /// The shown place's view.
     var view: ViewModel? { views.indices.contains(active) ? views[active] : views.first }
@@ -297,6 +306,9 @@ final class WeatherStore {
             }
         #endif
         rebuild()
+        #if DEBUG
+            if args.contains("-stormahead") { Task { await seedStormAhead() } }
+        #endif
     }
 
     /// Moves files from Application Support into the App Group the first time it
@@ -689,9 +701,15 @@ final class WeatherStore {
         let askAlerts = shouldAskAppleAlerts(place, cache: fetched, now: nowSeconds)
         async let alerts: [ExternalAlert]? = askAlerts ? appleAlerts(for: place, now: nowSeconds) : nil
         async let history = historyUpdate(fetched, at: place, settings: settings, host: host, now: now)
-        let (found, foundAlerts, kept) = await (minutes, alerts, history)
+        // A storm ahead, for the place shown only: one Open-Meteo call at most every
+        // 3 hours (none while the outlook kept is younger).
+        let checkStorm = StormAheadRules.checks(place.id, shown: shownPlaceID)
+        async let storm: StormAheadCheck =
+            checkStorm ? stormAheadCheck(place, settings: settings, host: host, now: now) : .unanswered
+        let (found, foundAlerts, kept, stormCheck) = await (minutes, alerts, history, storm)
         applyMinutes(found, asked: ask, at: nowSeconds, to: &cache)
         applyAlerts(foundAlerts, asked: askAlerts, at: nowSeconds, for: place, to: &cache)
+        cache.stormAheadJson = StormAheadRules.kept(cache.stormAheadJson, after: stormCheck)
         if let kept {
             cache.historyJson = kept.historyJson
             cache.normalsJson = kept.normalsJson
@@ -743,6 +761,67 @@ final class WeatherStore {
             return HistoryUpdate(historyJson: cache.historyJson, normalsJson: cache.normalsJson, failedAt: t)
         }
     }
+
+    // MARK: Storm ahead
+
+    /// Whether a significant storm is coming to `place`: the core builds the card from
+    /// the outlook kept for the place (shared with the Storms tab) while it is younger
+    /// than 3 hours, else fetches the models' hours there once, and the outlook it used
+    /// is kept for next time. A failure answers nothing, so the last card stays.
+    private func stormAheadCheck(
+        _ place: AppPlace, settings: Settings, host: URLSessionHost, now: Date
+    ) async -> StormAheadCheck {
+        #if DEBUG
+            // `-stormahead` shows the built-in card instead (`seedStormAhead`).
+            if ProcessInfo.processInfo.arguments.contains("-stormahead") { return .unanswered }
+        #endif
+        let url = StormsRules.outlookURL(place.id)
+        let cached = try? String(contentsOf: url, encoding: .utf8)
+        do {
+            let outcome = try await stormAhead(
+                place: place.corePlace(now: now), settings: settings, cachedJson: cached,
+                now: Int64(now.timeIntervalSince1970), host: host)
+            if outcome.outlookJson != cached {
+                try? FileManager.default.createDirectory(
+                    at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try? Data(outcome.outlookJson.utf8).write(to: url, options: .atomic)
+            }
+            return .answered(outcome.viewJson)
+        } catch {
+            return .unanswered
+        }
+    }
+
+    /// The "Storm ahead" card for `place`, until its storm has ended.
+    func stormAheadCard(for place: AppPlace) -> StormAhead? {
+        #if DEBUG
+            if let sampleStormAhead, place.id == shownPlaceID {
+                return StormAheadRules.shown(json: sampleStormAhead, now: sampleStormAheadNow)
+            }
+        #endif
+        return StormAheadRules.shown(
+            json: caches[place.id]?.stormAheadJson, now: Int64(Date.now.timeIntervalSince1970))
+    }
+
+    #if DEBUG
+        /// Screenshots: `-stormahead` builds the card from the built-in nor'easter through
+        /// the core, at the time the sample was made for (its outlook is fresh then, so no
+        /// request goes out). In memory only.
+        func seedStormAhead() async {
+            guard places.indices.contains(active),
+                let url = Bundle.main.url(forResource: "storms-noreaster", withExtension: "json"),
+                let outlook = try? String(contentsOf: url, encoding: .utf8),
+                let runs = try? StormOutlookRuns.decode(outlook)
+            else { return }
+            let place = places[active]
+            let now = Date(timeIntervalSince1970: TimeInterval(runs.fetchedAt))
+            let outcome = try? await stormAhead(
+                place: place.corePlace(now: now), settings: preferences.settings(withKey: false),
+                cachedJson: outlook, now: runs.fetchedAt, host: URLSessionHost(ledgerURL: ledgerURL))
+            sampleStormAheadNow = runs.fetchedAt
+            sampleStormAhead = outcome?.viewJson
+        }
+    #endif
 
     // MARK: Trips
 
