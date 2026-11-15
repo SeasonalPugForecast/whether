@@ -42,6 +42,7 @@ struct WhetherApp: App {
             if phase == .active { updateIcon() }
             if phase == .background {
                 store.savePendingPlans()
+                store.savePendingPreferences()
                 store.scheduleRefresh()
             }
         }

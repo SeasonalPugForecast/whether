@@ -86,23 +86,33 @@ final class WeatherStore {
     var preferences: Preferences {
         didSet {
             guard preferences != oldValue else { return }
-            preferences.save()
+            // Saved, and the widgets told, once the changes stop: a slider or a color
+            // picker being dragged changes this many times a second.
+            savePreferencesSoon()
             if preferences.refreshMinutes != oldValue.refreshMinutes { scheduleRefresh() }
             // Layout-only choices (cards, tiles, the graph's measures) leave the
             // views as they are.
-            if preferences.settings(withKey: false) != oldValue.settings(withKey: false) {
+            let settings = preferences.settings(withKey: false)
+            if settings != viewSettings {
+                viewSettings = settings
                 rebuild()
-                reloadWidgets()
+                widgetsWaiting = true
             } else if preferences.colorTheme != oldValue.colorTheme
                 || preferences.colorVision != oldValue.colorVision
                 || preferences.patterns != oldValue.patterns
                 || preferences.customThemes != oldValue.customThemes
             {
                 // The widgets paint with the same colors (`WidgetData.entry`).
-                reloadWidgets()
+                widgetsWaiting = true
             }
         }
     }
+    /// The settings the views were last built with (keyless).
+    @ObservationIgnored private var viewSettings: Settings?
+    /// A settings change waiting to be saved.
+    @ObservationIgnored private var pendingPreferences: Task<Void, Never>?
+    /// The widgets read the settings again once the change waiting is saved.
+    @ObservationIgnored private var widgetsWaiting = false
     private var caches: [String: PlaceCache] = [:]
     /// The other places' caches being read at launch (`nil` once they are in):
     /// fetches wait for it.
@@ -311,6 +321,7 @@ final class WeatherStore {
         }
         // The other places' views, without their data yet, are off screen.
         alignViews()
+        viewSettings = preferences.settings(withKey: false)
         let others = self.places.filter { $0.id != shown?.id }
         if !others.isEmpty {
             cachesRead = Task { await self.readCaches(of: others) }
@@ -375,7 +386,34 @@ final class WeatherStore {
     /// Asks the widgets to read the places and caches again. Once per change or
     /// refresh, never per place: WidgetKit throttles reloads from the background.
     private func reloadWidgets() {
+        // They read the settings too: a change waiting is saved first.
+        flushPreferences()
+        widgetsWaiting = false
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// Saves the settings half a second after the last change, as `update(_:)` saves plans.
+    private func savePreferencesSoon() {
+        pendingPreferences?.cancel()
+        pendingPreferences = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled else { return }
+            self?.savePendingPreferences()
+        }
+    }
+
+    /// Saves a settings change still waiting (also when the app goes to the
+    /// background), and has the widgets read it when it changes what they show.
+    func savePendingPreferences() {
+        flushPreferences()
+        if widgetsWaiting { reloadWidgets() }
+    }
+
+    private func flushPreferences() {
+        guard let pending = pendingPreferences else { return }
+        pending.cancel()
+        pendingPreferences = nil
+        preferences.save()
     }
 
     /// Adds `place` (or selects the saved one within 1 km of it) and fetches it.
@@ -444,8 +482,9 @@ final class WeatherStore {
     /// Makes the place `id` the favourite, or (when it is) none.
     func toggleFavourite(id: String) {
         preferences.favouritePlaceID = preferences.favouritePlaceID == id ? nil : id
-        // The widget shows the favourite until its button picks another place.
-        reloadWidgets()
+        // The widget shows the favourite until its button picks another place: told
+        // once the change is saved.
+        widgetsWaiting = true
     }
 
     /// Shows the place `id`.
