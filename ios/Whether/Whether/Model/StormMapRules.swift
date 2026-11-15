@@ -8,21 +8,30 @@ enum StormMapRules {
     /// A track point marks a step when it is at most this far from the step's time.
     static let nearestWithin: Int64 = 3 * 3_600
 
-    /// The track's dash pattern in points, on and off, drawn with round caps (so a
-    /// near-zero dash is a dot): ECMWF solid, GFS long dashes, GEM dots, ICON dash-dot,
-    /// any other model short dashes. Empty is solid.
+    /// The dash pattern of a track's edges in points, on and off, drawn with round caps
+    /// (so a near-zero dash is a dot) at `edgeWidth`: ECMWF solid, GFS long dashes, GEM
+    /// dots, ICON dash-dot, any other model short dashes. Empty is solid. The band's fill
+    /// between the edges is always continuous.
     static func dash(_ role: String) -> [Double] {
         switch role {
         case "ecmwf": []
-        case "gfs": [14, 9]
-        case "gem": [0.5, 9]
-        case "icon": [16, 9, 0.5, 9]
-        default: [5, 7]
+        case "gfs": [7, 4]
+        case "gem": [0.01, 3.5]
+        case "icon": [8, 3.5, 0.01, 3.5]
+        default: [3, 3.5]
         }
     }
 
-    /// The storm's track is drawn thicker than the other lows'.
-    static func lineWidth(isStorm: Bool) -> Double { isStorm ? 4.5 : 2 }
+    /// A track is a band this wide in points, edge to edge: the storm's wider than the
+    /// other lows'.
+    static func bandWidth(isStorm: Bool) -> Double { isStorm ? 12 : 6 }
+
+    /// The width of a band's two edges, in points, in the model's full color.
+    nonisolated static let edgeWidth = 1.5
+
+    /// The opacity of a band's fill in the model's color, so bands that cross show
+    /// through each other.
+    nonisolated static let fillAlpha = 0.28
 
     /// The point of `track` at `time`: the one at that time, else the nearest within
     /// `nearestWithin` (the earlier one on a tie), else `nil` (the low isn't there yet,

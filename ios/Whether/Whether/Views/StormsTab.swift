@@ -321,7 +321,7 @@ private struct StormsScreen: View {
     }
 }
 
-/// A model's chip on the map: its line as the map draws it, its short name and run;
+/// A model's chip on the map: its band as the map draws it, its short name and run;
 /// tap to show or hide it.
 private struct ModelToggle: View {
     let chip: StormsView.ModelChip
@@ -359,20 +359,22 @@ private struct ModelToggle: View {
     }
 }
 
-/// A short piece of a model's track, in its color and dash, as a legend.
+/// A short piece of a model's track as the map draws it, as a legend: a band in its
+/// color, translucent between edges in its dash.
 struct DashSample: View {
     let role: String
     let color: Color
 
     var body: some View {
         Canvas { context, size in
-            var path = Path()
-            path.move(to: CGPoint(x: 2, y: size.height / 2))
-            path.addLine(to: CGPoint(x: size.width - 2, y: size.height / 2))
-            // The map's dash at 60 %, so the short sample still shows the whole pattern.
-            let dash = StormMapRules.dash(role).map { CGFloat($0) * 0.6 }
+            let edge = StormMapRules.edgeWidth
+            let band = CGRect(x: edge / 2, y: edge / 2, width: size.width - edge, height: size.height - edge)
+            let shape = Path(roundedRect: band, cornerRadius: band.height / 2)
+            context.fill(shape, with: .color(color.opacity(StormMapRules.fillAlpha)))
+            let dash = StormMapRules.dash(role).map { CGFloat($0) }
             context.stroke(
-                path, with: .color(color), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, dash: dash))
+                shape, with: .color(color),
+                style: StrokeStyle(lineWidth: edge, lineCap: .round, lineJoin: .round, dash: dash))
         }
         .accessibilityHidden(true)
     }

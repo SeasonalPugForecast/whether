@@ -191,7 +191,22 @@ final class StormsTests: XCTestCase {
         XCTAssertEqual(dashes.first, [], "ECMWF is solid")
         XCTAssertEqual(Set(dashes.map { $0.map(String.init(describing:)).joined(separator: ",") }).count, roles.count)
         for dash in dashes { XCTAssertEqual(dash.count % 2, 0, "on and off in pairs: \(dash)") }
-        XCTAssertGreaterThan(StormMapRules.lineWidth(isStorm: true), StormMapRules.lineWidth(isStorm: false))
+        // Each gap leaves room between the round caps of the edge's strokes.
+        for dash in dashes {
+            for gap in stride(from: 1, to: dash.count, by: 2) {
+                XCTAssertGreaterThan(dash[gap], StormMapRules.edgeWidth * 1.5, "\(dash)")
+            }
+        }
+    }
+
+    func testTracksAreTranslucentBandsWithEdges() {
+        let storm = StormMapRules.bandWidth(isStorm: true)
+        let other = StormMapRules.bandWidth(isStorm: false)
+        XCTAssertGreaterThan(storm, other, "the storm's band is wider")
+        // Both edges leave a fill between them.
+        XCTAssertGreaterThan(other, 2 * StormMapRules.edgeWidth + 2)
+        XCTAssertGreaterThan(StormMapRules.fillAlpha, 0.15)
+        XCTAssertLessThan(StormMapRules.fillAlpha, 0.4)
     }
 
     func testALowMarksTheStepAtItsTimeOrTheNearestWithinThreeHours() throws {

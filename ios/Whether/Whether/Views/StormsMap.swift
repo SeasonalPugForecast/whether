@@ -2,9 +2,9 @@ import MapKit
 import SwiftUI
 import WhetherKit
 
-/// The models' low-pressure tracks on Apple's map: one line per model in its theme
-/// color and its own dash (`StormMapRules.dash`), the storm thicker than the other
-/// lows, each model's low at the scrubber's step labelled with the core's pressure,
+/// The models' low-pressure tracks on Apple's map: one translucent band per model in
+/// its theme color with edges in its own dash (`StormMapRules.dash`), the storm wider
+/// than the other lows, each model's low at the scrubber's step labelled with the core's pressure,
 /// and the place's pin. The map is set up as the radar's (`RadarMap`).
 struct StormsMap: UIViewRepresentable {
     let view: StormsView
@@ -72,7 +72,7 @@ struct StormsMap: UIViewRepresentable {
                     let line = TrackLine(coordinates: coordinates, count: coordinates.count)
                     line.color = UIColor(key.colors[track.role] ?? RGBA(rgb: 0x8E8E93))
                     line.dash = StormMapRules.dash(track.role)
-                    line.width = StormMapRules.lineWidth(isStorm: track.isStorm)
+                    line.width = StormMapRules.bandWidth(isStorm: track.isStorm)
                     return line
                 }, level: .aboveRoads)
         }
@@ -119,8 +119,52 @@ struct StormsMap: UIViewRepresentable {
     /// A model's track, with how to draw it.
     nonisolated final class TrackLine: MKPolyline {
         var color = UIColor.gray
+        /// The edges' dash pattern, in points.
         var dash: [Double] = []
-        var width = 2.0
+        /// The band's width, edge to edge, in points.
+        var width = 6.0
+    }
+
+    /// A track as a band: the outline of the line stroked at the band's width (round
+    /// caps and joins, overlaps merged so the fill is even), filled in the model's color
+    /// at `StormMapRules.fillAlpha` and stroked along it in the full color, dashed by
+    /// the model. Each track is its own overlay, so where bands cross their fills blend.
+    /// Its properties have defaults, so it keeps MapKit's initializers (MapKit calls
+    /// `init(overlay:)` from `init(polyline:)`).
+    nonisolated final class TrackBandRenderer: MKPolylineRenderer {
+        private var color = UIColor.gray
+        private var dash: [CGFloat] = []
+        private var band: CGFloat = 6
+
+        static func band(_ line: TrackLine) -> TrackBandRenderer {
+            let renderer = TrackBandRenderer(polyline: line)
+            renderer.color = line.color
+            renderer.dash = line.dash.map { CGFloat($0) }
+            renderer.band = CGFloat(line.width)
+            // Tells MapKit how far the drawing reaches past the line.
+            renderer.lineWidth = renderer.band + CGFloat(StormMapRules.edgeWidth)
+            return renderer
+        }
+
+        override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {
+            if path == nil { createPath() }
+            guard let line = path else { return }
+            // Points on screen to map points at this zoom.
+            let perPoint = 1 / zoomScale
+            let outline = line.copy(
+                strokingWithWidth: band * perPoint, lineCap: .round, lineJoin: .round, miterLimit: 10
+            ).normalized()
+            context.addPath(outline)
+            context.setFillColor(color.withAlphaComponent(StormMapRules.fillAlpha).cgColor)
+            context.fillPath()
+            context.addPath(outline)
+            context.setStrokeColor(color.cgColor)
+            context.setLineWidth(CGFloat(StormMapRules.edgeWidth) * perPoint)
+            context.setLineCap(.round)
+            context.setLineJoin(.round)
+            if !dash.isEmpty { context.setLineDash(phase: 0, lengths: dash.map { $0 * perPoint }) }
+            context.strokePath()
+        }
     }
 
     /// A model's low at the scrubber's step, labelled with its pressure.
@@ -147,13 +191,7 @@ struct StormsMap: UIViewRepresentable {
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: any MKOverlay) -> MKOverlayRenderer {
             guard let line = overlay as? TrackLine else { return MKOverlayRenderer(overlay: overlay) }
-            let renderer = MKPolylineRenderer(polyline: line)
-            renderer.strokeColor = line.color
-            renderer.lineWidth = line.width
-            renderer.lineCap = .round
-            renderer.lineJoin = .round
-            renderer.lineDashPattern = line.dash.isEmpty ? nil : line.dash.map { NSNumber(value: $0) }
-            return renderer
+            return TrackBandRenderer.band(line)
         }
 
         func mapView(_ mapView: MKMapView, viewFor annotation: any MKAnnotation) -> MKAnnotationView? {
