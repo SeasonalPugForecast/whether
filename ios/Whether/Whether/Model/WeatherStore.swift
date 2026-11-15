@@ -524,10 +524,10 @@ final class WeatherStore {
     /// Moves the following place to where the phone is, when that is 1 km or more
     /// from its coordinates (updating its name and time zone, keeping its id, and
     /// fetching it again unless `refetch` is `false`). With access turned off the
-    /// place keeps its last coordinates and `locationOff` says why. Returns
-    /// whether it moved.
+    /// place keeps its last coordinates and `locationOff` says why. Gives up on
+    /// the location after `timeout` seconds. Returns whether it moved.
     @discardableResult
-    func followMe(refetch: Bool = true) async -> Bool {
+    func followMe(refetch: Bool = true, timeout: Double = 12) async -> Bool {
         guard !followingNow, let followed = places.first(where: \.follows) else {
             if !places.contains(where: \.follows) { locationOff = false }
             return false
@@ -536,7 +536,7 @@ final class WeatherStore {
         defer { followingNow = false }
         let location: CLLocation
         do {
-            location = try await CurrentLocation.fix()
+            location = try await CurrentLocation.fix(timeout: timeout)
         } catch CurrentLocation.Failure.denied {
             locationOff = true
             return false
@@ -632,12 +632,41 @@ final class WeatherStore {
             limit: UInt32(clamping: preferences.pirateWeatherCalls), now: Int64(Date.now.timeIntervalSince1970))
     }
 
-    /// Whether the shown place's data is old enough to fetch again.
-    var due: Bool {
-        guard places.indices.contains(active),
-            let last = caches[places[active].id]?.lastSuccess
-        else { return true }
-        return Date.now.timeIntervalSince1970 - Double(last) > preferences.fetchDueAfter
+    /// The places whose data is old enough to fetch again.
+    private var duePlaces: Set<String> {
+        Freshness.due(
+            places.map { ($0.id, caches[$0.id]?.lastSuccess) }, now: Date.now.timeIntervalSince1970,
+            after: preferences.fetchDueAfter)
+    }
+
+    /// A launch's or a return's refresh is under way (`refreshOnOpen`).
+    @ObservationIgnored private var opening = false
+
+    /// On launch and on coming back to the app: fetches the places whose data is
+    /// due, and moves the following place to where the phone is. That place waits
+    /// for the location (briefly), so it is fetched once, where the phone is,
+    /// rather than where it was and then again. A refresh already running is
+    /// fresh enough.
+    func refreshOnOpen() async {
+        guard !opening, !refreshing else { return }
+        opening = true
+        defer { opening = false }
+        await cachesRead?.value
+        var due = duePlaces
+        #if DEBUG
+            // Screenshots of a fetch (failing, or slow) fetch on every launch.
+            let args = ProcessInfo.processInfo.arguments
+            if args.contains("-offline") || args.contains("-slow") { due = Set(places.map(\.id)) }
+        #endif
+        let following = places.first(where: \.follows)?.id
+        let others = due.subtracting([following].compactMap { $0 })
+        async let fetched: Void = refresh(only: others)
+        let moved = await followMe(refetch: false, timeout: 5)
+        if let following, moved || due.contains(following) {
+            // Joins the refresh of the others when it still runs.
+            await refresh(only: [following])
+        }
+        await fetched
     }
 
     /// Rebuilds the views of every place (or of the places `only`) off the main
@@ -757,6 +786,7 @@ final class WeatherStore {
     func refresh(inBackground: Bool = false, only: Set<String>? = nil) async {
         // A fetch starts from the place's cache (its validators, minutes and history).
         await cachesRead?.value
+        if only?.isEmpty == true { return }
         guard !refreshing else {
             // Joins the running refresh, which fetches these before it ends.
             queue?.request(only)

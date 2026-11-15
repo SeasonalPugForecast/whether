@@ -37,3 +37,16 @@ nonisolated struct RefreshQueue: Equatable {
         return due
     }
 }
+
+/// Which places a refresh on opening the app fetches.
+nonisolated enum Freshness {
+    /// The ids of `places` (with when each was last fetched, Unix seconds) whose
+    /// forecast is more than `after` seconds old at `now`, or was never fetched.
+    static func due(
+        _ places: [(id: String, lastSuccess: Int64?)], now: TimeInterval, after: TimeInterval
+    ) -> Set<String> {
+        Set(places.filter { place in
+            place.lastSuccess.map { now - Double($0) > after } ?? true
+        }.map(\.id))
+    }
+}

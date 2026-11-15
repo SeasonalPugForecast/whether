@@ -103,10 +103,8 @@ struct ForecastView: View {
         .environment(\.hourlyCards, $store.preferences.hourlyCards)
         .environment(\.daysCards, $store.preferences.daysCards)
         .environment(\.openCustomize, CustomizeOpener(open: { showCustomize = true }))
-        .task {
-            await store.refresh()
-            await store.followMe()
-        }
+        // What is due, and the following place where the phone is now.
+        .task { await store.refreshOnOpen() }
         // Shared plans follow iCloud: on launch (here), on becoming active, and on a push
         // (`AppDelegate`). Does nothing without iCloud (`PlanCloud.isAvailable`).
         .task { await store.followSharedPlans() }
@@ -245,10 +243,7 @@ struct ForecastView: View {
         }
         .onChange(of: phase) {
             if phase == .active {
-                Task {
-                    if store.due { await store.refresh() }
-                    await store.followMe()
-                }
+                Task { await store.refreshOnOpen() }
                 Task { await store.followSharedPlans() }
             }
         }
