@@ -155,7 +155,19 @@ fn comes_near(place: &Place, position: (f64, f64), official: &[TrackFix]) -> boo
     within_range(place, position) || official.iter().any(|f| within_range(place, f.position()))
 }
 
-/// The active cyclones near `place`, with their tracks.
+/// Which tracks of a near cyclone a refresh reads.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Decks {
+    /// The forecast tracks (a-deck) and the observed track (b-deck), for the
+    /// Storms screen.
+    All,
+    /// Only the forecast tracks, which the cone needs, for the Storm ahead
+    /// card.
+    Forecast,
+}
+
+/// The active cyclones near `place`, with their tracks: the observed one
+/// only with [`Decks::All`].
 ///
 /// Reads NHC's active storms. A cyclone is near when its position, or a
 /// point of its official forecast in `known` (the cached cyclones, from
@@ -170,6 +182,7 @@ async fn hurricanes(
     host: &Arc<dyn FetchHost>,
     place: &Place,
     known: &[Hurricane],
+    decks: Decks,
     attempts: &mut Vec<AttemptInfo>,
 ) -> Vec<Hurricane> {
     let Some(active) = exchange_with(
@@ -190,7 +203,7 @@ async fn hurricanes(
     };
     let mut near = Vec::new();
     for storm in &active {
-        if let Some(h) = hurricane(host, place, storm, known, attempts).await {
+        if let Some(h) = hurricane(host, place, storm, known, decks, attempts).await {
             near.push(h);
         }
     }
@@ -204,6 +217,7 @@ async fn hurricane(
     place: &Place,
     storm: &ActiveStorm,
     known: &[Hurricane],
+    decks: Decks,
     attempts: &mut Vec<AttemptInfo>,
 ) -> Option<Hurricane> {
     let earlier = known.iter().find(|h| h.id == storm.id);
@@ -230,6 +244,7 @@ async fn hurricane(
     };
     let past = match same.filter(|h| !h.past.is_empty()) {
         Some(h) => h.past.clone(),
+        None if decks == Decks::Forecast => Vec::new(),
         None => exchange_with(
             host,
             bdeck_request(&storm.id),
@@ -426,7 +441,14 @@ pub async fn fetch_storms(
     });
     let known = match cached {
         Some((json, outlook)) if is_current(&outlook, &place, &runs, now) => {
-            let hurricanes = hurricanes(&host, &place, &outlook.hurricanes, &mut attempts).await;
+            let hurricanes = hurricanes(
+                &host,
+                &place,
+                &outlook.hurricanes,
+                Decks::All,
+                &mut attempts,
+            )
+            .await;
             let (outlook_json, outlook) = if hurricanes == outlook.hurricanes {
                 (json, outlook)
             } else {
@@ -489,7 +511,7 @@ pub async fn fetch_storms(
     for g in &mut grids {
         g.run = run_of(run_domain(&g.model));
     }
-    let hurricanes = hurricanes(&host, &place, &known, &mut attempts).await;
+    let hurricanes = hurricanes(&host, &place, &known, Decks::All, &mut attempts).await;
     let outlook = StormOutlook {
         place: location(&place, resolved.as_ref()),
         // The zone's changes as the app computed them for the place, like the
@@ -530,8 +552,8 @@ pub struct StormAheadOutcome {
     /// The hours at the place were fetched now; `false` when the cached
     /// outlook was used.
     pub refreshed: bool,
-    /// Every request's outcome: none when the cache was used, else the one
-    /// point request.
+    /// Every request's outcome: none when the cache was used, else the
+    /// point request, the active storms and each near cyclone's a-deck.
     pub attempts: Vec<AttemptInfo>,
 }
 
@@ -562,6 +584,13 @@ fn ahead_view(
 /// Otherwise only the models' hours at the place are fetched (no run times,
 /// ensembles or pressure grid), and the agreement comes from their totals.
 /// It is an error when that request fails.
+///
+/// The card also warns of a hurricane whose forecast cone reaches the
+/// place: a cached outlook carries its cyclones, and a fetch reads NHC's
+/// active storms and the a-deck of each near cyclone whose advisory is not
+/// in `cached_json` (no observed tracks), with the same failure rules as
+/// [`fetch_storms`]. So a check costs one point request, one active storms
+/// request and one a-deck per near cyclone, at most every three hours.
 #[uniffi::export]
 #[allow(clippy::needless_pass_by_value)] // UniFFI passes arguments by value
 pub async fn storm_ahead(
@@ -572,21 +601,27 @@ pub async fn storm_ahead(
     host: Arc<dyn FetchHost>,
 ) -> Result<StormAheadOutcome, WhetherError> {
     // A cache that doesn't read is no cache: the hours are fetched again.
-    let cached = cached_json
-        .as_deref()
-        .and_then(|json| from_json::<StormOutlook>("cached storm outlook", json).ok());
-    if let (Some(json), Some(outlook)) = (cached_json, cached)
-        && same_place(&outlook, &place)
-        && !outlook.points.is_empty()
-        && (0..STORM_AHEAD_MAX_AGE_SECS).contains(&(now - outlook.fetched_at.0))
-    {
-        return Ok(StormAheadOutcome {
-            view_json: ahead_view(outlook, &place, &settings, now)?,
-            outlook_json: json,
-            refreshed: false,
-            attempts: Vec::new(),
-        });
-    }
+    let cached = cached_json.and_then(|json| {
+        let outlook = from_json::<StormOutlook>("cached storm outlook", &json).ok()?;
+        Some((json, outlook))
+    });
+    let young = |o: &StormOutlook| {
+        same_place(o, &place)
+            && !o.points.is_empty()
+            && (0..STORM_AHEAD_MAX_AGE_SECS).contains(&(now - o.fetched_at.0))
+    };
+    let known = match cached {
+        Some((json, outlook)) if young(&outlook) => {
+            return Ok(StormAheadOutcome {
+                view_json: ahead_view(outlook, &place, &settings, now)?,
+                outlook_json: json,
+                refreshed: false,
+                attempts: Vec::new(),
+            });
+        }
+        Some((_, outlook)) => outlook.hurricanes,
+        None => Vec::new(),
+    };
 
     let mut attempts = Vec::new();
     let loc = outgoing(&place);
@@ -606,6 +641,7 @@ pub async fn storm_ahead(
     for p in &mut points {
         p.run = None;
     }
+    let hurricanes = hurricanes(&host, &place, &known, Decks::Forecast, &mut attempts).await;
     let outlook = StormOutlook {
         place: location(&place, Some(&point.location)),
         offset_changes: place.core_offset_changes(),
@@ -613,7 +649,7 @@ pub async fn storm_ahead(
         ensembles: Vec::new(),
         grids: Vec::new(),
         past_runs: Vec::new(),
-        hurricanes: Vec::new(),
+        hurricanes,
         fetched_at: UnixTime(now),
     };
     Ok(StormAheadOutcome {
@@ -1606,18 +1642,26 @@ mod tests {
     }
 
     #[test]
-    fn a_storm_check_asks_only_for_the_point() {
+    fn a_storm_check_asks_for_the_point_and_the_active_storms() {
         let net = Arc::new(Recorded::default());
         let outcome = check(&net, None, NOW).unwrap();
         assert!(outcome.refreshed);
         let asked = net.asked();
-        assert_eq!(asked.len(), 1);
+        assert_eq!(asked.len(), 2);
         assert_eq!(host_path(&asked[0]), "api.open-meteo.com/v1/forecast");
         assert!(asked[0].contains("latitude=40.71&longitude=-74.01&models="));
         assert!(!asked[0].contains("temporal_resolution"));
-        assert_eq!(outcome.attempts.len(), 1);
+        assert_eq!(host_path(&asked[1]), CURRENT_STORMS);
+        assert_eq!(outcome.attempts.len(), 2);
         assert_eq!(outcome.attempts[0].endpoint, "point");
         assert_eq!(outcome.attempts[0].error, None);
+        assert_eq!(
+            (
+                outcome.attempts[1].provider.as_str(),
+                outcome.attempts[1].endpoint.as_str()
+            ),
+            ("nhc", "current storms")
+        );
 
         let o: StormOutlook = serde_json::from_str(&outcome.outlook_json).unwrap();
         assert_eq!(
@@ -1650,7 +1694,7 @@ mod tests {
         let old = NOW + STORM_AHEAD_MAX_AGE_SECS;
         let late = check(&net, Some(first.outlook_json.clone()), old).unwrap();
         assert!(late.refreshed);
-        assert_eq!(net.asked().len(), 1);
+        assert_eq!(net.asked().len(), 2);
         let o: StormOutlook = serde_json::from_str(&late.outlook_json).unwrap();
         assert_eq!(o.fetched_at, UnixTime(old));
 
@@ -1707,7 +1751,7 @@ mod tests {
                 .unwrap()
                 .refreshed
         );
-        assert_eq!(net.asked().len(), 1);
+        assert_eq!(net.asked().len(), 2);
     }
 
     #[test]
@@ -1740,6 +1784,92 @@ mod tests {
             other => panic!("{other:?}"),
         }
         assert_eq!(net.asked().len(), 1);
+    }
+
+    /// Half an hour after Josephine's advisory 5.
+    const JOSEPHINE_NOW: i64 = ADVISORY + 1_800;
+
+    fn check_at(
+        host: &Arc<Recorded>,
+        place: Place,
+        cached: Option<String>,
+        now: i64,
+    ) -> StormAheadOutcome {
+        let shared: Arc<dyn FetchHost> = host.clone();
+        pollster::block_on(storm_ahead(place, default_settings(), cached, now, shared)).unwrap()
+    }
+
+    #[test]
+    fn a_cone_reaching_the_place_shows_the_hurricane_card() {
+        let net = with_storms(josephine());
+        let outcome = check_at(&net, on_the_track(), None, JOSEPHINE_NOW);
+        // No observed track: the card needs only the forecast.
+        let asked = net.asked();
+        let paths: Vec<&str> = asked.iter().map(|u| host_path(u)).collect();
+        assert_eq!(
+            paths,
+            ["api.open-meteo.com/v1/forecast", CURRENT_STORMS, ADECK_PATH]
+        );
+        let endpoints: Vec<(&str, &str)> = outcome
+            .attempts
+            .iter()
+            .map(|a| (a.provider.as_str(), a.endpoint.as_str()))
+            .collect();
+        assert_eq!(
+            endpoints,
+            [
+                ("open-meteo", "point"),
+                ("nhc", "current storms"),
+                ("nhc", "adeck al102026")
+            ]
+        );
+        let vm: serde_json::Value = serde_json::from_str(&outcome.view_json.unwrap()).unwrap();
+        assert_eq!(vm["title"], "Subtropical Storm Josephine");
+        assert_eq!(vm["line"], "The forecast cone reaches Test Point Fri");
+        assert_eq!(vm["hurricane"], "al102026");
+        let o: StormOutlook = serde_json::from_str(&outcome.outlook_json).unwrap();
+        let h = &o.hurricanes[0];
+        assert!(h.past.is_empty() && h.official.len() == 7);
+
+        // A young check is reused with its hurricane, with no request.
+        let net = with_storms(josephine());
+        let cached = Some(outcome.outlook_json.clone());
+        let again = check_at(&net, on_the_track(), cached, JOSEPHINE_NOW + HOUR);
+        assert_eq!(net.asked(), Vec::<String>::new());
+        assert!(again.view_json.unwrap().contains("al102026"));
+
+        // An old one keeps the known advisory's tracks: no a-deck.
+        let net = with_storms(josephine());
+        let later = JOSEPHINE_NOW + STORM_AHEAD_MAX_AGE_SECS;
+        let cached = Some(outcome.outlook_json.clone());
+        let late = check_at(&net, on_the_track(), cached, later);
+        assert_eq!(net.asked().len(), 2);
+        assert!(late.view_json.unwrap().contains("al102026"));
+
+        // The Storms screen reads only the missing b-deck.
+        let net = with_storms(josephine());
+        let full = fetch_at(&net, on_the_track(), Some(outcome.outlook_json), NOW);
+        assert_eq!(after_runs(&net)[3..], [CURRENT_STORMS, BDECK_PATH]);
+        assert_eq!(outlook(&full).hurricanes[0].official.len(), 7);
+    }
+
+    #[test]
+    fn a_failed_adeck_leaves_the_card_to_the_models() {
+        let net = Arc::new(Recorded {
+            storms: Some(josephine()),
+            down: vec!["aid_public"],
+            ..Recorded::default()
+        });
+        let outcome = check_at(&net, on_the_track(), None, JOSEPHINE_NOW);
+        let failed = outcome.attempts.last().unwrap();
+        assert_eq!(
+            (failed.endpoint.as_str(), failed.error.as_deref()),
+            ("adeck al102026", Some("HTTP 503"))
+        );
+        // Without a cone the recorded dry week brings no card.
+        assert_eq!(outcome.view_json, None);
+        let o: StormOutlook = serde_json::from_str(&outcome.outlook_json).unwrap();
+        assert_eq!(o.hurricanes.len(), 1);
     }
 
     #[test]
