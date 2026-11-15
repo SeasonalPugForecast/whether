@@ -117,8 +117,15 @@ async fn latest_runs(
 /// the latest in `runs`, and, when some run times could not be read, it is
 /// younger than [`TRUSTED_WITHOUT_META_SECS`].
 ///
-/// A model missing from the cache makes it stale, so an outlook that came
-/// back partly is fetched again next time.
+/// A part without a run time is stale whenever the latest run is known, so
+/// an outlook from [`storm_ahead`] is never current here.
+///
+/// A model missing from a part the cache has (its point, grid or ensemble)
+/// is current when the outlook was fetched after the model's latest run
+/// became available: that fetch got all there was, and Open-Meteo leaves
+/// some models out of some requests. Without the latest run, or when the
+/// whole part is missing (its request failed), a missing model makes the
+/// cache stale, so the outlook is fetched again next time.
 fn is_current(
     cached: &StormOutlook,
     place: &Place,
@@ -131,21 +138,38 @@ fn is_current(
     if runs.len() < domains().len() && now - cached.fetched_at.0 >= TRUSTED_WITHOUT_META_SECS {
         return false;
     }
-    // Without the latest run, being there is all that can be checked.
-    let fresh = |run: Option<Option<&ModelRun>>, latest: Option<&ModelRun>| match latest {
-        Some(latest) => run.flatten().is_some_and(|r| r.init >= latest.init),
-        None => run.is_some(),
+    // `run` is `None` when the model is missing from a part, `answered`
+    // whether the part holds any model. Without the latest run, being there
+    // is all that can be checked.
+    let fresh = |run: Option<Option<&ModelRun>>, answered: bool, latest: Option<&ModelRun>| match (
+        run, latest,
+    ) {
+        (Some(run), Some(latest)) => run.is_some_and(|r| r.init >= latest.init),
+        (None, Some(latest)) => answered && cached.fetched_at >= latest.available,
+        (run, None) => run.is_some(),
     };
     let deterministic = DETERMINISTIC_MODELS.iter().all(|m| {
         let latest = run_domain(m).and_then(|d| runs.get(d));
         let point = cached.points.iter().find(|p| p.model == *m);
         let grid = cached.grids.iter().find(|g| g.model == *m);
-        fresh(point.map(|p| p.run.as_ref()), latest) && fresh(grid.map(|g| g.run.as_ref()), latest)
+        fresh(
+            point.map(|p| p.run.as_ref()),
+            !cached.points.is_empty(),
+            latest,
+        ) && fresh(
+            grid.map(|g| g.run.as_ref()),
+            !cached.grids.is_empty(),
+            latest,
+        )
     });
     let ensembles = ENSEMBLE_MODELS.iter().all(|m| {
         let latest = ensemble_domain(m).and_then(|d| runs.get(d));
         let ensemble = cached.ensembles.iter().find(|e| e.model == *m);
-        fresh(ensemble.map(|e| e.run.as_ref()), latest)
+        fresh(
+            ensemble.map(|e| e.run.as_ref()),
+            !cached.ensembles.is_empty(),
+            latest,
+        )
     });
     deterministic && ensembles
 }
@@ -218,7 +242,8 @@ fn failed(attempts: &[AttemptInfo]) -> WhetherError {
 /// The storm outlook for `place` at Unix time `now`, through `host`.
 ///
 /// `cached_json` is the last [`StormsOutcome::outlook_json`] for the place.
-/// When every model's latest run is already in it, only the run times are
+/// When every model's latest run is already in it (or, for a model a request
+/// left out, it was fetched after that run was out), only the run times are
 /// read and the view is rebuilt from it. Otherwise the models' hours at the
 /// place, the ensembles and the pressure grid are fetched; a request that
 /// fails leaves its part out (and shows in `attempts`), and only when all
@@ -321,10 +346,12 @@ pub struct StormAheadOutcome {
     /// The "Storm ahead" card (`StormAheadVm`) as JSON, built at `now`;
     /// `None` when nothing coming is significant.
     pub view_json: Option<String>,
-    /// The outlook the card was built from, as JSON: cache it per place and
-    /// pass it back as `cached_json`. A fetched one holds only the models'
-    /// hours at the place, without run times, so [`fetch_storms`] fetches
-    /// the full outlook when it is given one.
+    /// The outlook the card was built from, as JSON. Keep it per place apart
+    /// from the [`StormsOutcome::outlook_json`], so it never replaces the
+    /// full outlook, and pass the newer of the two back as `cached_json`. A
+    /// fetched one holds only the models' hours at the place, without run
+    /// times, so [`fetch_storms`] fetches the full outlook when it is given
+    /// one.
     pub outlook_json: String,
     /// The hours at the place were fetched now; `false` when the cached
     /// outlook was used.
@@ -353,8 +380,9 @@ fn ahead_view(
 /// Whether a significant storm is coming to `place`, at Unix time `now`,
 /// through `host`.
 ///
-/// `cached_json` is the last outlook kept for the place: a
-/// [`StormAheadOutcome::outlook_json`] or a [`StormsOutcome::outlook_json`].
+/// `cached_json` is the newer of the outlooks kept for the place: the last
+/// [`StormAheadOutcome::outlook_json`] or the last
+/// [`StormsOutcome::outlook_json`], whichever was fetched later.
 /// When it is for the place, holds the models' hours there and is younger than
 /// [`STORM_AHEAD_MAX_AGE_SECS`], the card is built from it with no request.
 /// Otherwise only the models' hours at the place are fetched (no run times,
@@ -844,6 +872,48 @@ mod tests {
         let net = Arc::new(Recorded::default());
         assert!(
             fetch(&net, Some(outcome.outlook_json), NOW)
+                .unwrap()
+                .refreshed
+        );
+        assert_eq!(net.asked().len(), 9);
+    }
+
+    /// GEM's latest run in the recordings became available at this time.
+    const GEM_AVAILABLE: i64 = 1_794_678_853;
+
+    #[test]
+    fn a_model_left_out_after_its_run_was_out_is_current() {
+        let first = fetch(&Arc::new(Recorded::default()), None, NOW).unwrap();
+        let without_gem_grid = |fetched_at: i64| {
+            let mut o = outlook(&first);
+            o.grids.retain(|g| g.model != "gem_seamless");
+            o.fetched_at = UnixTime(fetched_at);
+            serde_json::to_string(&o).unwrap()
+        };
+        // Fetched after GEM's run was out: that fetch got all there was.
+        let net = Arc::new(Recorded::default());
+        let again = fetch(&net, Some(without_gem_grid(NOW)), NOW + HOUR).unwrap();
+        assert!(!again.refreshed);
+        let asked = net.asked();
+        let paths: Vec<&str> = asked.iter().map(|u| host_path(u)).collect();
+        assert_eq!(paths, meta_paths());
+        // Fetched before it: the new run may bring the grid.
+        let net = Arc::new(Recorded::default());
+        let before = without_gem_grid(GEM_AVAILABLE - 1);
+        assert!(fetch(&net, Some(before), NOW + HOUR).unwrap().refreshed);
+        assert_eq!(net.asked().len(), 9);
+        // Without GEM's run time, a missing grid stays stale.
+        let net = Arc::new(Recorded {
+            down: vec!["cmc_gem_gdps_15km/static/meta.json"],
+            ..Recorded::default()
+        });
+        let blind = fetch(&net, Some(without_gem_grid(NOW)), NOW + HOUR).unwrap();
+        assert!(blind.refreshed);
+        // A check's point-only outlook, though fetched later, stays stale.
+        let light = check(&Arc::new(Recorded::default()), None, NOW).unwrap();
+        let net = Arc::new(Recorded::default());
+        assert!(
+            fetch(&net, Some(light.outlook_json), NOW + HOUR)
                 .unwrap()
                 .refreshed
         );
