@@ -61,6 +61,10 @@ final class RadarPaletteTests: XCTestCase {
         XCTAssertTrue(
             RadarPalette.recolors(
                 template: "https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913-m10m/{z}/{x}/{y}.png"))
+        // The loop's frames, named by their composite's time.
+        for frame in radarFrames(latest: 1_791_663_300) {
+            XCTAssertTrue(RadarPalette.recolors(template: frame.tileTemplate), frame.tileTemplate)
+        }
         XCTAssertFalse(
             RadarPalette.recolors(template: "https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png"))
         XCTAssertNotEqual(RadarPalette.key(ramp), RadarPalette.key(ramp.reversed()), "cached per ramp")
@@ -69,7 +73,7 @@ final class RadarPaletteTests: XCTestCase {
     // MARK: Repainted tiles in memory
 
     func testATileGoesStaleWithTheRadar() {
-        // IEM's URLs are relative to now: the tile kept at 14:00 isn't 15:30's radar.
+        // An hour on, the frame has long left the loop.
         let cache = RadarTileCache()
         let t0 = Date(timeIntervalSince1970: 1_800_000_000)
         let tile = Data([1, 2, 3])
@@ -83,9 +87,15 @@ final class RadarPaletteTests: XCTestCase {
 
     func testOnlyFreshSuccessfulTilesAreKept() {
         let most = RadarTileCache.maxLifetime
-        XCTAssertEqual(RadarTileCache.lifetime(status: 200, cacheControl: nil), most)
+        XCTAssertEqual(RadarTileCache.lifetime(status: 200, cacheControl: nil), RadarTileCache.unstatedLifetime)
+        XCTAssertEqual(RadarTileCache.lifetime(status: 200, cacheControl: "public"), 300, "one radar update")
         XCTAssertEqual(RadarTileCache.lifetime(status: 200, cacheControl: "public, max-age=120"), 120)
-        XCTAssertEqual(RadarTileCache.lifetime(status: 200, cacheControl: "max-age=86400"), most, "one update at most")
+        // A layer relative to now (`/cache/`) changes with the next composite.
+        XCTAssertEqual(RadarTileCache.lifetime(status: 200, cacheControl: "public, max-age=300"), 300)
+        // A composite's own tiles (`/c/`) never change: kept while the loop can show them.
+        XCTAssertEqual(RadarTileCache.lifetime(status: 200, cacheControl: "public, max-age=1209600"), most)
+        XCTAssertEqual(most, 3600)
+        XCTAssertEqual(RadarTileCache.lifetime(status: 503, cacheControl: "public, max-age=1209600"), 0)
         XCTAssertEqual(RadarTileCache.lifetime(status: 200, cacheControl: "no-cache"), 0)
         XCTAssertEqual(RadarTileCache.lifetime(status: 200, cacheControl: "private, No-Store"), 0)
         XCTAssertEqual(RadarTileCache.lifetime(status: 503, cacheControl: "max-age=300"), 0, "an error page")

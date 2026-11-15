@@ -17,7 +17,8 @@ pub struct RadarFrame {
     pub minutes_ago: u32,
     /// When the composite was valid (Unix seconds).
     pub valid: i64,
-    /// The frame's `{z}/{x}/{y}` tile URL template.
+    /// The frame's `{z}/{x}/{y}` tile URL template. A NEXRAD frame's names its
+    /// composite's time, so its tiles never change and can be kept long.
     pub tile_template: String,
 }
 
@@ -100,7 +101,8 @@ pub fn radar_latest_valid(body: Vec<u8>) -> Result<i64, WhetherError> {
         })
 }
 
-/// The loop ending at `latest`, oldest first.
+/// The loop ending at `latest`, oldest first, each frame's tiles named by its
+/// composite's time (IEM's archive layer) rather than by its age.
 #[uniffi::export]
 pub fn radar_frames(latest: i64) -> Vec<RadarFrame> {
     radar::frames(UnixTime(latest))
@@ -108,7 +110,7 @@ pub fn radar_frames(latest: i64) -> Vec<RadarFrame> {
         .map(|(minutes_ago, valid)| RadarFrame {
             minutes_ago,
             valid: valid.0,
-            tile_template: radar::tile_template(minutes_ago),
+            tile_template: radar::archive_tile_template(valid),
         })
         .collect()
 }
@@ -193,7 +195,16 @@ mod tests {
         let frames = radar_frames(latest);
         assert_eq!(frames.len(), 6);
         assert_eq!(frames[5].valid, latest);
-        assert!(frames[0].tile_template.contains("-m25m/{z}/{x}/{y}.png"));
+        assert_eq!(
+            frames[5].tile_template,
+            "https://mesonet.agron.iastate.edu/c/tile.py/1.0.0/ridge::USCOMP-N0Q-202610102015/{z}/{x}/{y}.png"
+        );
+        assert!(
+            frames[0]
+                .tile_template
+                .contains("/ridge::USCOMP-N0Q-202610101950/{z}/{x}/{y}.png"),
+            "the oldest frame, 25 minutes before"
+        );
         assert!(radar_latest_valid(b"{}".to_vec()).is_err());
         assert!(radar_attribution(true).contains("NEXRAD"));
         assert!(!radar_attribution(true).contains("OpenStreetMap"));

@@ -2,15 +2,19 @@ import Foundation
 
 /// Repainted radar tiles in memory, keyed by ramp and URL.
 ///
-/// IEM's tile URLs are relative to now (`nexrad-n0q-900913` is the latest frame and
-/// `-m05m` … `-m50m` the ones before it), so the same URL holds new echoes every five
-/// minutes. A tile is kept only as long as the server says it stays fresh, and never
-/// longer than one radar update (`maxLifetime`); plain `MKTileOverlay` follows the same
-/// HTTP lifetime. Failed responses are never kept. `NSCache` is thread-safe and empties
-/// itself under memory pressure.
+/// The loop's frames name their composite's time (IEM's archive layer), so a tile's URL
+/// always holds the same echoes and IEM lets clients keep it for 14 days; a layer
+/// relative to now (`nexrad-n0q-900913-m05m`) gets five minutes. A tile is kept as long
+/// as the server says, one radar update when it says nothing (`unstatedLifetime`), and
+/// never longer than an hour (`maxLifetime`): by then its frame has left the loop.
+/// Failed responses are never kept. `NSCache` is thread-safe and empties itself under
+/// memory pressure.
 nonisolated final class RadarTileCache: @unchecked Sendable {
-    /// The longest a tile is kept: IEM's composite updates every five minutes.
-    static let maxLifetime: TimeInterval = 300
+    /// How long a tile is kept when the server gives no lifetime: IEM's composite
+    /// updates every five minutes.
+    static let unstatedLifetime: TimeInterval = 300
+    /// The longest a tile is kept: the loop spans half an hour.
+    static let maxLifetime: TimeInterval = 60 * 60
 
     private final class Entry {
         let data: Data
@@ -49,19 +53,18 @@ nonisolated final class RadarTileCache: @unchecked Sendable {
 
     /// How long a tile fetched with HTTP `status` and `Cache-Control` header may be
     /// kept: nothing for a failed response or `no-store`/`no-cache`, `max-age` when the
-    /// server gives one, and never more than `maxLifetime`.
+    /// server gives one (else `unstatedLifetime`), and never more than `maxLifetime`.
     static func lifetime(status: Int?, cacheControl: String?) -> TimeInterval {
         guard succeeded(status: status) else { return 0 }
-        guard let cacheControl else { return maxLifetime }
-        var lifetime = maxLifetime
-        for directive in cacheControl.lowercased().split(separator: ",") {
+        var lifetime = unstatedLifetime
+        for directive in (cacheControl ?? "").lowercased().split(separator: ",") {
             let part = directive.trimmingCharacters(in: .whitespaces)
             if part == "no-store" || part == "no-cache" { return 0 }
             if part.hasPrefix("max-age="), let seconds = TimeInterval(part.dropFirst("max-age=".count)) {
-                lifetime = min(lifetime, max(seconds, 0))
+                lifetime = max(seconds, 0)
             }
         }
-        return lifetime
+        return min(lifetime, maxLifetime)
     }
 
     /// Whether a response with HTTP `status` (none for a non-HTTP response) is a tile.

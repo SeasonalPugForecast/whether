@@ -3,8 +3,8 @@ import Foundation
 /// The NEXRAD composite's colors, read back as reflectivity, and the radar tiles
 /// repainted from a theme's radar ramp for color vision.
 ///
-/// The Iowa Environmental Mesonet draws the n0q composite (`nexrad-n0q-900913`
-/// tiles) with a fixed 255-color table: palette index `i` (1…255) is
+/// The Iowa Environmental Mesonet draws the n0q composite (`nexrad-n0q-900913` and
+/// `ridge::USCOMP-N0Q-…` tiles) with a fixed 255-color table: palette index `i` (1…255) is
 /// `-32 + 0.5 × (i − 1)` dBZ, -32 to 95 dBZ, and index 0 is no data (transparent).
 /// The table below is IEM's own, copied from pyIEM
 /// `src/pyiem/data/ramps/composite_n0q.txt` (github.com/akrherz/pyIEM, last changed in
@@ -88,7 +88,9 @@ nonisolated enum RadarPalette {
 
     /// Whether tiles from `template` are the n0q composite (OpenWeather's layer has
     /// its own colors and is left as it is).
-    static func recolors(template: String) -> Bool { template.contains("/nexrad-n0q") }
+    static func recolors(template: String) -> Bool {
+        template.contains("/nexrad-n0q") || template.contains("/ridge::USCOMP-N0Q-")
+    }
 
     /// Repaints RGBA pixels (8 bits each, alpha premultiplied or not: the tiles' are
     /// 0 or 255) in place: every n0q color becomes its step's color in `ramp` (five,
