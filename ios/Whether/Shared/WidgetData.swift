@@ -78,6 +78,7 @@ extension WidgetData {
         // The widget never uses a key (it is not metered): none is read.
         let settings = preferences.settings(withKey: false)
         let forecast = await forecast(for: place, of: places, settings: settings, in: dir, now: now)
+        let observedAt = forecast.flatMap { observedAt(snapshotJson: $0.json) } ?? forecast?.at
         let viewSettings = viewSettings(settings, content: setup.content, temperature: setup.temperature)
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: place.timeZone) ?? .current
@@ -90,7 +91,7 @@ extension WidgetData {
                 date: date, view: view?.current == nil ? nil : view, places: places.count,
                 content: setup.content, followsApp: followsApp, colorTheme: colorTheme,
                 backdrop: setup.backdrop, followsPhone: place.follows,
-                leadsWithHour: leadsWithHour(at: date, dataAt: forecast?.at))
+                leadsWithHour: leadsWithHour(at: date, observedAt: observedAt))
         }
         return (entries, reloadDate(now: now, dataAt: forecast?.at, content: setup.content))
     }

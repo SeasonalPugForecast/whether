@@ -1,10 +1,36 @@
-//! The sample view model the Swift package decodes (`ios/WhetherKit` tests), kept
-//! in step with the core: regenerate with `UPDATE_SAMPLE=1 cargo test -p whether-ffi`.
+//! The sample view model the Swift package decodes (`ios/WhetherKit` tests), and
+//! the sample snapshot it builds views from, kept in step with the core:
+//! regenerate with `UPDATE_SAMPLE=1 cargo test -p whether-ffi`.
 
 use whether_core::testdata;
 use whether_ffi::{LocationEntry, Place, Settings, default_settings, view_model};
 
 const SAMPLE: &str = "../../ios/WhetherKit/Tests/WhetherKitTests/Resources/sample-view.json";
+const SNAPSHOT: &str = "../../ios/WhetherKit/Tests/WhetherKitTests/Resources/sample-snapshot.json";
+
+/// Checks `json` (pretty-printed) against the file at `relative`, or writes it there.
+fn check(relative: &str, json: &str) {
+    let value: serde_json::Value = serde_json::from_str(json).unwrap();
+    let pretty = serde_json::to_string_pretty(&value).unwrap() + "\n";
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(relative);
+    if std::env::var_os("UPDATE_SAMPLE").is_some() {
+        std::fs::write(&path, &pretty).unwrap();
+    }
+    let saved = std::fs::read_to_string(&path).unwrap_or_default();
+    assert!(
+        saved == pretty,
+        "{} is out of date; run UPDATE_SAMPLE=1 cargo test -p whether-ffi",
+        path.display()
+    );
+}
+
+#[test]
+fn the_swift_sample_snapshot_is_current() {
+    check(
+        SNAPSHOT,
+        &serde_json::to_string(&testdata::sample_snapshot()).unwrap(),
+    );
+}
 
 #[test]
 fn the_swift_sample_is_current() {
@@ -46,16 +72,5 @@ fn the_swift_sample_is_current() {
         testdata::SAMPLE_NOW.0,
     )
     .unwrap();
-    let value: serde_json::Value = serde_json::from_str(&json).unwrap();
-    let pretty = serde_json::to_string_pretty(&value).unwrap() + "\n";
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(SAMPLE);
-    if std::env::var_os("UPDATE_SAMPLE").is_some() {
-        std::fs::write(&path, &pretty).unwrap();
-    }
-    let saved = std::fs::read_to_string(&path).unwrap_or_default();
-    assert!(
-        saved == pretty,
-        "{} is out of date; run UPDATE_SAMPLE=1 cargo test -p whether-ffi",
-        path.display()
-    );
+    check(SAMPLE, &json);
 }

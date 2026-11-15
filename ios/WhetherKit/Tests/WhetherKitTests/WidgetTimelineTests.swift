@@ -14,6 +14,14 @@ final class WidgetTimelineTests: XCTestCase {
 
     private func date(_ seconds: Int64) -> Date { Date(timeIntervalSince1970: TimeInterval(seconds)) }
 
+    /// The core's sample (`testdata::SAMPLE_NOW`): when `sample-snapshot.json` was observed.
+    private let sampleNow: Int64 = 1_791_212_400
+
+    private func resource(_ name: String) throws -> String {
+        let url = try XCTUnwrap(Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "Resources"))
+        return try String(contentsOf: url, encoding: .utf8)
+    }
+
     // MARK: Which forecast
 
     func testAForecastIsFreshForTwoHours() {
@@ -99,9 +107,15 @@ final class WidgetTimelineTests: XCTestCase {
     }
 
     func testTheHoursForecastLeadsOnceTheObservationIsAnHourOld() {
-        XCTAssertFalse(WidgetData.leadsWithHour(at: date(t0 + 3599), dataAt: t0))
-        XCTAssertTrue(WidgetData.leadsWithHour(at: date(t0 + 3600), dataAt: t0))
-        XCTAssertFalse(WidgetData.leadsWithHour(at: date(t0), dataAt: nil))
+        XCTAssertFalse(WidgetData.leadsWithHour(at: date(t0 + 3599), observedAt: t0))
+        XCTAssertTrue(WidgetData.leadsWithHour(at: date(t0 + 3600), observedAt: t0))
+        XCTAssertFalse(WidgetData.leadsWithHour(at: date(t0), observedAt: nil))
+    }
+
+    func testTheObservationTimeComesFromTheSnapshot() throws {
+        XCTAssertEqual(WidgetData.observedAt(snapshotJson: try resource("sample-snapshot")), sampleNow)
+        XCTAssertNil(WidgetData.observedAt(snapshotJson: #"{"current": null}"#), "no current conditions")
+        XCTAssertNil(WidgetData.observedAt(snapshotJson: "not json"))
     }
 
     func testAnHoursSkyFollowsItsWeatherAndTheSun() {

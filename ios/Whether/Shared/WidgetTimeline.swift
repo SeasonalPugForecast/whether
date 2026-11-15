@@ -58,6 +58,16 @@ extension WidgetData {
         place.cacheURL(in: directory.appending(path: "widget", directoryHint: .isDirectory))
     }
 
+    /// When a snapshot's current conditions were observed (Unix seconds), from
+    /// the core's snapshot JSON; `nil` without them.
+    static func observedAt(snapshotJson: String) -> Int64? {
+        struct Snapshot: Decodable {
+            struct Current: Decodable { var time: Int64 }
+            var current: Current?
+        }
+        return (try? JSONDecoder().decode(Snapshot.self, from: Data(snapshotJson.utf8)))?.current?.time
+    }
+
     /// The timeline's moments: `now`, then the start of each next hour in
     /// `calendar` (the place's zone), `count` in all.
     static func entryDates(now: Date, count: Int = entryCount, calendar: Calendar) -> [Date] {
@@ -76,10 +86,12 @@ extension WidgetData {
         return min(max(stale, soonest), now.addingTimeInterval(TimeInterval(freshFor)))
     }
 
-    /// Whether an entry at `date` leads with the hour's forecast: the observation
-    /// in a forecast from `dataAt` is an hour old or more by then.
-    static func leadsWithHour(at date: Date, dataAt: Int64?) -> Bool {
-        dataAt.map { date.timeIntervalSince1970 - TimeInterval($0) >= 3600 } ?? false
+    /// Whether an entry at `date` leads with the hour's forecast: the current
+    /// conditions, observed at `observedAt` (else, unknown, fetched then), are an
+    /// hour old or more by then. A station's observation is often most of an hour
+    /// old when it is fetched, and an unchanged forecast keeps its old one.
+    static func leadsWithHour(at date: Date, observedAt: Int64?) -> Bool {
+        observedAt.map { date.timeIntervalSince1970 - TimeInterval($0) >= 3600 } ?? false
     }
 
     /// The Lock Screen gauge's scale: today's low to high, stretched to the
