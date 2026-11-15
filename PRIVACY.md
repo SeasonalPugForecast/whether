@@ -16,8 +16,9 @@ so it sees roughly where you are looking. The Storms tab, and the "Storm ahead" 
 tab, ask Open-Meteo for several weather models' forecasts at the place shown (the same rounded
 coordinates); the Storms tab also asks for the models' ensembles and earlier runs at that place,
 and for sea-level pressure at a grid of 49 points up to about 1,000 km around it. Both also ask the
-US National Hurricane Center for its list of active tropical storms and, for any within about
-3,000 km of the place, their forecast and past track files; those requests name only the storms,
+US National Hurricane Center for its list of active tropical storms, the forecast track file of
+any within about 8,500 km of the place (once per forecast, to see whether it comes within about
+3,000 km), and for those that do, their forecast and past track files; those requests name only the storms,
 never your coordinates (the distance is worked out on the phone). When you type in the place search, the text goes to
 Apple Maps for suggestions and, if Apple has none, to Open-Meteo's place search; a search that is
 only digits (a postal code) also sends your phone's region code. Those services see your phone's IP

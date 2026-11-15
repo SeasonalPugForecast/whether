@@ -13,7 +13,9 @@
 //! read once per forecast advisory (the official track changes only then):
 //! a cyclone whose tracks in the cached outlook are that advisory's keeps
 //! them. Tracks from an earlier run (NHC had not published the new one yet)
-//! are kept and drawn but read again on the next refresh.
+//! are kept and drawn but read again on the next refresh. A cyclone further
+//! out, but within [`HURRICANE_SEARCH_KM`], has its a-deck read once per
+//! forecast advisory to see whether its forecast comes near.
 //!
 //! The "Storm ahead" check is lighter: it asks only for the models' hours at
 //! the place, plus the active cyclones and the a-deck of each near one, and
@@ -24,9 +26,10 @@ use std::sync::Arc;
 
 use whether_core::model::{ProviderId, ResolvedLocation};
 use whether_core::storm::analysis::{distance_km, window_totals};
-use whether_core::storm::hurricane::{DRAWN_AIDS, OFFICIAL_LEAD_SECS};
+use whether_core::storm::hurricane::{DRAWN_AIDS, KM_PER_NMI, OFFICIAL_LEAD_SECS};
 use whether_core::storm::{
-    DETERMINISTIC_MODELS, ENSEMBLE_MODELS, Hurricane, ModelRun, PastRun, StormOutlook, TrackFix,
+    DETERMINISTIC_MODELS, ENSEMBLE_MODELS, FarHurricane, Hurricane, ModelRun, PastRun,
+    StormOutlook, TrackFix,
 };
 use whether_core::strings::Strings;
 use whether_core::time::{UnixTime, UtcOffset};
@@ -61,6 +64,15 @@ const SAME_PLACE_DEG: f64 = 0.01;
 /// point of its official forecast must be this close for its tracks to be
 /// read and drawn.
 pub(crate) const HURRICANE_RANGE_KM: f64 = 3_000.0;
+
+/// How far from the place a cyclone not followed yet is looked at more
+/// closely, in km: within it, its a-deck is read (once per forecast
+/// advisory) to see whether its official forecast comes within
+/// [`HURRICANE_RANGE_KM`]. That is five days of fast motion beyond the
+/// range: 120 hours at 25 kt, about 5,600 km, more than an official
+/// forecast usually travels even when the storm recurves and speeds up.
+/// Cyclones further out are judged by their position alone.
+pub(crate) const HURRICANE_SEARCH_KM: f64 = HURRICANE_RANGE_KM + 120.0 * 25.0 * KM_PER_NMI;
 
 /// The provider the hurricane requests are recorded under.
 const NHC: &str = "nhc";
@@ -145,10 +157,14 @@ async fn exchange_with<T>(
     result.ok()
 }
 
-/// Whether `position` (`(latitude, longitude)`) is within
-/// [`HURRICANE_RANGE_KM`] of `place`.
-fn within_range(place: &Place, (latitude, longitude): (f64, f64)) -> bool {
-    distance_km(place.latitude, place.longitude, latitude, longitude) <= HURRICANE_RANGE_KM
+/// Whether `position` (`(latitude, longitude)`) is within `km` of `place`.
+fn within(place: &Place, (latitude, longitude): (f64, f64), km: f64) -> bool {
+    distance_km(place.latitude, place.longitude, latitude, longitude) <= km
+}
+
+/// Whether `position` is within [`HURRICANE_RANGE_KM`] of `place`.
+fn within_range(place: &Place, position: (f64, f64)) -> bool {
+    within(place, position, HURRICANE_RANGE_KM)
 }
 
 /// Whether a cyclone at `position` with the official forecast `official`
@@ -168,13 +184,49 @@ enum Decks {
     Forecast,
 }
 
-/// The active cyclones near `place`, with their tracks: the observed one
-/// only with [`Decks::All`].
+/// The active cyclones a refresh knows of: those near the place, with
+/// their tracks, and those found far by their forecast.
+#[derive(Clone, Debug, Default, PartialEq)]
+struct Cyclones {
+    near: Vec<Hurricane>,
+    far: Vec<FarHurricane>,
+}
+
+impl Cyclones {
+    /// The cyclones `outlook` holds, as known for `place`: the far ones only
+    /// when the outlook is for the place, since far is measured from it.
+    fn of(outlook: &StormOutlook, place: &Place) -> Self {
+        Self {
+            near: outlook.hurricanes.clone(),
+            far: if same_place(outlook, place) {
+                outlook.far_hurricanes.clone()
+            } else {
+                Vec::new()
+            },
+        }
+    }
+}
+
+/// What a refresh found of one active cyclone.
+enum Found {
+    /// It comes near: drawn, with its tracks.
+    Near(Box<Hurricane>),
+    /// Its forecast advisory's official track stays far.
+    Far(FarHurricane),
+    /// Too far to look at, or not settled yet (looked at again next time).
+    Neither,
+}
+
+/// The active cyclones near `place`, with their tracks (the observed one
+/// only with [`Decks::All`]), and those found far.
 ///
 /// Reads NHC's active storms. A cyclone is near when its position, or a
-/// point of its official forecast in `known` (the cached cyclones, from
-/// any advisory), is within [`HURRICANE_RANGE_KM`]; only near ones get
-/// their decks read, and only near ones (by the fresh forecast) are kept.
+/// point of its official forecast, is within [`HURRICANE_RANGE_KM`]: by the
+/// forecast in `known` (the cached cyclones, from any advisory), else, for
+/// one within [`HURRICANE_SEARCH_KM`], by the forecast its a-deck gives.
+/// Only near ones get their b-deck read and are kept. One whose forecast
+/// advisory's official track stays far is kept among the far ones, and is
+/// not looked at again until NHC's next forecast advisory.
 ///
 /// A cyclone in `known` keeps the tracks it has there while they are its
 /// current forecast advisory's ([`Hurricane::official_is_current`]; for the
@@ -183,14 +235,15 @@ enum Decks {
 /// tracks in place, even from an earlier advisory, so the cone stays; they
 /// are read again on the next refresh. A cyclone with no known tracks and
 /// a failed a-deck has no cone. When the active storms can't be read, the
-/// near cyclones in `known` are kept. Cyclones no longer active are dropped.
+/// cyclones in `known` are kept (the near ones while they still come near).
+/// Cyclones no longer active are dropped.
 async fn hurricanes(
     host: &Arc<dyn FetchHost>,
     place: &Place,
-    known: &[Hurricane],
+    known: &Cyclones,
     decks: Decks,
     attempts: &mut Vec<AttemptInfo>,
-) -> Vec<Hurricane> {
+) -> Cyclones {
     let Some(active) = exchange_with(
         host,
         Ok(current_storms_request()),
@@ -201,39 +254,54 @@ async fn hurricanes(
     )
     .await
     else {
-        return known
-            .iter()
-            .filter(|h| comes_near(place, (h.latitude, h.longitude), &h.official))
-            .cloned()
-            .collect();
+        return Cyclones {
+            near: known
+                .near
+                .iter()
+                .filter(|h| comes_near(place, (h.latitude, h.longitude), &h.official))
+                .cloned()
+                .collect(),
+            far: known.far.clone(),
+        };
     };
-    let mut near = Vec::new();
+    let mut found = Cyclones::default();
     for storm in &active {
-        if let Some(h) = hurricane(host, place, storm, known, decks, attempts).await {
-            near.push(h);
+        match hurricane(host, place, storm, known, decks, attempts).await {
+            Found::Near(h) => found.near.push(*h),
+            Found::Far(f) => found.far.push(f),
+            Found::Neither => {}
         }
     }
-    near
+    found
 }
 
-/// `storm` with its tracks when it comes near `place`, else `None`; see
-/// [`hurricanes`].
+/// What a refresh finds of `storm`; see [`hurricanes`].
 async fn hurricane(
     host: &Arc<dyn FetchHost>,
     place: &Place,
     storm: &ActiveStorm,
-    known: &[Hurricane],
+    known: &Cyclones,
     decks: Decks,
     attempts: &mut Vec<AttemptInfo>,
-) -> Option<Hurricane> {
-    let earlier = known.iter().find(|h| h.id == storm.id);
-    let known_track = earlier.map_or(&[][..], |h| h.official.as_slice());
-    if !comes_near(place, (storm.latitude, storm.longitude), known_track) {
-        return None;
-    }
+) -> Found {
+    let earlier = known.near.iter().find(|h| h.id == storm.id);
     let forecast_time = storm.forecast_time();
+    let far = FarHurricane {
+        id: storm.id.clone(),
+        forecast_advisory_time: forecast_time,
+    };
+    let position = (storm.latitude, storm.longitude);
     let current = earlier
         .filter(|h| h.forecast_advisory_time == Some(forecast_time) && h.official_is_current());
+    let known_track = earlier.map_or(&[][..], |h| h.official.as_slice());
+    if !comes_near(place, position, known_track) {
+        if known.far.contains(&far) || current.is_some() {
+            return Found::Far(far);
+        }
+        if !within(place, position, HURRICANE_SEARCH_KM) {
+            return Found::Neither;
+        }
+    }
     let forecast = if let Some(h) = current {
         forecast_of(h)
     } else {
@@ -248,6 +316,15 @@ async fn hurricane(
         .await;
         newer_forecast(read, earlier)
     };
+    if !comes_near(place, position, &forecast.official) {
+        // Far by this advisory's own track: settled until the next one.
+        let h = storm.hurricane(forecast, Vec::new());
+        return if h.official_is_current() {
+            Found::Far(far)
+        } else {
+            Found::Neither
+        };
+    }
     let past = match earlier.filter(|h| past_is_current(&h.past, forecast_time)) {
         Some(h) => h.past.clone(),
         // Not read for the card; an older one stays until the Storms screen reads it.
@@ -264,8 +341,7 @@ async fn hurricane(
         .or_else(|| earlier.map(|h| h.past.clone()))
         .unwrap_or_default(),
     };
-    let h = storm.hurricane(forecast, past);
-    comes_near(place, (h.latitude, h.longitude), &h.official).then_some(h)
+    Found::Near(Box::new(storm.hurricane(forecast, past)))
 }
 
 /// The forecast tracks of `h`.
@@ -479,19 +555,14 @@ pub async fn fetch_storms(
     });
     let known = match cached {
         Some((json, outlook)) if is_current(&outlook, &place, &runs, now) => {
-            let hurricanes = hurricanes(
-                &host,
-                &place,
-                &outlook.hurricanes,
-                Decks::All,
-                &mut attempts,
-            )
-            .await;
-            let (outlook_json, outlook) = if hurricanes == outlook.hurricanes {
+            let known = Cyclones::of(&outlook, &place);
+            let found = hurricanes(&host, &place, &known, Decks::All, &mut attempts).await;
+            let (outlook_json, outlook) = if found == known {
                 (json, outlook)
             } else {
                 let outlook = StormOutlook {
-                    hurricanes,
+                    hurricanes: found.near,
+                    far_hurricanes: found.far,
                     ..outlook
                 };
                 (to_json("storm outlook", &outlook)?, outlook)
@@ -503,8 +574,8 @@ pub async fn fetch_storms(
                 attempts,
             });
         }
-        Some((_, outlook)) => outlook.hurricanes,
-        None => Vec::new(),
+        Some((_, outlook)) => Cyclones::of(&outlook, &place),
+        None => Cyclones::default(),
     };
 
     let loc = outgoing(&place);
@@ -549,7 +620,7 @@ pub async fn fetch_storms(
     for g in &mut grids {
         g.run = run_of(run_domain(&g.model));
     }
-    let hurricanes = hurricanes(&host, &place, &known, Decks::All, &mut attempts).await;
+    let found = hurricanes(&host, &place, &known, Decks::All, &mut attempts).await;
     let outlook = StormOutlook {
         place: location(&place, resolved.as_ref()),
         // The zone's changes as the app computed them for the place, like the
@@ -559,7 +630,8 @@ pub async fn fetch_storms(
         ensembles,
         grids,
         past_runs: Vec::new(),
-        hurricanes,
+        hurricanes: found.near,
+        far_hurricanes: found.far,
         fetched_at: UnixTime(now),
     };
     Ok(StormsOutcome {
@@ -629,8 +701,9 @@ fn ahead_view(
 /// active storms and the a-deck of each near cyclone whose forecast
 /// advisory's tracks are not in `cached_json` (no observed tracks), with
 /// the same failure rules as [`fetch_storms`]. So a check costs one point
-/// request, one active storms request and one a-deck per near cyclone, at
-/// most every three hours while the a-decks answer.
+/// request, one active storms request and one a-deck per near cyclone (and
+/// per cyclone within [`HURRICANE_SEARCH_KM`], once per forecast advisory),
+/// at most every three hours while the a-decks answer.
 #[uniffi::export]
 #[allow(clippy::needless_pass_by_value)] // UniFFI passes arguments by value
 pub async fn storm_ahead(
@@ -662,8 +735,8 @@ pub async fn storm_ahead(
                 attempts: Vec::new(),
             });
         }
-        Some((_, outlook)) => outlook.hurricanes,
-        None => Vec::new(),
+        Some((_, outlook)) => Cyclones::of(&outlook, &place),
+        None => Cyclones::default(),
     };
 
     let mut attempts = Vec::new();
@@ -684,7 +757,7 @@ pub async fn storm_ahead(
     for p in &mut points {
         p.run = None;
     }
-    let hurricanes = hurricanes(&host, &place, &known, Decks::Forecast, &mut attempts).await;
+    let found = hurricanes(&host, &place, &known, Decks::Forecast, &mut attempts).await;
     let outlook = StormOutlook {
         place: location(&place, Some(&point.location)),
         offset_changes: place.core_offset_changes(),
@@ -692,7 +765,8 @@ pub async fn storm_ahead(
         ensembles: Vec::new(),
         grids: Vec::new(),
         past_runs: Vec::new(),
-        hurricanes,
+        hurricanes: found.near,
+        far_hurricanes: found.far,
         fetched_at: UnixTime(now),
     };
     Ok(StormAheadOutcome {
@@ -1786,11 +1860,18 @@ mod tests {
 
     #[test]
     fn only_near_hurricanes_are_read() {
-        // Far from New York, with nothing known of her track: no decks.
-        let net = with_storms(far_away(&josephine()));
-        let outcome = fetch_at(&net, place(), None, NOW);
+        // Half a world away, beyond the search: no decks.
+        let tokyo = Place {
+            name: "Tokyo".into(),
+            latitude: 35.68,
+            longitude: 139.69,
+            ..on_the_track()
+        };
+        let net = with_storms(josephine());
+        let outcome = fetch_at(&net, tokyo, None, NOW);
         assert_eq!(after_runs(&net)[3..], [CURRENT_STORMS]);
-        assert_eq!(outlook(&outcome).hurricanes, []);
+        let o = outlook(&outcome);
+        assert_eq!((o.hurricanes, o.far_hurricanes), (vec![], vec![]));
         // Where she really was, about 630 km out, she is near.
         let net = with_storms(josephine());
         let near = fetch_at(&net, place(), None, NOW);
@@ -1808,6 +1889,93 @@ mod tests {
             (h.latitude, h.advisory_time),
             (15.0, UnixTime(NEXT_ADVISORY))
         );
+    }
+
+    /// Los Angeles: about 4,600 km from Josephine, and her forecast heads
+    /// away from it.
+    fn los_angeles() -> Place {
+        Place {
+            name: "Los Angeles".into(),
+            latitude: 34.05,
+            longitude: -118.24,
+            ..on_the_track()
+        }
+    }
+
+    #[test]
+    fn a_new_storm_is_judged_by_its_forecast_once_per_advisory() {
+        // Within the search: her a-deck is read, and her track stays far.
+        let net = with_storms(josephine());
+        let first = fetch_at(&net, los_angeles(), None, NOW);
+        assert_eq!(after_runs(&net)[3..], [CURRENT_STORMS, ADECK_PATH]);
+        let o = outlook(&first);
+        assert_eq!(o.hurricanes, []);
+        let far = FarHurricane {
+            id: "al102026".into(),
+            forecast_advisory_time: UnixTime(ADVISORY),
+        };
+        assert_eq!(o.far_hurricanes, std::slice::from_ref(&far));
+        // Not again for the same forecast advisory.
+        let net = with_storms(josephine());
+        let cached = Some(first.outlook_json.clone());
+        let again = fetch_at(&net, los_angeles(), cached, NOW + HOUR);
+        assert_eq!(after_runs(&net), [CURRENT_STORMS]);
+        assert_eq!(again.outlook_json, first.outlook_json);
+        // Far is from the place: another place's outlook knows none.
+        assert_eq!(
+            Cyclones::of(&o, &los_angeles()).far,
+            std::slice::from_ref(&far)
+        );
+        assert_eq!(Cyclones::of(&o, &place()).far, []);
+        // Her next advisory is looked at, but an earlier run settles nothing:
+        // it is read again until the new one is out.
+        let net = with_storms(josephine_next());
+        let cached = Some(first.outlook_json.clone());
+        let early = fetch_at(&net, los_angeles(), cached, NOW + 2 * HOUR);
+        assert_eq!(after_runs(&net), [CURRENT_STORMS, ADECK_PATH]);
+        assert_eq!(outlook(&early).far_hurricanes, []);
+        let net = next_advisory();
+        let settled = fetch_at(
+            &net,
+            los_angeles(),
+            Some(early.outlook_json),
+            NOW + 3 * HOUR,
+        );
+        assert_eq!(after_runs(&net), [CURRENT_STORMS, ADECK_PATH]);
+        assert_eq!(
+            outlook(&settled).far_hurricanes,
+            [FarHurricane {
+                forecast_advisory_time: UnixTime(NEXT_ADVISORY),
+                ..far
+            }]
+        );
+        // Without the active storms, what was found stays.
+        let net = Arc::new(Recorded {
+            down: vec!["CurrentStorms"],
+            ..Recorded::default()
+        });
+        let cached = Some(settled.outlook_json.clone());
+        let offline = fetch_at(&net, los_angeles(), cached, NOW + 4 * HOUR);
+        assert_eq!(offline.outlook_json, settled.outlook_json);
+    }
+
+    #[test]
+    fn a_storm_drawn_before_that_moves_off_is_far() {
+        // Drawn at New York, then her forecast advisory's track is far from
+        // the place: kept as far, with no b-deck read.
+        let first = fetch_at(&with_storms(josephine()), place(), None, NOW);
+        assert_eq!(outlook(&first).hurricanes.len(), 1);
+        let mut moved = outlook(&first);
+        for fix in &mut moved.hurricanes[0].official {
+            fix.longitude += 40.0;
+        }
+        let net = with_storms(far_away(&josephine()));
+        let cached = Some(serde_json::to_string(&moved).unwrap());
+        let again = fetch_at(&net, place(), cached, NOW + HOUR);
+        assert_eq!(after_runs(&net), [CURRENT_STORMS]);
+        let o = outlook(&again);
+        assert_eq!(o.hurricanes, []);
+        assert_eq!(o.far_hurricanes.len(), 1);
     }
 
     #[test]

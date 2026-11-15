@@ -14,7 +14,7 @@ use crate::model::{OffsetChange, ResolvedLocation};
 use crate::scales::Level;
 use crate::time::{UnixTime, UtcOffset};
 
-pub use hurricane::{Basin, Hurricane, TrackFix};
+pub use hurricane::{Basin, FarHurricane, Hurricane, TrackFix};
 
 pub mod analysis;
 pub mod hurricane;
@@ -206,6 +206,14 @@ pub struct StormOutlook {
         serde(default, skip_serializing_if = "Vec::is_empty")
     )]
     pub hurricanes: Vec<Hurricane>,
+    /// Active cyclones found too far from the place by their official
+    /// forecast, so their tracks aren't read again until their next forecast
+    /// advisory; empty when none was.
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Vec::is_empty")
+    )]
+    pub far_hurricanes: Vec<FarHurricane>,
     /// When the data was received.
     pub fetched_at: UnixTime,
 }

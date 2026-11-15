@@ -430,6 +430,7 @@ pub fn noreaster() -> StormOutlook {
         grids,
         past_runs: Vec::new(),
         hurricanes: Vec::new(),
+        far_hurricanes: Vec::new(),
         fetched_at: STORM_NOW,
     }
 }
@@ -558,6 +559,7 @@ pub fn dry_week() -> StormOutlook {
         grids,
         past_runs: Vec::new(),
         hurricanes: Vec::new(),
+        far_hurricanes: Vec::new(),
         fetched_at: STORM_NOW,
     }
 }

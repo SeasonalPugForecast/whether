@@ -162,6 +162,19 @@ pub struct Hurricane {
 /// advisory at 20 UTC), so a run this much older is an earlier advisory's.
 pub const OFFICIAL_LEAD_SECS: i64 = 6 * 3_600;
 
+/// An active cyclone whose official forecast, as of one forecast advisory,
+/// stays too far from the place to be drawn: it need not be looked at again
+/// until NHC's next forecast advisory.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct FarHurricane {
+    /// NHC's id, e.g. `al102026`.
+    pub id: String,
+    /// When the forecast advisory it was judged by was issued.
+    pub forecast_advisory_time: UnixTime,
+}
+
 impl Hurricane {
     /// When the forecast advisory was issued: [`Self::forecast_advisory_time`],
     /// else the public advisory's time.
