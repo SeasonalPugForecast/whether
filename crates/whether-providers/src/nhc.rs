@@ -150,6 +150,19 @@ fn get(url: String) -> HttpRequest {
     }
 }
 
+/// The header a deck request carries so that no cache along the way
+/// (the app's own included) answers with an older copy: a deck keeps its
+/// URL from one advisory to the next.
+pub const FRESH_COPY: (&str, &str) = ("Cache-Control", "no-cache");
+
+/// A GET of an NHC deck, asking for a fresh copy ([`FRESH_COPY`]).
+fn get_deck(url: String) -> HttpRequest {
+    HttpRequest {
+        headers: vec![(FRESH_COPY.0, FRESH_COPY.1.to_string())],
+        ..get(url)
+    }
+}
+
 /// The active storms summary request.
 pub fn current_storms_request() -> HttpRequest {
     get(CURRENT_STORMS_URL.to_string())
@@ -174,13 +187,13 @@ fn storm_id(id: &str) -> Result<String, ProviderError> {
 /// e.g. `al102026`.
 pub fn adeck_request(id: &str) -> Result<HttpRequest, ProviderError> {
     let id = storm_id(id)?;
-    Ok(get(format!("{ADECK_BASE_URL}/a{id}.dat.gz")))
+    Ok(get_deck(format!("{ADECK_BASE_URL}/a{id}.dat.gz")))
 }
 
 /// The b-deck (observed track) of storm `id`.
 pub fn bdeck_request(id: &str) -> Result<HttpRequest, ProviderError> {
     let id = storm_id(id)?;
-    Ok(get(format!("{BDECK_BASE_URL}/b{id}.dat")))
+    Ok(get_deck(format!("{BDECK_BASE_URL}/b{id}.dat")))
 }
 
 #[derive(Deserialize)]
@@ -652,7 +665,14 @@ mod tests {
 
     #[test]
     fn ids_are_checked() {
-        assert!(adeck_request("al102026").is_ok());
+        let adeck = adeck_request("al102026").unwrap();
+        assert_eq!(
+            adeck.headers,
+            [("Cache-Control", "no-cache".to_string())],
+            "a deck is never an older copy"
+        );
+        assert_eq!(bdeck_request("al102026").unwrap().headers, adeck.headers);
+        assert_eq!(current_storms_request().headers, []);
         assert_eq!(
             bdeck_request("EP092023").unwrap().url,
             "https://ftp.nhc.noaa.gov/atcf/btk/bep092023.dat"
