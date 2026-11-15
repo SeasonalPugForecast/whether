@@ -126,6 +126,40 @@ extension WidgetData {
         return lowest < highest ? lowest...highest : lowest...(lowest + 1)
     }
 
+    /// The contrast the widget's white text keeps on the sky (WCAG AA for text):
+    /// its secondary text, at 80%, stays at 3:1 or more.
+    static let skyTextContrast = 4.5
+    /// Points down the sky where the shade is measured (`skyShade`).
+    static let skyShadeStops = 5
+
+    /// How much black (0…1) darkens the sky from `top` to `bottom` at each of
+    /// `skyShadeStops` points down it, evenly spaced, so the white text on it
+    /// keeps `skyTextContrast`: none on the deep skies, more on the light ones
+    /// (a clear day's or a snowy one's bottom, a custom theme's pale sky). In
+    /// dark mode (`dark`) the sky is a little deeper anyway.
+    static func skyShade(top: RGBA, bottom: RGBA, dark: Bool) -> [Double] {
+        let least = dark ? 0.2 : 0
+        return (0..<skyShadeStops).map { i in
+            let sky = ColorMath.mix(top, bottom, Double(i) / Double(skyShadeStops - 1))
+            return max(shade(under: sky, for: skyTextContrast), least)
+        }
+    }
+
+    /// The least black over `sky` that gives white text `contrast` on it.
+    static func shade(under sky: RGBA, for contrast: Double) -> Double {
+        func enough(_ black: Double) -> Bool {
+            ColorMath.contrast(.white, ColorMath.over(RGBA(red: 0, green: 0, blue: 0, alpha: black), sky))
+                >= contrast
+        }
+        if enough(0) { return 0 }
+        var (low, high) = (0.0, 1.0)
+        for _ in 0..<20 {
+            let mid = (low + high) / 2
+            if enough(mid) { high = mid } else { low = mid }
+        }
+        return high
+    }
+
     /// The sky for an hour (a core icon name), as the core chooses one for the
     /// current conditions: storms, snow, rain and fog first, then cloud, day or night.
     static func sky(icon: String, isDay: Bool) -> String {

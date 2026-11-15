@@ -41,9 +41,9 @@ struct WeatherWidgetView: View {
         entry.backdrop == .sky && showsBackground && renderingMode == .fullColor
     }
 
-    /// White text and the theme's colors for dark backgrounds on the sky (the
-    /// skies are deep enough for both, light or dark mode); the secondary text a
-    /// little stronger than usual, for the lighter day skies.
+    /// White text and the theme's colors for dark backgrounds on the sky, which
+    /// `WidgetBackground` shades where it is too light for them; the secondary
+    /// text a little stronger than usual.
     @ViewBuilder private func onBackground(_ content: some View) -> some View {
         if onSky {
             content
@@ -401,7 +401,8 @@ struct WeatherWidgetView: View {
 }
 
 /// Behind a Home Screen widget: the sky for what it leads with (still, without
-/// the app's motion), a little deeper in dark mode, or the plain system background.
+/// the app's motion), shaded where it is too light for white text and a little
+/// deeper in dark mode, or the plain system background.
 struct WidgetBackground: View {
     let entry: WeatherWidgetEntry
     @Environment(\.colorScheme) private var scheme
@@ -410,9 +411,19 @@ struct WidgetBackground: View {
         if entry.backdrop == .sky, let sky = entry.now?.sky {
             let (top, bottom) = entry.colorTheme.sky(sky)
             LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom)
-                .overlay(scheme == .dark ? Color.black.opacity(0.2) : .clear)
+                .overlay(LinearGradient(stops: shade(sky), startPoint: .top, endPoint: .bottom))
         } else {
             Color(.systemBackground)
+        }
+    }
+
+    /// The shade over `sky` (`WidgetData.skyShade`), as gradient stops.
+    private func shade(_ sky: String) -> [Gradient.Stop] {
+        let (top, bottom) = ColorRole.sky(sky)
+        let shade = WidgetData.skyShade(
+            top: entry.colorTheme[top].light, bottom: entry.colorTheme[bottom].light, dark: scheme == .dark)
+        return shade.enumerated().map { i, black in
+            Gradient.Stop(color: .black.opacity(black), location: Double(i) / Double(max(shade.count - 1, 1)))
         }
     }
 }

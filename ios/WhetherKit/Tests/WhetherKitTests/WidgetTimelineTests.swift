@@ -154,6 +154,44 @@ final class WidgetTimelineTests: XCTestCase {
         XCTAssertNil(WidgetData.observedAt(snapshotJson: "not json"))
     }
 
+    func testTheSkyIsShadedUntilWhiteTextReadsOnIt() {
+        // Every preset's every sky, light and dark, at every point down it.
+        for theme in ColorPresets.all {
+            for role in ColorRole.allCases where role.rawValue.hasSuffix(".top") && role.group == .sky {
+                let sky = String(role.rawValue.dropFirst("sky.".count).dropLast(".top".count))
+                let (topRole, bottomRole) = ColorRole.sky(sky)
+                let top = theme[topRole].light, bottom = theme[bottomRole].light
+                for dark in [false, true] {
+                    let shade = WidgetData.skyShade(top: top, bottom: bottom, dark: dark)
+                    XCTAssertEqual(shade.count, WidgetData.skyShadeStops)
+                    for step in 0...20 {
+                        let t = Double(step) / 20
+                        // Both gradients as SwiftUI draws them, between their stops.
+                        let at = t * Double(shade.count - 1)
+                        let i = min(Int(at), shade.count - 2)
+                        let black = shade[i] + (shade[i + 1] - shade[i]) * (at - Double(i))
+                        let shaded = ColorMath.over(
+                            RGBA(red: 0, green: 0, blue: 0, alpha: black), ColorMath.mix(top, bottom, t))
+                        let label = "\(theme.id) \(sky) dark: \(dark) at \(t)"
+                        XCTAssertGreaterThanOrEqual(ColorMath.contrast(.white, shaded), 4.4, label)
+                        let secondary = ColorMath.over(RGBA(red: 1, green: 1, blue: 1, alpha: 0.8), shaded)
+                        XCTAssertGreaterThanOrEqual(ColorMath.contrast(secondary, shaded), 3, label)
+                    }
+                }
+            }
+        }
+        // The deep skies keep their colors; the dark mode's deepening stays.
+        let night = ColorPresets.whether
+        let (top, bottom) = ColorRole.sky("clear_night")
+        XCTAssertEqual(WidgetData.skyShade(top: night[top].light, bottom: night[bottom].light, dark: false), [0, 0, 0, 0, 0])
+        XCTAssertEqual(WidgetData.skyShade(top: night[top].light, bottom: night[bottom].light, dark: true).min(), 0.2)
+        let day = ColorRole.sky("clear_day")
+        XCTAssertGreaterThan(
+            WidgetData.skyShade(top: night[day.top].light, bottom: night[day.bottom].light, dark: false).last ?? 0, 0.2,
+            "a clear day's pale bottom is shaded")
+    }
+
+
     func testAnHoursSkyFollowsItsWeatherAndTheSun() {
         XCTAssertEqual(WidgetData.sky(icon: "clear_day", isDay: true), "clear_day")
         XCTAssertEqual(WidgetData.sky(icon: "partly_cloudy_night", isDay: false), "clear_night")
