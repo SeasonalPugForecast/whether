@@ -15,7 +15,10 @@ same rounded coordinates. The radar asks the radar service for the map tiles you
 so it sees roughly where you are looking. The Storms tab, and the "Storm ahead" card on the Now
 tab, ask Open-Meteo for several weather models' forecasts at the place shown (the same rounded
 coordinates); the Storms tab also asks for the models' ensembles and earlier runs at that place,
-and for sea-level pressure at a grid of 49 points up to about 1,000 km around it. When you type in the place search, the text goes to
+and for sea-level pressure at a grid of 49 points up to about 1,000 km around it. Both also ask the
+US National Hurricane Center for its list of active tropical storms and, for any within about
+3,000 km of the place, their forecast and past track files; those requests name only the storms,
+never your coordinates (the distance is worked out on the phone). When you type in the place search, the text goes to
 Apple Maps for suggestions and, if Apple has none, to Open-Meteo's place search; a search that is
 only digits (a postal code) also sends your phone's region code. Those services see your phone's IP
 address, as any web request does, and keep their own logs under their own policies.
@@ -32,6 +35,7 @@ neither; it lists the search text because it reaches a third party (Open-Meteo).
 |---|---|
 | [Apple Maps](https://www.apple.com/legal/privacy/data/en/apple-maps/) | place suggestions as you type a search (the text typed, ranked near the place shown, which is sent to about 1 km), and naming the place your location is |
 | [Open-Meteo](https://open-meteo.com/en/terms) | forecasts, history, place search when Apple has no suggestion, and the Storms tab and "Storm ahead" card (the models' forecasts, ensembles and earlier runs at the place shown, and pressure on a grid around it) |
+| [National Hurricane Center](https://www.nhc.noaa.gov/) | the Storms tab and "Storm ahead" card: the list of active tropical storms, and the track files of the ones near the place (no coordinates are sent) |
 | [MET Norway](https://api.met.no/doc/TermsOfService) | the backup forecast, only when Open-Meteo cannot answer and you leave it on; the request names the project's web address as its contact |
 | [National Weather Service](https://www.weather.gov/privacy) | US alerts, and US forecasts if you switch them on |
 | [NOAA Regional Climate Centers (ACIS)](https://www.rcc-acis.org/) | US climate normals and history |

@@ -391,12 +391,22 @@ all five other tabs shown, iOS lists it under More.
   least 5 cm of snow, 25 mm of rain or 60 km/h gusts. It is checked during the normal refresh with
   one small request at most every 3 hours, opens the Storms screen even when the tab is off, and
   can be hidden like any Now card.
+- **Hurricanes** come from the National Hurricane Center (Atlantic, eastern and central Pacific).
+  For each active storm within about 3,000 km, the map draws NHC's forecast cone, its official
+  track with day labels, the dotted past track and the guidance models (GFS, GEM, ECMWF, UKMET,
+  HAFS and the consensus) as dashed bands; the drawer gives the latest advisory and links to it.
+  The cone is built from NHC's radii for the 2026 season (`whether-core::storm::hurricane`,
+  `CONE_RADII_NMI`): update them each spring from NHC's "About the cone" page. The storm list is
+  fetched on each refresh; the track files are kept until NHC issues a new advisory. The card
+  shows a hurricane first when its cone reaches the place within 5 days.
 
 Screenshots: `-storms` (`-storms dry`) shows a built-in nor'easter (or a dry week) at the time it
 was made for, `-show storms` opens the tab, `-stormstep <n>` moves the scrubber, `-stormsheet
-large` opens the drawer, and `-stormahead` shows the card. The shots are `storms`, `storms-sheet`,
-`storms-charts`, `storms-map-step`, `storms-dark`, `storms-light`, `storms-deutan`, `storms-dry` and
-`now-storm-ahead`.
+large` opens the drawer, and `-stormahead` shows the card. `-hurricane` seeds Subtropical Storm
+Josephine (2026) from NHC's recordings, and `-stormahead hurricane` shows her card. The shots are
+`storms`, `storms-sheet`, `storms-charts`, `storms-map-step`, `storms-dark`, `storms-light`,
+`storms-deutan`, `storms-dry`, `storms-hurricane`, `storms-hurricane-sheet`, `now-storm-ahead` and
+`now-storm-ahead-hurricane`.
 
 ## Widgets
 
