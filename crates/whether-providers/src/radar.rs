@@ -10,7 +10,7 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
 use serde::Deserialize;
-use whether_core::time::{UnixTime, parse_rfc3339};
+use whether_core::time::{UnixTime, UtcOffset, parse_rfc3339};
 
 use crate::error::ProviderError;
 use crate::http::{Endpoint, HttpRequest, Method};
@@ -174,6 +174,20 @@ pub fn tile_template(minutes_ago: u32) -> String {
     format!(
         "{IEM}/cache/tile.py/1.0.0/{}/{{z}}/{{x}}/{{y}}.png",
         layer(minutes_ago)
+    )
+}
+
+/// A `{z}/{x}/{y}` URL template of the composite valid at `valid` (rounded down to its
+/// five minutes), for map views that fetch tiles themselves. [`tile_template`]'s layers
+/// move along with the latest composite; this one names the composite's time
+/// (`ridge::USCOMP-N0Q-YYYYMMDDHHMI`), so its tiles never change and IEM's `/c/` service
+/// lets clients keep them for 14 days. A time the archive doesn't hold yet answers 503.
+pub fn archive_tile_template(valid: UnixTime) -> String {
+    let at = UnixTime(valid.0 - valid.0.rem_euclid(i64::from(FRAME_STEP_MIN) * 60));
+    let t = at.to_local(UtcOffset(0));
+    format!(
+        "{IEM}/c/tile.py/1.0.0/ridge::USCOMP-N0Q-{:04}{:02}{:02}{:02}{:02}/{{z}}/{{x}}/{{y}}.png",
+        t.date.year, t.date.month, t.date.day, t.hour, t.minute
     )
 }
 
@@ -345,5 +359,27 @@ mod tests {
         assert!(parse_valid(b"{}").is_err());
         assert!(ATTRIBUTION.starts_with(RADAR_CREDIT));
         assert_eq!(meta_request().endpoint, Endpoint::Radar);
+    }
+
+    #[test]
+    fn archive_templates_name_the_composite_time() {
+        // 2026-10-10 20:15 UTC.
+        let valid = UnixTime(1_791_663_300);
+        assert_eq!(
+            archive_tile_template(valid),
+            "https://mesonet.agron.iastate.edu/c/tile.py/1.0.0/ridge::USCOMP-N0Q-202610102015/{z}/{x}/{y}.png"
+        );
+        assert_eq!(
+            archive_tile_template(UnixTime(valid.0 + 4 * 60 + 59)),
+            archive_tile_template(valid),
+            "rounded down to the composite's five minutes"
+        );
+        // The loop's oldest frame, across midnight and a month's end.
+        assert!(
+            archive_tile_template(UnixTime(1_793_491_200 - 1500))
+                .contains("ridge::USCOMP-N0Q-202610312335/"),
+            "{}",
+            archive_tile_template(UnixTime(1_793_491_200 - 1500))
+        );
     }
 }
