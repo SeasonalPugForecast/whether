@@ -58,12 +58,13 @@ struct WeatherWidgetView: View {
         "H \(now.high.text)  L \(now.low.text)"
     }
 
-    /// The forecast's source (core text), and Apple's Weather mark when its minutes show.
+    /// The data's credit (the core's attribution, as at the foot of the app's
+    /// forecast), and Apple's Weather mark when its minutes show.
     private func credit(_ view: ViewModel) -> some View {
         HStack(spacing: 4) {
-            Text(view.status.provider)
+            Text(view.attribution)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.7)
             if view.nowcast?.stepMinutes == 1 {
                 Text("·")
                 AppleWeatherBadge()
@@ -71,6 +72,15 @@ struct WeatherWidgetView: View {
         }
         .font(.caption2)
         .foregroundStyle(.secondary)
+    }
+
+    /// The data's credit where little fits: the small and the rectangular widgets.
+    private func smallCredit(_ view: ViewModel) -> some View {
+        Text(view.attribution)
+            .font(.system(size: 9))
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .foregroundStyle(.secondary)
     }
 
     /// Switches to the next saved place (interactive widgets).
@@ -119,6 +129,7 @@ struct WeatherWidgetView: View {
             Text(now.conditionLabel).font(.caption.weight(.semibold)).lineLimit(1)
                 .minimumScaleFactor(0.8)
             Text(highLow(now)).font(.caption).lineLimit(1).minimumScaleFactor(0.8)
+            smallCredit(view).padding(.top, 2)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
@@ -340,15 +351,19 @@ struct WeatherWidgetView: View {
 
     // MARK: Lock Screen
 
+    /// Now, today's high and low and the place, with the data's credit across the foot.
     private func rectangular(_ view: ViewModel, _ now: WidgetNow) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: WeatherSymbols.symbol(now.icon)).font(.title2)
-            VStack(alignment: .leading, spacing: 0) {
-                Text("\(now.temperature.text) \(now.conditionLabel)")
-                    .font(.headline).lineLimit(1)
-                Text(highLow(now)).font(.caption)
-                name(view, font: .caption2).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                Image(systemName: WeatherSymbols.symbol(now.icon)).font(.title2)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("\(now.temperature.text) \(now.conditionLabel)")
+                        .font(.headline).lineLimit(1)
+                    Text(highLow(now)).font(.caption)
+                    name(view, font: .caption2).foregroundStyle(.secondary)
+                }
             }
+            smallCredit(view)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
