@@ -44,9 +44,10 @@ pub(crate) fn run(args: &[&str]) -> Result<(), String> {
         ["--provider", "met-norway"] => met_norway(),
         ["--provider", "openweather-geocode"] => openweather_geocode(),
         ["--provider", "pirate-weather"] => pirate_weather(),
+        ["--provider", "nhc"] => nhc(),
         ["--provider", other] => Err(format!("fixtures for `{other}` are not implemented yet")),
         _ => Err(
-            "usage: cargo xtask fixtures --provider openweather|openweather-onecall4|openweather-geocode|open-meteo|open-meteo-models|open-meteo-storm|nws|nws-observation|acis|open-meteo-history|climate|met-norway|pirate-weather"
+            "usage: cargo xtask fixtures --provider openweather|openweather-onecall4|openweather-geocode|open-meteo|open-meteo-models|open-meteo-storm|nws|nws-observation|acis|open-meteo-history|climate|met-norway|pirate-weather|nhc"
                 .into(),
         ),
     }
@@ -994,6 +995,36 @@ fn open_meteo_storm() -> Result<(), String> {
         )?;
     }
     Ok(())
+}
+
+/// NHC: the active storms summary (empty outside the season), NHC's sample
+/// summary (August 2023), and Josephine's (AL10 2026) public a-deck and
+/// b-deck, through the provider's request builders.
+fn nhc() -> Result<(), String> {
+    use whether_providers::nhc::{adeck_request, bdeck_request, current_storms_request, is_gzip};
+
+    const SAMPLE_URL: &str = "https://www.nhc.noaa.gov/productexamples/NHC_JSON_Sample.json";
+    const STORM: &str = "al102026";
+    let dir = fixture_dir("nhc");
+    fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    record(
+        &dir,
+        "current_storms.json",
+        &current_storms_request().url,
+        200,
+    )?;
+    record(&dir, "current_storms_sample.json", SAMPLE_URL, 200)?;
+    let adeck = adeck_request(STORM).map_err(|e| e.to_string())?;
+    let name = format!("a{STORM}.dat.gz");
+    record(&dir, &name, &adeck.url, 200)?;
+    // NHC serves the file as application/x-gzip; it must stay compressed.
+    let path = dir.join(&name);
+    let bytes = fs::read(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    if !is_gzip(&bytes) {
+        return Err(format!("{}: not gzip", path.display()));
+    }
+    let bdeck = bdeck_request(STORM).map_err(|e| e.to_string())?;
+    record(&dir, &format!("b{STORM}.dat"), &bdeck.url, 200)
 }
 
 #[cfg(test)]
