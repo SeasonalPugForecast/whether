@@ -22,8 +22,8 @@ expression: pretty(&vm)
       "latitude": 39.5,
       "longitude": -66.8,
       "wind": {
-        "value": 101.86002,
-        "text": "102 km/h",
+        "value": 100.0,
+        "text": "100 km/h",
         "unit": "km/h"
       },
       "pressure": {
@@ -43,8 +43,8 @@ expression: pretty(&vm)
           "time": 1792692000,
           "label": "Thu 14:00",
           "wind": {
-            "value": 101.86002,
-            "text": "102 km/h",
+            "value": 100.0,
+            "text": "100 km/h",
             "unit": "km/h"
           }
         },
@@ -54,8 +54,8 @@ expression: pretty(&vm)
           "time": 1792702800,
           "label": "Thu 17:00",
           "wind": {
-            "value": 101.86002,
-            "text": "102 km/h",
+            "value": 100.0,
+            "text": "100 km/h",
             "unit": "km/h"
           }
         },
@@ -65,7 +65,7 @@ expression: pretty(&vm)
           "time": 1792735200,
           "label": "Fri 02:00",
           "wind": {
-            "value": 120.38002,
+            "value": 120.0,
             "text": "120 km/h",
             "unit": "km/h"
           }
@@ -76,8 +76,8 @@ expression: pretty(&vm)
           "time": 1792778400,
           "label": "Fri 14:00",
           "wind": {
-            "value": 111.120026,
-            "text": "111 km/h",
+            "value": 110.0,
+            "text": "110 km/h",
             "unit": "km/h"
           }
         },
@@ -87,8 +87,8 @@ expression: pretty(&vm)
           "time": 1792821600,
           "label": "Sat 02:00",
           "wind": {
-            "value": 101.86002,
-            "text": "102 km/h",
+            "value": 100.0,
+            "text": "100 km/h",
             "unit": "km/h"
           }
         },
@@ -98,8 +98,8 @@ expression: pretty(&vm)
           "time": 1792864800,
           "label": "Sat 14:00",
           "wind": {
-            "value": 92.60002,
-            "text": "93 km/h",
+            "value": 95.0,
+            "text": "95 km/h",
             "unit": "km/h"
           }
         },
@@ -109,8 +109,8 @@ expression: pretty(&vm)
           "time": 1792908000,
           "label": "Sun 02:00",
           "wind": {
-            "value": 83.34003,
-            "text": "83 km/h",
+            "value": 85.0,
+            "text": "85 km/h",
             "unit": "km/h"
           }
         }

@@ -22,8 +22,8 @@ expression: pretty(&vm)
       "latitude": 39.5,
       "longitude": -66.8,
       "wind": {
-        "value": 63.29288,
-        "text": "63 mph",
+        "value": 65.0,
+        "text": "65 mph",
         "unit": "mph"
       },
       "pressure": {
@@ -43,8 +43,8 @@ expression: pretty(&vm)
           "time": 1792692000,
           "label": "Thu 2 PM",
           "wind": {
-            "value": 63.29288,
-            "text": "63 mph",
+            "value": 65.0,
+            "text": "65 mph",
             "unit": "mph"
           }
         },
@@ -54,8 +54,8 @@ expression: pretty(&vm)
           "time": 1792702800,
           "label": "Thu 5 PM",
           "wind": {
-            "value": 63.29288,
-            "text": "63 mph",
+            "value": 65.0,
+            "text": "65 mph",
             "unit": "mph"
           }
         },
@@ -65,7 +65,7 @@ expression: pretty(&vm)
           "time": 1792735200,
           "label": "Fri 2 AM",
           "wind": {
-            "value": 74.800674,
+            "value": 75.0,
             "text": "75 mph",
             "unit": "mph"
           }
@@ -76,8 +76,8 @@ expression: pretty(&vm)
           "time": 1792778400,
           "label": "Fri 2 PM",
           "wind": {
-            "value": 69.046776,
-            "text": "69 mph",
+            "value": 70.0,
+            "text": "70 mph",
             "unit": "mph"
           }
         },
@@ -87,8 +87,8 @@ expression: pretty(&vm)
           "time": 1792821600,
           "label": "Sat 2 AM",
           "wind": {
-            "value": 63.29288,
-            "text": "63 mph",
+            "value": 65.0,
+            "text": "65 mph",
             "unit": "mph"
           }
         },
@@ -98,8 +98,8 @@ expression: pretty(&vm)
           "time": 1792864800,
           "label": "Sat 2 PM",
           "wind": {
-            "value": 57.538982,
-            "text": "58 mph",
+            "value": 60.0,
+            "text": "60 mph",
             "unit": "mph"
           }
         },
@@ -109,8 +109,8 @@ expression: pretty(&vm)
           "time": 1792908000,
           "label": "Sun 2 AM",
           "wind": {
-            "value": 51.785088,
-            "text": "52 mph",
+            "value": 50.0,
+            "text": "50 mph",
             "unit": "mph"
           }
         }

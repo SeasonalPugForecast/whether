@@ -322,7 +322,8 @@ pub struct HurricaneVm {
     pub latitude: f32,
     /// The centre's longitude, in degrees.
     pub longitude: f32,
-    /// The maximum sustained wind, e.g. "75 mph".
+    /// The maximum sustained wind, e.g. "75 mph", rounded to the nearest 5
+    /// in km/h, mph and knots as NHC's advisories are.
     pub wind: Quantity,
     /// The central pressure, e.g. "29.18 inHg".
     pub pressure: Quantity,
@@ -364,7 +365,8 @@ pub struct ForecastPointVm {
     pub time: UnixTime,
     /// The marker's label, e.g. "Fri 2 AM".
     pub label: String,
-    /// The forecast maximum wind, e.g. "75 mph".
+    /// The forecast maximum wind, e.g. "75 mph", rounded like
+    /// [`HurricaneVm::wind`].
     pub wind: Quantity,
 }
 
@@ -1321,6 +1323,12 @@ fn knots(f: &Formatter<'_>, kt: Option<f32>) -> Quantity {
     f.wind(kt.and_then(|kt| Mps::from_unit(kt, WindUnit::Knots)))
 }
 
+/// A sustained wind in knots, in the display's wind unit and rounded the
+/// way NHC's advisories round it.
+fn advisory_knots(f: &Formatter<'_>, kt: Option<u16>) -> Quantity {
+    f.advisory_wind(kt.and_then(|kt| Mps::from_unit(f32::from(kt), WindUnit::Knots)))
+}
+
 /// "NE at 13 mph", "Stationary" below 1 kt, or the missing placeholder.
 fn movement(f: &Formatter<'_>, h: &Hurricane) -> String {
     match (h.movement_deg, h.movement_kt) {
@@ -1454,7 +1462,7 @@ fn hurricane_vm(
         basin: h.basin,
         latitude: coordinate(h.latitude),
         longitude: coordinate(h.longitude),
-        wind: knots(f, h.wind_kt.map(f32::from)),
+        wind: advisory_knots(f, h.wind_kt),
         pressure: f.pressure(h.pressure_hpa.map(Hpa)),
         movement: movement(f, h),
         advisory: f.strings.fmt(
@@ -1473,7 +1481,7 @@ fn hurricane_vm(
                 longitude: coordinate(fix.longitude),
                 time: fix.time,
                 label: day_time(f, fix.time, outlook.offset_at(fix.time)),
-                wind: knots(f, fix.wind_kt.map(f32::from)),
+                wind: advisory_knots(f, fix.wind_kt),
             })
             .collect(),
         aids: aid_tracks(f, h),
@@ -2467,13 +2475,13 @@ mod tests {
     #[test]
     fn hurricanes_show_strength_and_movement_in_display_units() {
         let vm = sample(&imperial());
-        assert_eq!(vm.wind.text, "104 mph");
+        assert_eq!(vm.wind.text, "105 mph");
         assert_eq!(vm.pressure.text, "28.50 inHg");
         assert_eq!(vm.movement, "N at 9 mph");
         assert_eq!(vm.advisory, "Advisory Fri 4:00 PM");
         assert_eq!(vm.advisory_time, UnixTime(HURRICANE_START.0 + 3 * HOUR));
         let metric = sample(&PresentationConfig::default());
-        assert_eq!(metric.wind.text, "167 km/h");
+        assert_eq!(metric.wind.text, "165 km/h");
         assert_eq!(metric.pressure.text, "965 hPa");
         assert_eq!(metric.movement, "N at 15 km/h");
         assert_eq!(metric.advisory, "Advisory Fri 16:00");
@@ -2492,7 +2500,7 @@ mod tests {
         let vm = sample(&imperial());
         let labels: Vec<&str> = vm.official.iter().map(|p| p.label.as_str()).collect();
         assert_eq!(labels[..3], ["Fri 1 PM", "Sat 1 AM", "Sat 1 PM"]);
-        assert_eq!(vm.official[0].wind.text, "104 mph");
+        assert_eq!(vm.official[0].wind.text, "105 mph");
         assert_eq!((vm.latitude, vm.longitude), (31.0, -75.0));
         let aids: Vec<(&str, &str, &str)> = vm
             .aids

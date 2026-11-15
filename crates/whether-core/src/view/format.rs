@@ -116,6 +116,21 @@ impl<'a> Formatter<'a> {
         }
     }
 
+    /// A cyclone's sustained wind as the National Hurricane Center's
+    /// advisories give it: like [`Self::wind`], rounded to the nearest 5 in
+    /// km/h, mph and knots, so 55 kt shows as "65 mph" or "100 km/h".
+    pub fn advisory_wind(&self, v: Option<Mps>) -> Quantity {
+        let wind = self.wind(v);
+        let fives = matches!(
+            self.presentation.units.wind,
+            WindUnit::Kmh | WindUnit::Mph | WindUnit::Knots
+        );
+        match wind.value {
+            Some(value) if fives => Self::quantity(libm::roundf(value / 5.0) * 5.0, 0, wind.unit),
+            _ => wind,
+        }
+    }
+
     /// "1020 hPa", "30.12 inHg", "765 mmHg" or "102.0 kPa".
     pub fn pressure(&self, v: Option<Hpa>) -> Quantity {
         let u = self.presentation.units.pressure;
@@ -300,6 +315,49 @@ mod tests {
             assert_eq!(q.text, "59.5 °F");
             assert!((q.value.unwrap() - 59.54).abs() < 1e-3);
         });
+    }
+
+    #[test]
+    fn advisory_winds_round_to_fives_like_nhc() {
+        let kt = |kt: f32| Mps::from_unit(kt, WindUnit::Knots);
+        // NHC: 55 kt is "65 MPH...100 KM/H", 90 kt "105 MPH...165 KM/H".
+        let expect = [
+            (WindUnit::Mph, 55.0, "65 mph", 65.0),
+            (WindUnit::Mph, 90.0, "105 mph", 105.0),
+            (WindUnit::Kmh, 55.0, "100 km/h", 100.0),
+            (WindUnit::Kmh, 90.0, "165 km/h", 165.0),
+            (WindUnit::Knots, 55.0, "55 kn", 55.0),
+            (WindUnit::Knots, 57.0, "55 kn", 55.0),
+        ];
+        for (unit, knots, text, value) in expect {
+            let mut units = UnitPrefs::METRIC;
+            units.wind = unit;
+            let p = PresentationConfig {
+                units,
+                ..Default::default()
+            };
+            fmt_with(&p, |f| {
+                let q = f.advisory_wind(kt(knots));
+                assert_eq!(
+                    (q.text.as_str(), q.value),
+                    (text, Some(value)),
+                    "{knots} kt"
+                );
+            });
+        }
+        // Metres per second and Beaufort show as the plain wind does.
+        for unit in [WindUnit::Mps, WindUnit::Beaufort] {
+            let mut units = UnitPrefs::METRIC;
+            units.wind = unit;
+            let p = PresentationConfig {
+                units,
+                ..Default::default()
+            };
+            fmt_with(&p, |f| {
+                assert_eq!(f.advisory_wind(kt(55.0)), f.wind(kt(55.0)));
+                assert_eq!(f.advisory_wind(None).text, "—");
+            });
+        }
     }
 
     #[test]
