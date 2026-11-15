@@ -128,7 +128,7 @@ struct SourceDetail: View {
     init(store: WeatherStore, provider: String) {
         self.store = store
         self.provider = provider
-        _hasKey = State(initialValue: Keychain.key(for: provider) != nil)
+        _hasKey = State(initialValue: store.savedKeys[provider] != nil)
     }
 
     private var info: Sources.Info? { Sources.info(provider) }
@@ -171,7 +171,7 @@ struct SourceDetail: View {
     @ViewBuilder private var openWeather: some View {
         Section {
             ProviderKeyEditor(
-                provider: provider, signUp: info?.signUp,
+                provider: provider, stored: store.savedKeys[provider], signUp: info?.signUp,
                 check: { await store.checkKey($0) },
                 onSaved: { keySaved($0) })
         } header: {
@@ -210,7 +210,7 @@ struct SourceDetail: View {
     @ViewBuilder private var pirateWeather: some View {
         Section {
             ProviderKeyEditor(
-                provider: provider, signUp: info?.signUp,
+                provider: provider, stored: store.savedKeys[provider], signUp: info?.signUp,
                 check: { await store.checkPirateKey($0) },
                 onSaved: { keySaved($0) })
         } header: {
@@ -305,17 +305,18 @@ struct ProviderKeyEditor: View {
     @State private var keyCheck: KeyCheck?
     @State private var checking = false
 
+    /// `stored` is the key saved now (the store's `savedKeys`, so the Keychain is
+    /// not read each time the page is drawn).
     init(
-        provider: String, signUp: URL? = nil, check: ((String) async -> KeyCheck)? = nil,
+        provider: String, stored: String?, signUp: URL? = nil, check: ((String) async -> KeyCheck)? = nil,
         onSaved: @escaping (Bool) -> Void
     ) {
         self.provider = provider
         self.signUp = signUp
         self.check = check
         self.onSaved = onSaved
-        let stored = Keychain.key(for: provider) ?? ""
-        _key = State(initialValue: stored)
-        _savedKey = State(initialValue: stored)
+        _key = State(initialValue: stored ?? "")
+        _savedKey = State(initialValue: stored ?? "")
     }
 
     private var trimmed: String { key.trimmingCharacters(in: .whitespacesAndNewlines) }
