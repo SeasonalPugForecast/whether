@@ -257,7 +257,7 @@ mod view {
     use whether_core::strings::Strings;
     use whether_core::time::UtcOffset;
     use whether_core::units::UnitPrefs;
-    use whether_core::view::storms::build_storms;
+    use whether_core::view::storms::{build_storms, storm_ahead};
 
     /// Half an hour after Josephine's last advisory (5:30 PM EDT).
     pub(super) const NOW: UnixTime = UnixTime(LAST_INIT.0 + 3 * HOUR + 1_800);
@@ -347,5 +347,39 @@ mod view {
             NOW,
         );
         insta::assert_snapshot!("josephine_metric", pretty(&vm));
+    }
+
+    /// A made-up place on Josephine's official track, at its 36-hour
+    /// position.
+    fn on_the_track() -> ResolvedLocation {
+        place("Test Point", 43.5, -55.9)
+    }
+
+    #[test]
+    fn the_cone_warns_a_place_on_the_track() {
+        let vm = storm_ahead(
+            &outlook(on_the_track()),
+            &imperial(),
+            &Strings::default(),
+            NOW,
+        )
+        .unwrap();
+        assert_eq!(vm.title, "Subtropical Storm Josephine");
+        assert_eq!(vm.line, "The forecast cone reaches Test Point Fri");
+        assert_eq!(vm.hurricane.as_deref(), Some("al102026"));
+        assert!(vm.start > NOW && vm.start.0 < LAST_INIT.0 + 36 * HOUR);
+        let none = storm_ahead(&outlook(new_york()), &imperial(), &Strings::default(), NOW);
+        assert_eq!(none, None);
+    }
+
+    #[test]
+    fn snapshot_josephine_storm_ahead() {
+        let vm = storm_ahead(
+            &outlook(on_the_track()),
+            &imperial(),
+            &Strings::default(),
+            NOW,
+        );
+        insta::assert_snapshot!("josephine_storm_ahead", pretty(&vm));
     }
 }

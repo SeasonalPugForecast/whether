@@ -1,0 +1,13 @@
+---
+source: crates/whether-providers/tests/nhc.rs
+expression: pretty(&vm)
+---
+{
+  "title": "Subtropical Storm Josephine",
+  "line": "The forecast cone reaches Test Point Fri",
+  "level": "poor",
+  "agreement": null,
+  "start": 1792805748,
+  "end": 1792837700,
+  "hurricane": "al102026"
+}

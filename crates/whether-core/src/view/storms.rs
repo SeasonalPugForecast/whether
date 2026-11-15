@@ -463,27 +463,38 @@ pub fn build_storms(
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct StormAheadVm {
     /// e.g. "Storm ahead · Sat night – Sun night", named like
-    /// [`StormEventVm::title`].
+    /// [`StormEventVm::title`]; for a hurricane its kind and name, e.g.
+    /// "Hurricane Josephine".
     pub title: String,
     /// The headline amount, then how the models differ when they don't
     /// agree well, e.g. "Up to 14 in of snow · models disagree", "Up to
-    /// 1.7 in of rain" or "Gusts to 52 mph".
+    /// 1.7 in of rain" or "Gusts to 52 mph"; for a hurricane, e.g. "The
+    /// forecast cone reaches New York Thu".
     pub line: String,
     /// The severity level displays color the card with: the agreement's, or
-    /// Moderate when the agreement is unknown.
+    /// Moderate when the agreement is unknown; a hurricane's
+    /// [`HurricaneVm::level`].
     pub level: Level,
     /// The agreement's name, e.g. "Low agreement"; `None` when fewer than two
-    /// models can be compared.
+    /// models can be compared, and for a hurricane.
     pub agreement: Option<String>,
-    /// The event window's start.
+    /// The event window's start; for a hurricane, when its cone reaches the
+    /// place (`now` when the place is in it already).
     pub start: UnixTime,
-    /// The event window's end.
+    /// The event window's end; for a hurricane, when its cone leaves the
+    /// place.
     pub end: UnixTime,
+    /// The NHC id of the hurricane the card warns of; `None` (and left out
+    /// of the JSON) for a storm from the models.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub hurricane: Option<String>,
 }
 
-/// The "Storm ahead" card for `outlook` at `now`: the first event
-/// [`analysis::significant_event`] finds, or `None` when nothing coming is
-/// significant.
+/// The "Storm ahead" card for `outlook` at `now`: a hurricane whose
+/// forecast cone covers the place within
+/// [`analysis::SIGNIFICANT_HORIZON_SECS`] (the earliest, when several do),
+/// else the first event [`analysis::significant_event`] finds, or `None`
+/// when nothing coming is significant.
 ///
 /// The headline is whichever of snow, precipitation and gusts goes furthest
 /// past its significance threshold (snow, then precipitation, on a tie), as
@@ -495,8 +506,11 @@ pub fn storm_ahead(
     strings: &Strings,
     now: UnixTime,
 ) -> Option<StormAheadVm> {
-    let event = analysis::significant_event(outlook, now)?;
     let f = Formatter::new(presentation, strings);
+    if let Some(card) = hurricane_ahead(outlook, &f, now) {
+        return Some(card);
+    }
+    let event = analysis::significant_event(outlook, now)?;
     let (wet_start, wet_end) = wet_span(outlook, &event);
     let when = event_title(&f, outlook, wet_start, wet_end);
     let found: Vec<Vec<Track>> = outlook.grids.iter().map(track::track_lows).collect();
@@ -524,6 +538,31 @@ pub fn storm_ahead(
         agreement: agreement.map(|a| a.label),
         start: event.start,
         end: event.end,
+        hurricane: None,
+    })
+}
+
+/// The card for the hurricane whose forecast cone reaches the place first
+/// within [`analysis::SIGNIFICANT_HORIZON_SECS`]: "Hurricane Josephine",
+/// "The forecast cone reaches New York Thu".
+fn hurricane_ahead(
+    outlook: &StormOutlook,
+    f: &Formatter<'_>,
+    now: UnixTime,
+) -> Option<StormAheadVm> {
+    let (h, (start, end)) = outlook
+        .hurricanes
+        .iter()
+        .filter_map(|h| cone_window(outlook, h, now).map(|window| (h, window)))
+        .min_by_key(|(_, (start, _))| *start)?;
+    Some(StormAheadVm {
+        title: hurricane_name(f, h),
+        line: cone_sentence(f, outlook, start, now),
+        level: hurricane_level(h),
+        agreement: None,
+        start,
+        end,
+        hurricane: Some(h.id.clone()),
     })
 }
 
@@ -2081,6 +2120,74 @@ mod tests {
         points_only.ensembles.clear();
         let vm = ahead(&points_only, &imperial()).unwrap();
         assert_eq!(vm.agreement.as_deref(), Some("Low agreement"));
+    }
+
+    #[test]
+    fn a_hurricane_cone_comes_before_the_models() {
+        let vm = ahead(&with_hurricane(noreaster()), &imperial()).unwrap();
+        assert_eq!(vm.title, "Hurricane Sample");
+        assert_eq!(vm.line, "The forecast cone reaches New York Sun");
+        assert_eq!((vm.level, vm.agreement.as_deref()), (Level::VeryPoor, None));
+        assert_eq!(vm.hurricane.as_deref(), Some("al992027"));
+        assert!(vm.start > STORM_NOW && vm.end > vm.start);
+        let reach = crate::storm::hurricane::hurricane_reaches(
+            &crate::storm::testdata::hurricane(),
+            (40.7143, -74.005_97),
+            STORM_NOW,
+            analysis::SIGNIFICANT_HORIZON_SECS,
+        );
+        assert_eq!(Some(vm.start), reach);
+        // Without the models' storm too.
+        let dry = ahead(&with_hurricane(dry_week()), &imperial()).unwrap();
+        assert_eq!(dry.line, vm.line);
+        let (de, _) = Strings::localized("de", &alloc::collections::BTreeMap::new());
+        let german = storm_ahead(
+            &with_hurricane(dry_week()),
+            &PresentationConfig::default(),
+            &de,
+            STORM_NOW,
+        )
+        .unwrap();
+        assert_eq!(german.title, "Hurrikan Sample");
+        assert_eq!(german.line, "Der Vorhersagekegel erreicht New York So");
+        // Inside the cone already.
+        let inside = storm_ahead(
+            &with_hurricane(dry_week()),
+            &imperial(),
+            &Strings::default(),
+            vm.start,
+        )
+        .unwrap();
+        assert_eq!(inside.line, "New York is in the forecast cone");
+        assert_eq!(inside.start, vm.start);
+    }
+
+    #[test]
+    fn a_far_off_hurricane_leaves_the_card_to_the_models() {
+        let mut outlook = with_hurricane(noreaster());
+        // The same storm a week later: past the 5-day horizon.
+        let h = &mut outlook.hurricanes[0];
+        for fix in &mut h.official {
+            fix.time = UnixTime(fix.time.0 + 7 * DAY);
+        }
+        let vm = ahead(&outlook, &imperial()).unwrap();
+        assert_eq!(vm.title, "Storm ahead · Sat night – Sun night");
+        assert_eq!(vm.hurricane, None);
+        let vm = build(&outlook, &imperial());
+        assert_eq!(vm.hurricanes[0].reaches, None);
+        // Far to the east.
+        let mut outlook = with_hurricane(dry_week());
+        for fix in &mut outlook.hurricanes[0].official {
+            fix.longitude += 20.0;
+        }
+        assert_eq!(ahead(&outlook, &imperial()), None);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn snapshot_storm_ahead_hurricane() {
+        let vm = ahead(&with_hurricane(dry_week()), &imperial());
+        insta::assert_snapshot!("storm_ahead_hurricane", pretty(&vm));
     }
 
     #[test]
