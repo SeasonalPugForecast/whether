@@ -22,6 +22,14 @@ final class FollowMeTests: XCTestCase {
         XCTAssertTrue(AppPlace.shouldMove(old: here, new: at(50_000)))
     }
 
+    func testAFixAnswersForTenMinutes() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        XCTAssertTrue(AppPlace.fixIsRecent(now, now: now))
+        XCTAssertTrue(AppPlace.fixIsRecent(now.addingTimeInterval(-599), now: now))
+        XCTAssertFalse(AppPlace.fixIsRecent(now.addingTimeInterval(-600), now: now))
+        XCTAssertFalse(AppPlace.fixIsRecent(now.addingTimeInterval(60), now: now), "the clock went back")
+    }
+
     func testAtMostOneFollowingPlaceAndItIsFirst() {
         let list = AppPlace.arranged([
             place("a"), place("b", follows: true), place("c"), place("d", follows: true),

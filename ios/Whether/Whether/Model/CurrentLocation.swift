@@ -14,13 +14,18 @@ enum CurrentLocation {
         }
     }
 
-    /// One location fix. Gives up after `timeout` seconds (no signal, or a
-    /// permission prompt left alone).
+    /// The last fix: one under ten minutes old answers for a new one
+    /// (`AppPlace.fixIsRecent`).
+    private static var last: CLLocation?
+
+    /// One location fix, at about a kilometre (the following place moves at 1 km).
+    /// Gives up after `timeout` seconds (no signal, or a permission prompt left alone).
     static func fix(timeout: Double = 12) async throws -> CLLocation {
         #if DEBUG
             if let fake = debugFix() { return try fake.get() }
         #endif
-        return try await withThrowingTaskGroup(of: CLLocation.self) { group in
+        if let last, AppPlace.fixIsRecent(last.timestamp, now: .now) { return last }
+        let location = try await withThrowingTaskGroup(of: CLLocation.self) { group in
             group.addTask { try await liveFix() }
             group.addTask {
                 try await Task.sleep(for: .seconds(timeout))
@@ -30,11 +35,24 @@ enum CurrentLocation {
             // INVARIANT: the group has two tasks and one of them always finishes.
             return try await group.next()!
         }
+        last = location
+        return location
     }
 
     private static func liveFix() async throws -> CLLocation {
         let session = CLServiceSession(authorization: .whenInUse)
         defer { withExtendedLifetime(session) {} }
+        switch CLLocationManager().authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            // Wi-Fi and cell towers where they answer, rather than the best accuracy
+            // (which keeps GPS on).
+            return try await CoarseFix().location()
+        case .denied, .restricted:
+            throw Failure.denied
+        default:
+            // Not asked yet: the live updates ask, and say what was answered.
+            break
+        }
         for try await update in CLLocationUpdate.liveUpdates() {
             if update.authorizationDenied || update.authorizationDeniedGlobally {
                 throw Failure.denied
@@ -91,4 +109,47 @@ enum CurrentLocation {
             return (words(parts[2]), parts.count > 3 ? words(parts[3]) : "")
         }
     #endif
+}
+
+/// One fix at about a kilometre (`kCLLocationAccuracyKilometer`), once location
+/// access is given.
+private final class CoarseFix: NSObject, CLLocationManagerDelegate {
+    private let manager = CLLocationManager()
+    private var continuation: CheckedContinuation<CLLocation, any Error>?
+
+    func location() async throws -> CLLocation {
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                guard !Task.isCancelled else {
+                    continuation.resume(throwing: CancellationError())
+                    return
+                }
+                self.continuation = continuation
+                manager.delegate = self
+                manager.desiredAccuracy = kCLLocationAccuracyKilometer
+                manager.requestLocation()
+            }
+        } onCancel: {
+            Task { @MainActor in self.finish(.failure(CancellationError())) }
+        }
+    }
+
+    private func finish(_ result: Result<CLLocation, any Error>) {
+        guard let continuation else { return }
+        self.continuation = nil
+        manager.stopUpdatingLocation()
+        continuation.resume(with: result)
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.last else { return }
+        Task { @MainActor in self.finish(.success(location)) }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: any Error) {
+        let denied = (error as? CLError)?.code == .denied
+        Task { @MainActor in
+            self.finish(.failure(denied ? CurrentLocation.Failure.denied : CurrentLocation.Failure.unavailable))
+        }
+    }
 }

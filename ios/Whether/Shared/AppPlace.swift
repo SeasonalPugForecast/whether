@@ -79,6 +79,16 @@ struct AppPlace: Codable, Hashable, Identifiable {
             .distance(from: CLLocation(latitude: new.latitude, longitude: new.longitude)) >= 1_000
     }
 
+    /// How long a location fix answers for a new one: coming back to the app
+    /// minutes later asks for none.
+    static let fixLasts: TimeInterval = 10 * 60
+
+    /// Whether a fix taken at `taken` still answers at `now`.
+    static func fixIsRecent(_ taken: Date, now: Date) -> Bool {
+        let age = now.timeIntervalSince(taken)
+        return age >= 0 && age < fixLasts
+    }
+
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
