@@ -914,8 +914,9 @@ final class WeatherStore {
         // follow side by side.
         let nowSeconds = Int64(now.timeIntervalSince1970)
         applyAlerts(nil, asked: false, at: nowSeconds, for: place, to: &cache)
-        // Written once, below, with the rest.
-        commit(cache, for: place, persist: false)
+        // Written at once: the calls are counted, and the app may be gone before
+        // the rest comes.
+        commit(cache, for: place)
         #if DEBUG
             print("fetch \(place.name): forecast shown after \(Date.now.timeIntervalSince(now))s")
         #endif
@@ -944,8 +945,9 @@ final class WeatherStore {
             cache.normalsJson = kept.normalsJson
             cache.historyFailedAt = kept.failedAt
         }
-        // Shown again only when the minutes, alerts or history changed something.
-        commit(cache, for: place, show: cache != fetched)
+        // Kept, written and shown again only when the minutes, alerts or history
+        // changed something.
+        if cache != fetched { commit(cache, for: place) }
         #if DEBUG
             print(
                 "fetch \(place.name): minutes and history after \(Date.now.timeIntervalSince(now))s"
@@ -981,14 +983,14 @@ final class WeatherStore {
 
     /// Keeps `cache` for `place` (unless the place was removed or moved meanwhile:
     /// a forecast for the old coordinates would replace the reset cache), writes
-    /// it unless `persist` is `false`, and shows it unless `show` is.
-    private func commit(_ cache: PlaceCache, for place: AppPlace, persist: Bool = true, show: Bool = true) {
+    /// it and shows it.
+    private func commit(_ cache: PlaceCache, for place: AppPlace) {
         guard AppPlace.isCurrent(place, in: places) else { return }
         caches[place.id] = cache
-        if persist { save(place) }
+        save(place)
         // The other places' views change only in their tabs, which the refresh's
         // last rebuild brings up to date.
-        if show { rebuild(only: [place.id]) }
+        rebuild(only: [place.id])
     }
 
     /// A place's history after a fetch: what to keep.
