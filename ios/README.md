@@ -348,8 +348,11 @@ in Files), or use iCloud Drive.
   radar color, color vision or patterns repaints each tile in the theme's five steps
   (`RadarPalette`: IEM's n0q table read back to dBZ; steps at 20, 35, 45 and 55 dBZ) and shows the
   stepped legend with words, so the legend always describes the map. Repainted tiles are cached in
-  memory only while fresh (at most five minutes, `RadarTileCache`). OpenWeather's layer abroad is
-  never repainted.
+  memory while fresh (at most an hour, `RadarTileCache`). The loop's frames name their composite's
+  time (IEM's `ridge::USCOMP-N0Q-YYYYMMDDHHMI` layer), so their tiles never change and are also kept
+  on disk (`URLSession.radarTiles`, up to 100 MB in Caches). The latest frame loads first and the
+  others after it; the loop plays from the oldest once they are in. OpenWeather's layer abroad is
+  never repainted and never cached on disk (its URLs carry the key).
 - **Your own colors.** "Customize…" on a preset (or touch and hold its card) makes "My <Preset>"
   and opens the editor: every role grouped as Sky, Weather, Temperature, Severity, Precipitation,
   Radar, Sun & moon, Storm models and Accent, with a `ColorPicker` (and a second one for dark where the role has

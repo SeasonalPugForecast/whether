@@ -63,8 +63,7 @@ final class RadarLoop {
     /// Steps the loop, holding the latest frame a little longer.
     func tick(_ step: inout Int) {
         guard !frames.isEmpty else { return }
-        step = (step + 1) % (frames.count + 3)
-        index = min(step, frames.count - 1)
+        (step, index) = RadarLoopRules.next(after: step, count: frames.count)
     }
 }
 

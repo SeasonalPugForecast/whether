@@ -102,6 +102,12 @@ struct RadarScreen: View {
     @Environment(\.colorVision) private var vision
     @State private var playing = true
     @State private var step = 0
+    /// The frames whose tiles are all in (the map says so): the loop plays once they are,
+    /// the latest frame showing until then.
+    @State private var loaded: [String] = []
+    /// The frames the loop has played or been dragged through: a first play starts from
+    /// the oldest.
+    @State private var played: [String] = []
     /// Apple's satellite Earth, zoomed out to the globe.
     @State private var globe = false
     @State private var started = false
@@ -118,7 +124,8 @@ struct RadarScreen: View {
                 // About 150 km across (county scale) unless the options say otherwise.
                 span: options.startZoom.span, globe: globe,
                 maximumZ: source == .openWeather ? Int(radarOpenweatherMaxZoom()) : 20,
-                style: options.style, opacity: options.opacity
+                style: options.style, opacity: options.opacity,
+                onLoopLoaded: { loaded = $0 }
             )
             .ignoresSafeArea()
             VStack {
@@ -197,16 +204,26 @@ struct RadarScreen: View {
                 }
             #endif
         }
-        .task(id: LoopKey(playing: playing, milliseconds: options.speed.frameMilliseconds)) {
-            // One frame (OpenWeather's layer) has nothing to step through.
-            guard playing, loop.frames.count > 1 else { return }
-            step = loop.index
+        .task(
+            id: LoopKey(
+                playing: playing, milliseconds: options.speed.frameMilliseconds, frames: templates,
+                loaded: loaded == templates)
+        ) {
+            // One frame (OpenWeather's layer) has nothing to step through; the latest
+            // frame shows until the others are in.
+            let frames = templates
+            guard playing, frames.count > 1, loaded == frames else { return }
+            step = RadarLoopRules.start(index: loop.index, count: frames.count, firstPlay: played != frames)
+            played = frames
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(options.speed.frameMilliseconds))
                 loop.tick(&step)
             }
         }
     }
+
+    /// The frames' tile templates: the loop starts over when they change.
+    private var templates: [String] { loop.frames.map(\.tileTemplate) }
 
     /// The radar's quick choices, and a page with all of them.
     private var optionsMenu: some View {
@@ -268,6 +285,7 @@ struct RadarScreen: View {
                         get: { Double(loop.index) },
                         set: {
                             playing = false
+                            played = templates
                             loop.index = Int($0.rounded())
                         }),
                     in: 0...Double(loop.frames.count - 1), step: 1
@@ -288,10 +306,13 @@ struct RadarScreen: View {
     }
 }
 
-/// What restarts the loop's timer: pausing, playing, or a new speed.
+/// What restarts the loop's timer: pausing, playing, a new speed, new frames, or their
+/// tiles coming in.
 private struct LoopKey: Equatable {
     var playing: Bool
     var milliseconds: Int
+    var frames: [String]
+    var loaded: Bool
 }
 
 /// What the radar's colors mean: NOAA's own scale from light (green) to heavy (red

@@ -2,14 +2,43 @@ import XCTest
 
 @testable import WhetherKit
 
-/// The radar loop: which frames load after the one shown, and when a frame's tiles
-/// count as in.
+/// The radar loop: which frames load after the one shown, how it steps, and when a
+/// frame's tiles count as in.
 final class RadarLoopTests: XCTestCase {
     func testTheOtherFramesLoadOldestFirst() {
         XCTAssertEqual(RadarLoopRules.deferred(count: 6, shown: 5), [0, 1, 2, 3, 4])
         XCTAssertEqual(RadarLoopRules.deferred(count: 6, shown: 2), [0, 1, 3, 4, 5], "dragged to")
         XCTAssertEqual(RadarLoopRules.deferred(count: 1, shown: 0), [], "OpenWeather's one frame")
         XCTAssertEqual(RadarLoopRules.deferred(count: 0, shown: 0), [], "no radar")
+    }
+
+    /// Plays `ticks` steps from `step`: the frames shown.
+    private func play(from step: Int, count: Int, ticks: Int) -> [Int] {
+        var step = step
+        var shown: [Int] = []
+        for _ in 0..<ticks {
+            let next = RadarLoopRules.next(after: step, count: count)
+            step = next.step
+            shown.append(next.index)
+        }
+        return shown
+    }
+
+    func testTheFirstPlayRunsFromTheOldestFrame() {
+        // The latest frame (5) shows while the others load; then the loop starts over.
+        let start = RadarLoopRules.start(index: 5, count: 6, firstPlay: true)
+        XCTAssertEqual(
+            play(from: start, count: 6, ticks: 12), [0, 1, 2, 3, 4, 5, 5, 5, 5, 0, 1, 2],
+            "through once, the latest held, and again")
+    }
+
+    func testPlayingAgainGoesOnFromTheFrameShown() {
+        let start = RadarLoopRules.start(index: 2, count: 6, firstPlay: false)
+        XCTAssertEqual(play(from: start, count: 6, ticks: 5), [3, 4, 5, 5, 5])
+        // Paused on the latest: it holds before the loop starts over.
+        let latest = RadarLoopRules.start(index: 5, count: 6, firstPlay: false)
+        XCTAssertEqual(play(from: latest, count: 6, ticks: 4), [5, 5, 5, 0])
+        XCTAssertEqual(RadarLoopRules.next(after: 0, count: 0).index, 0, "no frames")
     }
 
     /// Waits until `condition` holds or `seconds` pass.
