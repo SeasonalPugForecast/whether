@@ -10,9 +10,27 @@ struct AcknowledgementsView: View {
 
     /// The weather data's credits (the core's attribution says the same).
     private static let ccBy = URL(string: "https://creativecommons.org/licenses/by/4.0/")
+    /// Environment and Climate Change Canada's licence for its open data, GEM included.
+    private static let ecccLicence = URL(string: "https://eccc-msc.github.io/open-data/licence/readme_en/")
 
     private static let credits: [(source: String, terms: String, license: URL?)] = [
         ("Open-Meteo.com", "Weather data under CC BY 4.0. Converted to your units and combined.", ccBy),
+        (
+            "ECMWF (Storms: IFS and its ensemble)",
+            "Forecasts via Open-Meteo. Copyright European Centre for Medium-Range Weather Forecasts, under CC BY 4.0.",
+            ccBy
+        ),
+        ("NOAA GFS and GEFS (Storms)", "Forecasts and ensemble via Open-Meteo: US government, public domain", nil),
+        (
+            "ECCC GEM (Storms)",
+            "Forecasts via Open-Meteo. Contains information licensed under the Data Server End-use Licence of Environment and Climate Change Canada.",
+            ecccLicence
+        ),
+        (
+            "DWD ICON (Storms)",
+            "Forecasts via Open-Meteo. Based on data from Deutscher Wetterdienst, under CC BY 4.0.",
+            ccBy
+        ),
         (
             "ERA5 (history, normals)",
             "Contains modified Copernicus Climate Change Service information", nil
@@ -46,7 +64,10 @@ struct AcknowledgementsView: View {
                         Text(credit.source)
                         Text(credit.terms).font(.caption).foregroundStyle(.secondary)
                         if let license = credit.license {
-                            Link("CC BY 4.0 license", destination: license).font(.caption)
+                            Link(
+                                license == Self.ccBy ? "CC BY 4.0 license" : "End-use licence", destination: license
+                            )
+                            .font(.caption)
                         }
                     }
                 }
