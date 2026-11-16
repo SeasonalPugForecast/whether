@@ -10,7 +10,7 @@ struct SettingsView: View {
     @Environment(\.scenePhase) private var phase
     @State private var importing = false
     @State private var importResult: String?
-    /// "0.1.0 (1)": the app's version and build, from Version.xcconfig.
+    /// "1.0.0 (1)": the app's version and build, from Version.xcconfig.
     private static let appVersion: String = {
         let info = Bundle.main.infoDictionary
         let version = info?["CFBundleShortVersionString"] as? String ?? "?"
