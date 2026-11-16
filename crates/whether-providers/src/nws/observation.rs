@@ -123,6 +123,29 @@ fn distance_m(a: (f64, f64), b: (f64, f64)) -> u32 {
     metres
 }
 
+/// What an observation of `temperature` °C feels like: the station's heat
+/// index or wind chill when it reports one. Stations report a wind chill only
+/// at 10 °C or colder with at least 5 km/h of wind, and a heat index only
+/// when it is hot, so a calm moment in a breezy night reports neither; then
+/// the forecast hour's feels-like is moved by how far the measured temperature
+/// is from the forecast's, which keeps the forecast's wind and humidity. With
+/// no forecast to go by, it feels like the temperature.
+fn feels_like(
+    heat_index: Option<f32>,
+    wind_chill: Option<f32>,
+    temperature: f32,
+    forecast: &Current,
+) -> f32 {
+    let shifted = || match (forecast.apparent, forecast.temperature) {
+        (Some(apparent), Some(forecast)) => Some(apparent.0 + (temperature - forecast.0)),
+        _ => None,
+    };
+    heat_index
+        .or(wind_chill)
+        .or_else(shifted)
+        .unwrap_or(temperature)
+}
+
 /// Puts a station's observation in place of the forecast hour's current
 /// conditions when it is fresh and its temperature passed quality control.
 /// Values it lacks keep the forecast's; the condition is its icon's, else the
@@ -158,11 +181,12 @@ pub(super) fn parse(
         .as_deref()
         .and_then(icon)
         .unwrap_or((forecast.condition, forecast.is_day));
-    let apparent = p
-        .heat_index
-        .get()
-        .or_else(|| p.wind_chill.get())
-        .unwrap_or(temperature);
+    let apparent = feels_like(
+        p.heat_index.get(),
+        p.wind_chill.get(),
+        temperature,
+        &forecast,
+    );
     let observed = Current {
         time: UnixTime(time.0),
         is_day,
@@ -229,6 +253,47 @@ mod tests {
             Some("KPTW")
         );
         assert_eq!(first_station(br#"{"features":[]}"#).unwrap(), None);
+    }
+
+    /// A forecast hour of `temperature` °C that feels like `apparent` °C.
+    fn hour(temperature: Option<f32>, apparent: Option<f32>) -> Current {
+        Current {
+            temperature: temperature.map(Celsius),
+            apparent: apparent.map(Celsius),
+            ..Current::default()
+        }
+    }
+
+    #[test]
+    fn a_reported_heat_index_or_wind_chill_is_the_feels_like() {
+        let breezy = hour(Some(1.1), Some(-2.2));
+        assert_eq!(feels_like(Some(33.0), None, 30.0, &breezy), 33.0);
+        assert_eq!(feels_like(None, Some(-0.5), 2.2, &breezy), -0.5);
+        assert_eq!(feels_like(Some(33.0), Some(-0.5), 2.2, &breezy), 33.0);
+    }
+
+    #[test]
+    fn a_calm_moment_keeps_the_forecast_hours_wind_chill() {
+        // A station reads 1.7 °C and calm, so no wind chill; the forecast hour
+        // has 1.1 °C with an 11 km/h wind, feeling like -2.2 °C. Measured 0.6°
+        // warmer, it feels like -1.6 °C.
+        let breezy = hour(Some(1.1), Some(-2.2));
+        let felt = feels_like(None, None, 1.7, &breezy);
+        assert!((felt - -1.6).abs() < 1e-4, "{felt}");
+    }
+
+    #[test]
+    fn a_mild_hour_feels_like_the_measured_temperature() {
+        // Neither index applies: the forecast's feels-like is its temperature.
+        let mild = hour(Some(16.0), Some(16.0));
+        assert_eq!(feels_like(None, None, 15.0, &mild), 15.0);
+    }
+
+    #[test]
+    fn without_a_forecast_feels_like_is_the_temperature() {
+        assert_eq!(feels_like(None, None, 1.7, &hour(None, None)), 1.7);
+        assert_eq!(feels_like(None, None, 1.7, &hour(Some(1.1), None)), 1.7);
+        assert_eq!(feels_like(None, None, 1.7, &hour(None, Some(-2.2))), 1.7);
     }
 
     #[test]

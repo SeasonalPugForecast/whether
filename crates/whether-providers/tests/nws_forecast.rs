@@ -230,9 +230,16 @@ fn a_fresh_observation_is_the_current_conditions() {
     assert_eq!(current.time, OBSERVED_AT, "14:51 UTC");
     assert_eq!(current.temperature.map(|c| c.0), Some(15.0));
     // No wind measured: the forecast hour's 11.112 km/h stays, and with neither
-    // a wind chill nor a heat index, it feels like the temperature.
+    // a wind chill nor a heat index, it feels like the forecast hour's
+    // feels-like, moved by how far the measured 15 °C is from its temperature.
     assert!((current.wind_speed.unwrap().0 - 3.087).abs() < 0.01);
-    assert_eq!(current.apparent.map(|c| c.0), Some(15.0));
+    let hour = snap
+        .hourly
+        .iter()
+        .find(|h| h.time == UnixTime(1_793_631_600))
+        .unwrap();
+    let shifted = hour.apparent.unwrap().0 + (15.0 - hour.temperature.unwrap().0);
+    assert!((current.apparent.unwrap().0 - shifted).abs() < 1e-4);
     let station = snap.location.station.as_ref().unwrap();
     assert_eq!(
         (station.id.as_str(), station.name.as_str()),
