@@ -234,6 +234,14 @@ press Run). Once a team is chosen, its ID is in the project file; copy it into
 syncs keep it. Xcode's per-user files (`xcuserdata/`, the workspace) are
 gitignored, so syncs leave them alone.
 
+Simpler still: SSH in as the account you sign with (`host = "you@mac"`), so
+`ios remote device` signs in its keychain. The sync must own the build
+directory, because rsync sets file times and macOS lets only a file's owner do
+that, so give that account a directory of its own (another `dir`). The first
+time it signs, open the project in Xcode in that account, press Run and allow
+codesign to use the key ("Always Allow"); SSH sessions can't show that dialog
+and fail with `errSecInternalComponent` until then.
+
 ## Sharing plans
 
 
