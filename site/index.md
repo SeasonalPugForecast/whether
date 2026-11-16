@@ -6,7 +6,8 @@ title: Whether
 # Whether
 
 A calm weather app: the feels-like temperature first, rain minute by minute, hourly charts,
-radar, and a trip planner built on decades of recorded weather. It has no account, no ads and no
+radar, a trip planner built on decades of recorded weather, and a Storms view that compares the
+weather models and shows the National Hurricane Center's tropical storms. It has no account, no ads and no
 tracking. It runs on iPhone (as Pug Forecast), on Linux desktops and in terminals, and drives
 small ESP32 displays.
 

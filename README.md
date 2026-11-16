@@ -13,19 +13,22 @@ display only draws it.
 | iPhone app | **Pug Forecast**, a SwiftUI app on the same core (`ios/`) |
 
 It shows the feels-like temperature first, rain minute by minute, hourly charts, radar, history
-(normals and records) and a trip planner built on past years of weather. There is no account, no
+(normals and records) and a trip planner built on past years of weather. On iPhone, a Storms tab
+compares the weather models (ECMWF, GFS, GEM and ICON) and shows the National Hurricane Center's
+tropical storms. There is no account, no
 ads and no tracking.
 
 ## Data
 
 | Source | Used for |
 |---|---|
-| [Open-Meteo](https://open-meteo.com/) | forecasts, air quality, history; the always-available fallback |
+| [Open-Meteo](https://open-meteo.com/) | forecasts, air quality, history, and the models compared on the Storms tab; the always-available fallback |
 | [OpenWeather](https://openweathermap.org/) | forecasts and alerts, with your own API key |
 | [MET Norway](https://api.met.no/) | backup forecast |
 | [National Weather Service](https://www.weather.gov/) | US alerts and forecasts |
 | [Pirate Weather](https://pirateweather.net/) | forecasts, with your own API key |
 | [NOAA ACIS](https://www.rcc-acis.org/) | US climate normals and records |
+| [National Hurricane Center](https://www.nhc.noaa.gov/) | tropical storms on the iPhone's Storms tab |
 
 Providers are sans-IO: they build requests and parse bytes, and only the runtime does network I/O.
 Each source's data stays under its own license; the graphical and terminal displays credit them.
