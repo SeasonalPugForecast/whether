@@ -204,22 +204,41 @@ struct WidgetNow: Equatable, Sendable {
     var low: ViewModel.Quantity
     /// The sky behind (`ViewModel.theme`'s names).
     var sky: String
+    /// The temperatures are feels-like ones (the core's `feelsLikeLeads`), so
+    /// the widget says so: Apple's Weather widget shows the air temperature.
+    var feelsLike = false
+    /// With `feelsLike`: the air temperature now, "Actual 35°".
+    var actual: String?
+    /// With `feelsLike`: today's air high and low.
+    var actualHigh: ViewModel.Quantity?
+    var actualLow: ViewModel.Quantity?
 
     /// `nil` without current conditions (nothing to show yet).
     init?(_ view: ViewModel, fromHour: Bool) {
         guard let current = view.current else { return nil }
         high = current.high
         low = current.low
+        feelsLike = view.feelsLikeLeads
         if fromHour, let hour = view.hourly?.hours.first {
             temperature = hour.temperature
             conditionLabel = hour.conditionLabel
             icon = hour.icon
             sky = WidgetData.sky(icon: hour.icon, isDay: hour.isDay)
+            if feelsLike, hour.actual.value != nil { actual = "Actual \(hour.actual.text)" }
         } else {
             temperature = current.temperature
             conditionLabel = current.conditionLabel
             icon = current.icon
             sky = view.theme
+            // The core's "Actual 35°" when feels-like leads and is known
+            // (without a feels-like, the air temperature leads anyway).
+            if feelsLike, current.feelsLike.value != nil { actual = current.feelsLikeLabel }
+        }
+        if feelsLike, let today = view.daily?.days.first,
+            today.actualHigh.value != nil, today.actualLow.value != nil
+        {
+            actualHigh = today.actualHigh
+            actualLow = today.actualLow
         }
     }
 }

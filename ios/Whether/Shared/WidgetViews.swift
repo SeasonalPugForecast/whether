@@ -58,6 +58,33 @@ struct WeatherWidgetView: View {
         "H \(now.high.text)  L \(now.low.text)"
     }
 
+    /// Today's air high and low when feels-like leads, as Apple's Weather shows
+    /// them: "Actual H 51°  L 36°".
+    private func actualHighLow(_ now: WidgetNow) -> String? {
+        guard let high = now.actualHigh, let low = now.actualLow else { return nil }
+        return "Actual H \(high.text)  L \(low.text)"
+    }
+
+    /// Beside the big number when it is a feels-like one: says so, with the air
+    /// temperature under it.
+    @ViewBuilder private func feelsLikeTag(_ now: WidgetNow) -> some View {
+        if now.feelsLike {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("FEELS LIKE")
+                    .font(.system(size: 9, weight: .semibold))
+                    .tracking(0.6)
+                if let actual = now.actual {
+                    Text(actual).font(.caption2)
+                }
+            }
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .fixedSize()
+            .accessibilityElement(children: .combine)
+        }
+    }
+
     /// The data's credit (the core's attribution, as at the foot of the app's
     /// forecast), and Apple's Weather mark when its minutes show.
     private func credit(_ view: ViewModel) -> some View {
@@ -110,12 +137,15 @@ struct WeatherWidgetView: View {
         .font(font)
     }
 
-    /// The big number.
+    /// The big number, said to be feels-like when it is.
     private func temperature(_ now: WidgetNow, size: CGFloat) -> some View {
-        Text(now.temperature.text)
-            .font(.system(size: size, weight: .light))
-            .lineLimit(1)
-            .minimumScaleFactor(0.6)
+        HStack(alignment: .center, spacing: 6) {
+            Text(now.temperature.text)
+                .font(.system(size: size, weight: .light))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            feelsLikeTag(now)
+        }
     }
 
     // MARK: Small
@@ -152,6 +182,10 @@ struct WeatherWidgetView: View {
                 Text(now.conditionLabel).font(.caption.weight(.semibold))
                     .lineLimit(1).minimumScaleFactor(0.8)
                 Text(highLow(now)).font(.caption).lineLimit(1).minimumScaleFactor(0.8)
+                if let actual = actualHighLow(now) {
+                    Text(actual).font(.caption2).foregroundStyle(.secondary)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                }
             }
             .padding(.top, 2)
         }
@@ -359,7 +393,8 @@ struct WeatherWidgetView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("\(now.temperature.text) \(now.conditionLabel)")
                         .font(.headline).lineLimit(1)
-                    Text(highLow(now)).font(.caption)
+                    Text(now.feelsLike ? "Feels like · \(highLow(now))" : highLow(now))
+                        .font(.caption).lineLimit(1).minimumScaleFactor(0.8)
                     name(view, font: .caption2).foregroundStyle(.secondary)
                 }
             }
@@ -394,6 +429,7 @@ struct WeatherWidgetView: View {
     }
 
     private func inline(_ now: WidgetNow) -> some View {
+        // Too narrow beside the date to say feels-like without losing the number.
         Label(
             "\(now.temperature.text) \(now.conditionLabel)",
             systemImage: WeatherSymbols.symbol(now.icon))

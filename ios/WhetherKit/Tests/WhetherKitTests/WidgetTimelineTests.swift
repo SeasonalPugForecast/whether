@@ -253,6 +253,29 @@ final class WidgetTimelineTests: XCTestCase {
         XCTAssertNil(WidgetNow(empty, fromHour: true))
     }
 
+    func testAFeelsLikeLeadSaysSoWithTheAirTemperature() throws {
+        let url = try XCTUnwrap(
+            Bundle.module.url(forResource: "sample-view", withExtension: "json", subdirectory: "Resources"))
+        var view = try ViewModel.decode(String(contentsOf: url, encoding: .utf8))
+        let actualOnly = try XCTUnwrap(WidgetNow(view, fromHour: false))
+        XCTAssertFalse(actualOnly.feelsLike)
+        XCTAssertNil(actualOnly.actual, "the air temperature already leads")
+        XCTAssertNil(actualOnly.actualHigh)
+
+        // As the core writes it when feels-like leads.
+        view.feelsLikeLeads = true
+        view.current?.feelsLikeLabel = "Actual 60°"
+        let today = try XCTUnwrap(view.daily?.days.first)
+        let hour = try XCTUnwrap(view.hourly?.hours.first)
+        let observed = try XCTUnwrap(WidgetNow(view, fromHour: false))
+        XCTAssertTrue(observed.feelsLike)
+        XCTAssertEqual(observed.actual, "Actual 60°")
+        XCTAssertEqual(observed.actualHigh, today.actualHigh)
+        XCTAssertEqual(observed.actualLow, today.actualLow)
+        let forecast = try XCTUnwrap(WidgetNow(view, fromHour: true))
+        XCTAssertEqual(forecast.actual, "Actual \(hour.actual.text)")
+    }
+
     // MARK: Options
 
     func testTheTemperatureOptionFollowsTheAppByDefault() {
