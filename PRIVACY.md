@@ -1,6 +1,6 @@
 # Privacy
 
-*Last updated: 14 November 2026.* This policy is for the Pug Forecast iPhone app (the Whether
+*Last updated: 16 November 2026.* This policy is for the Pug Forecast iPhone app (the Whether
 project, <https://github.com/SeasonalPugForecast/whether>).
 
 Whether has no accounts, no ads, no analytics and no tracking. The project runs no server, and
@@ -66,7 +66,12 @@ phone, as for any place. The reading itself stays on the phone.
 
 Your places (with their full coordinates), trip plans, settings and cached forecasts are stored on
 the phone and shared with the app's widget through an App Group. Like other app data, they can be
-part of your iPhone backups, under your own backup settings with Apple. A key for a weather source
+part of your iPhone backups, under your own backup settings with Apple. The cached forecasts
+include the Storms tab's (the weather models' runs at the place shown, and the track files of
+nearby hurricanes), kept so that a run already fetched is not asked for again. The radar keeps
+NOAA's map tiles, which carry no key, in the app's caches folder (up to 100 MB, for as long as the
+radar service allows); OpenWeather's tiles, whose requests carry your key, are never written to
+disk, and neither is any other request that carries a key. A key for a weather source
 (such as OpenWeather), if you enter one, is kept in the iOS Keychain on this phone only, one item per
 source; it is not synced to iCloud and never appears in logs.
 
